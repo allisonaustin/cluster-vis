@@ -3,3 +3,7 @@ node_modules
 package-lock.json
 
 server.py
+
+data/
+ui/
+mgr/

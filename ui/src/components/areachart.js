@@ -10,7 +10,7 @@ const AreaChart = ({ data, field }) => {
       
       const timeFormat = d3.timeFormat('%H:%M');
       // const timeParse = d3.timeParse('%Y-%m-%d %H:%M:%S');
-      const margin = { top: 60, right: 60, bottom: 60, left: 70 };
+      const margin = { top: 40, right: 60, bottom: 60, left: 70 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
 
@@ -126,10 +126,20 @@ const AreaChart = ({ data, field }) => {
       //           .attr("d", areaGenerator);
       //       }
       //   }
+
+      const title = svg.append("text")
+        .attr("class", "grid-title")
+        .attr("x", size.width / 2)
+        .attr("y", 0)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("fill", "black")
+        .style('font-size', '12')
+        .text(field);
       
       }, [data, field]);
     
-      return <div ref={svgContainerRef} style={{ width: '100%', height: '400px' }}></div>;
+      return <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>;
 
     };
     
