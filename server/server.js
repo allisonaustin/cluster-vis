@@ -31,6 +31,17 @@ app.get('/farmData', (req, res) => {
     });
   });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT} !`);
+app.get('/files', (req, res) => {
+    const dataPath = path.join(__dirname, 'data');
+    fs.readdir(dataPath, (err, files) => {
+        if (err) {
+            res.status(500).send('Error reading folder');
+        } else {
+            res.json(files); 
+        }
+    });
 });
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT} !`);
+  });

@@ -16,6 +16,7 @@ const AreaChart = ({ data, field }) => {
 
       const svg = d3.select(svgContainerRef.current)
           .append("svg")
+          .attr('id', `${field}-svg`)
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
@@ -29,26 +30,30 @@ const AreaChart = ({ data, field }) => {
           value: data[field][obj]
         })
       });
-      
-      const xScale = d3.scaleUtc()
-        .domain(d3.extent(chartdata, d => d.timestamp))
+        
+      const start = chartdata[Math.floor(chartdata.length * 0.3)].timestamp;
+      const end = chartdata[Math.floor(chartdata.length * 0.5)].timestamp;
+      const filtered = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
+
+      const xScale = d3.scaleTime()
+        .domain(d3.extent(filtered, d => d.timestamp))
         .range([margin.left, size.width - margin.right])
         // .padding(0.1);
 
       const yScale = d3.scaleLinear()
-          .domain([0, d3.max(chartdata.map(v => v.value))])
+          .domain([0, d3.max(filtered.map(v => v.value))])
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
           .tickFormat(timeFormat)
           .tickSizeOuter(0);
+
+      const xAxisGroup = svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0,${size.height - margin.bottom})`)
+        .call(xAxis);
       
       const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
-
-      svg.append("g")
-          .attr("class", "x-axis")
-          .attr("transform", `translate(0,${size.height - margin.bottom})`)
-          .call(xAxis);
 
       // X axis label
       svg.append('text')
@@ -91,41 +96,13 @@ const AreaChart = ({ data, field }) => {
         .attr("clip-path", "url(#clip)")
 
       area.append("path")
-          .datum(chartdata)
-          .attr("class", "myArea")  
+          .datum(filtered)
+          .attr("class", `${field} area`)  
           .attr("fill", "#69b3a2")
           .attr("fill-opacity", .3)
           .attr("stroke", "black")
           .attr("stroke-width", 1)
           .attr("d", areaGenerator );
-
-      // adding brushing
-      // const brush = d3.brushX()
-      //   .extent([[margin.left, margin.top], [size.width - margin.right, size.height - margin.bottom]])
-      //   .on("end", updateChart);
-
-      // svg.append("g")
-      //     .attr("class", "brush")
-      //     .call(brush);
-
-      // function updateChart(event) {
-      //   const selection = event.selection;
-      //   if (selection) {
-      //       const [x0, x1] = selection.map(xScale.invert);
-      //       xScale.domain([x0, x1]);
-      //       svg.select(".x-axis").call(xAxis);
-
-      //       svg.select("path")
-      //           .datum(chartdata)
-      //           .attr("d", areaGenerator);
-      //   } else {
-      //       xScale.domain(d3.extent(chartdata, d => d.timestamp));
-      //       svg.select(".x-axis").call(xAxis);
-      //       svg.select("path")
-      //           .datum(chartdata)
-      //           .attr("d", areaGenerator);
-      //       }
-      //   }
 
       const title = svg.append("text")
         .attr("class", "grid-title")
@@ -136,6 +113,9 @@ const AreaChart = ({ data, field }) => {
         .style("fill", "black")
         .style('font-size', '12')
         .text(field);
+
+      svg.node().xScale = xScale;
+      svg.node().areaGenerator = areaGenerator;
       
       }, [data, field]);
     

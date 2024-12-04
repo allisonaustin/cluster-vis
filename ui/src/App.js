@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { fetchData } from './utils/api.js';
 import './App.css';
 import AreaChart from './components/areachart.js';
+import Window from './components/window.js';
+import Dropdown from './components/dropdown.js';
 
 function App() {
 
@@ -67,20 +69,27 @@ function App() {
       </header>)
       : (
         <div className="wrapper_main">
-          <div className="wrapper_left">
-            <div className="view_title">Performance</div>
-              {Object.keys(perfData).map((field) => (
-                <AreaChart key={field} data={perfData} field={field} />
-              ))}
-          </div>
-          <div className="wrapper_left">
-            <div className="view_title">Triggers</div>
-              {Object.keys(triggerData).map((field) => (
-                <AreaChart key={field} data={triggerData} field={field} />
-              ))}
-          </div>
-          <div className="wrapper_right">
-              <div className="view_title">MS Plot</div>
+           <div className="wrapper_top">
+              <div className="view_title">Data Selection</div>
+              <Dropdown />
+              <Window data={mgrData} />
+            </div>
+          <div className="wrapper_bottom">
+            <div className="wrapper_left">
+              <div className="view_title">Performance</div>
+                {Object.keys(perfData).map((field) => (
+                  <AreaChart key={field} data={perfData} field={field} />
+                ))}
+            </div>
+            <div className="wrapper_left">
+              <div className="view_title">Triggers</div>
+                {Object.keys(triggerData).map((field) => (
+                  <AreaChart key={field} data={triggerData} field={field} />
+                ))}
+            </div>
+            <div className="wrapper_right">
+                <div className="view_title">MS Plot</div>
+            </div>
           </div>
         </div>
       )}

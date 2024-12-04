@@ -5,5 +5,5 @@ package-lock.json
 server.py
 
 data/
-ui/
+farm/
 mgr/
