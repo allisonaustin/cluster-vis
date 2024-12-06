@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import App from '../App.js';
 import * as d3 from 'd3';
 
 const Window = ({ data }) => {
@@ -8,6 +9,7 @@ const Window = ({ data }) => {
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
+    const [chartData, setChartData] = useState([]);
     
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
@@ -36,6 +38,8 @@ const Window = ({ data }) => {
           value: data[field][obj]
         })
       });
+
+      setChartData(chartdata);
       
       const xScale = d3.scaleUtc()
         .domain(d3.extent(chartdata, d => d.timestamp))
@@ -94,8 +98,7 @@ const Window = ({ data }) => {
                 const [start, end] = selection.map(xScale.invert);
                 setBrushStart(start);
                 setBrushEnd(end);
-                const newdata = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
-                updateAreaChart([start, end], newdata);
+                updateAreaChart([start, end]);
             }
         })
     
@@ -106,34 +109,23 @@ const Window = ({ data }) => {
       
       }, [data]);
 
-      const brushed = (event, chartdata) => {
-        if (event.selection && xScaleRef.current) {
-            const [start, end] = event.selection.map(xScaleRef.current.invert);
-            setBrushStart(start);
-            setBrushEnd(end);
-            const newdata = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
-            updateAreaChart([start, end], newdata);
-        }
-    };
+    const updateAreaChart = (newDomain) => {
+        const chart = d3.select(`#focus-perf-1`);
+        const xScale = chart.node()?.xScale;
 
-    const updateAreaChart = (newDomain, newData) => {
-        const svg = d3.select(`#pkts_out-svg`);
-        
-        const xScale = svg.node()?.xScale;
-        const areaGenerator = svg.node()?.areaGenerator;
-        const area = svg.select('.area');
-
-        if (!xScale || !areaGenerator) {
+        if (!xScale) {
             return
         }
-        // updating x axis
+        
+        // updating x axes
         xScale.domain(newDomain)
-        d3.selectAll('.x-axis').call(d3.axisBottom(xScale));
+        d3.selectAll('.focus .x-axis').call(d3.axisBottom(xScale));
 
-        let areaPath = area.select('path');
-        areaPath
-            .datum(newData)
-            .attr('d', areaGenerator)
+        // updating charts
+        Object.keys(data).forEach((field, i) => {
+            window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
+            window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
+        })
       };
 
       return <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>;

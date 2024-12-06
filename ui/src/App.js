@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchData } from './utils/api.js';
 import './App.css';
 import AreaChart from './components/areachart.js';
@@ -12,7 +12,6 @@ function App() {
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
   const [fields, setFields] = useState([]);
-  const [field, setField] = useState("Activity_P1");
 
   useEffect(() => {
     const getMgrData = async () => {
@@ -77,14 +76,14 @@ function App() {
           <div className="wrapper_bottom">
             <div className="wrapper_left">
               <div className="view_title">Performance</div>
-                {Object.keys(perfData).map((field) => (
-                  <AreaChart key={field} data={perfData} field={field} />
+                {Object.keys(perfData).map((field, index) => (
+                  <AreaChart key={field} data={perfData} field={field} index={index} chartType={'perf'} />
                 ))}
             </div>
             <div className="wrapper_left">
               <div className="view_title">Triggers</div>
-                {Object.keys(triggerData).map((field) => (
-                  <AreaChart key={field} data={triggerData} field={field} />
+                {Object.keys(triggerData).map((field, index) => (
+                  <AreaChart key={field} data={triggerData} field={field} index={index} chartType={'trigger'} />
                 ))}
             </div>
             <div className="wrapper_right">

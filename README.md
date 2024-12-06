@@ -5,11 +5,11 @@
 
 ### UI
 Open a terminal and run:
-
 ```cd ui```
 
-```npm run start```
+```npm install```
 
+```npm run start```
 
 ### Server
 Open another terminal and run:

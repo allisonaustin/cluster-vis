@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import * as d3 from 'd3';
 
-const AreaChart = ({ data, field }) => {
+const AreaChart = ({ data, field, index, chartType }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 600, height: 300 });
+    const [chartId, setChartId] = useState(index);
+    const [type, setType] = useState(chartType);
+    const [chartdata, setChartData] = useState([]);
     
     useEffect(() => {
       if (!svgContainerRef.current || !data || !data[field] || Object.keys(data[field]).length === 0) return;
@@ -16,11 +19,22 @@ const AreaChart = ({ data, field }) => {
 
       const svg = d3.select(svgContainerRef.current)
           .append("svg")
-          .attr('id', `${field}-svg`)
+          .attr('id', `${type}-${index}-svg`)
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
+
+      svg.append('defs')
+        .append('clipPath')
+          .attr('id', 'clip')
+        .append('rect')
+          .attr('width', size.width)
+          .attr('height', size.height)
+
+      const focus = svg.append('g')
+        .attr('class', 'focus')
+        .attr('id', `focus-${type}-${index}`)
 
       let chartdata = [];
 
@@ -30,6 +44,8 @@ const AreaChart = ({ data, field }) => {
           value: data[field][obj]
         })
       });
+
+      setChartData(chartdata);
         
       const start = chartdata[Math.floor(chartdata.length * 0.3)].timestamp;
       const end = chartdata[Math.floor(chartdata.length * 0.5)].timestamp;
@@ -38,7 +54,6 @@ const AreaChart = ({ data, field }) => {
       const xScale = d3.scaleTime()
         .domain(d3.extent(filtered, d => d.timestamp))
         .range([margin.left, size.width - margin.right])
-        // .padding(0.1);
 
       const yScale = d3.scaleLinear()
           .domain([0, d3.max(filtered.map(v => v.value))])
@@ -48,7 +63,7 @@ const AreaChart = ({ data, field }) => {
           .tickFormat(timeFormat)
           .tickSizeOuter(0);
 
-      const xAxisGroup = svg.append("g")
+      focus.append("g")
         .attr("class", "x-axis")
         .attr("transform", `translate(0,${size.height - margin.bottom})`)
         .call(xAxis);
@@ -56,14 +71,14 @@ const AreaChart = ({ data, field }) => {
       const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
 
       // X axis label
-      svg.append('text')
+      focus.append('text')
         .attr("x", size.width/2)
         .attr("y", size.height - 10)
         .style('text-anchor', 'middle')
         .text('Time (hh:mm)')
         .style('font-size', '14px');
 
-      svg.append("g")
+      focus.append("g")
         .attr("class", "y-axis")
           .attr("transform", `translate(${margin.left},0)`)
           .call(yAxis)
@@ -77,34 +92,49 @@ const AreaChart = ({ data, field }) => {
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
               .style('font-size', '14px')
-              .text("Count")); // Y label
+              .text("Value")); // Y label
 
-      svg.append("defs").append("svg:clipPath")
-        .attr("id", "clip")
-        .append("svg:rect")
-        .attr("width", size.width )
-        .attr("height", size.height )
-        .attr("x", 0)
-        .attr("y", 0);             
+      // focus.append("defs").append("svg:clipPath")
+      //   .attr("id", "clip")
+      //   .append("svg:rect")
+      //   .attr("width", size.width )
+      //   .attr("height", size.height )
+      //   .attr("x", 0)
+      //   .attr("y", 0);             
 
-      var areaGenerator = d3.area()
-        .x(function(d) { return xScale(d.timestamp) })
-        .y0(yScale(0))
-        .y1(function(d) { return yScale(d.value) })
+      // var areaGenerator = d3.area()
+      //   .x(function(d) { return xScale(d.timestamp) })
+      //   .y0(yScale(0))
+      //   .y1(function(d) { return yScale(d.value) })
     
-      var area = svg.append('g')
-        .attr("clip-path", "url(#clip)")
+      // var area = chart.append('g')
+      //   .attr("clip-path", "url(#clip)")
 
-      area.append("path")
-          .datum(filtered)
-          .attr("class", `${field} area`)  
-          .attr("fill", "#69b3a2")
-          .attr("fill-opacity", .3)
-          .attr("stroke", "black")
-          .attr("stroke-width", 1)
-          .attr("d", areaGenerator );
+      // area.append("path")
+      //     .datum(filtered)
+      //     .attr("class", `${field} area`)  
+      //     .attr("fill", "#69b3a2")
+      //     .attr("fill-opacity", .3)
+      //     .attr("stroke", "black")
+      //     .attr("stroke-width", 1)
+      //     .attr("d", areaGenerator );
 
-      const title = svg.append("text")
+      const line = d3.line()
+        .x(function(d) { return xScale(d.timestamp) })
+        .y(function(d) { return yScale(+d.value) })
+
+      focus.append('path')
+        .datum(filtered)
+        .attr('id', (d, i) => `line-${i}`)
+        .attr('class', `line ${type} ${index}`)
+        .attr('clip-path', 'url(#clip)')
+        .style('fill', 'none')
+        .style('stroke', 'black')
+        .style('stroke-width', 1)
+        .style('opacity', 0.8)
+        .attr('d', (d) => line(d))
+
+      focus.append("text")
         .attr("class", "grid-title")
         .attr("x", size.width / 2)
         .attr("y", 0)
@@ -114,13 +144,46 @@ const AreaChart = ({ data, field }) => {
         .style('font-size', '12')
         .text(field);
 
-      svg.node().xScale = xScale;
-      svg.node().areaGenerator = areaGenerator;
+      focus.node().xScale = xScale;
+      focus.node().yScale = yScale;
       
-      }, [data, field]);
+      }, [data, field, index, chartType]);
+
+      const updateChart = (newDomain) => {
+        const chart = d3.select(`#focus-${type}-${chartId}`);
+        const xScale = chart.node()?.xScale;
+        const yScale = chart.node()?.yScale;
+
+        const newdata = chartdata.filter(d => d.timestamp >= newDomain[0] && d.timestamp <= newDomain[1]);
+
+        if (!xScale || !yScale) return;
+
+        // updating scales
+        xScale.domain(newDomain);
+        yScale.domain([0, d3.max(newdata.map(v => v.value))])
+
+        // updating x axes
+        // chart.select('.x-axis').call(d3.axisBottom(xScale));
+        chart.select('.y-axis').call(d3.axisLeft(yScale));
+
+        // updating line
+        chart.select('.line')
+            .datum(newdata)
+            .attr('d', d3.line()
+                .x(d => xScale(d.timestamp))
+                .y(d => yScale(+d.value))
+            );
+      };
+
+      const handleUpdateEvent = (event) => {
+        const { detail: newDomain } = event;
+        updateChart(newDomain);
+      };
+
+      window.addEventListener(`update-chart-${type}-${chartId}`, handleUpdateEvent);
     
       return <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>;
 
-    };
+};
     
 export default AreaChart;
