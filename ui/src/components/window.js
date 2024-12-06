@@ -41,7 +41,7 @@ const Window = ({ data }) => {
 
       setChartData(chartdata);
       
-      const xScale = d3.scaleUtc()
+      const xScale = d3.scaleTime()
         .domain(d3.extent(chartdata, d => d.timestamp))
         .range([margin.left, size.width - margin.right])
         // .padding(0.1);
@@ -112,6 +112,7 @@ const Window = ({ data }) => {
     const updateAreaChart = (newDomain) => {
         const chart = d3.select(`#focus-perf-1`);
         const xScale = chart.node()?.xScale;
+        const timeFormat = d3.timeFormat('%H:%M');
 
         if (!xScale) {
             return
@@ -119,13 +120,19 @@ const Window = ({ data }) => {
         
         // updating x axes
         xScale.domain(newDomain)
-        d3.selectAll('.focus .x-axis').call(d3.axisBottom(xScale));
+        d3.selectAll('.focus .x-axis').call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0));
 
         // updating charts
-        Object.keys(data).forEach((field, i) => {
-            window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
-            window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
-        })
+        Promise.all(
+            Object.keys(data).map((field, i) => 
+                Promise.resolve().then(() => {
+                    window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
+                    window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
+                })
+            )
+        ).then(() => {
+            console.log("All charts updated");
+        });
       };
 
       return <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>;

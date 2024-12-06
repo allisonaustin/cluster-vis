@@ -92,32 +92,12 @@ const AreaChart = ({ data, field, index, chartType }) => {
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
               .style('font-size', '14px')
-              .text("Value")); // Y label
+              .text("Value")); // Y label     
 
-      // focus.append("defs").append("svg:clipPath")
-      //   .attr("id", "clip")
-      //   .append("svg:rect")
-      //   .attr("width", size.width )
-      //   .attr("height", size.height )
-      //   .attr("x", 0)
-      //   .attr("y", 0);             
-
-      // var areaGenerator = d3.area()
-      //   .x(function(d) { return xScale(d.timestamp) })
-      //   .y0(yScale(0))
-      //   .y1(function(d) { return yScale(d.value) })
-    
-      // var area = chart.append('g')
-      //   .attr("clip-path", "url(#clip)")
-
-      // area.append("path")
-      //     .datum(filtered)
-      //     .attr("class", `${field} area`)  
-      //     .attr("fill", "#69b3a2")
-      //     .attr("fill-opacity", .3)
-      //     .attr("stroke", "black")
-      //     .attr("stroke-width", 1)
-      //     .attr("d", areaGenerator );
+      var areaGenerator = d3.area()
+        .x(function(d) { return xScale(d.timestamp) })
+        .y0(yScale(0))
+        .y1(function(d) { return yScale(d.value) })
 
       const line = d3.line()
         .x(function(d) { return xScale(d.timestamp) })
@@ -128,11 +108,11 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr('id', (d, i) => `line-${i}`)
         .attr('class', `line ${type} ${index}`)
         .attr('clip-path', 'url(#clip)')
-        .style('fill', 'none')
+        .style('fill', '#69b3a2')
         .style('stroke', 'black')
         .style('stroke-width', 1)
-        .style('opacity', 0.8)
-        .attr('d', (d) => line(d))
+        .attr("fill-opacity", .3)
+        .attr('d', areaGenerator)
 
       focus.append("text")
         .attr("class", "grid-title")
@@ -169,9 +149,10 @@ const AreaChart = ({ data, field, index, chartType }) => {
         // updating line
         chart.select('.line')
             .datum(newdata)
-            .attr('d', d3.line()
-                .x(d => xScale(d.timestamp))
-                .y(d => yScale(+d.value))
+            .attr('d', d3.area()
+              .x(function(d) { return xScale(d.timestamp) })
+              .y0(yScale(0))
+              .y1(function(d) { return yScale(d.value) })
             );
       };
 
