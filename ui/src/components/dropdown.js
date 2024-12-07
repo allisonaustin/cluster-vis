@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 const Dropdown = () => {
     const [files, setFiles] = useState([]);
 
-    const [selectedFile, setSelectedFile] = useState('novadaq-far-mgr-01.json');
+    const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01.json');
 
     useEffect(() => {
         const fetchFiles = async () => {
@@ -26,7 +26,6 @@ const Dropdown = () => {
                 value={selectedFile}
                 onChange={(e) => setSelectedFile(e.target.value)}
                 >
-                <option value="">{selectedFile}</option>
                 {files.map((file) => (
                     <option key={file} value={file}>
                         {file}

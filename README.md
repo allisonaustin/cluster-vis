@@ -5,6 +5,7 @@
 
 ### UI
 Open a terminal and run:
+
 ```cd ui```
 
 ```npm install```

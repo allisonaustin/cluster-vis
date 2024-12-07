@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { COLORS, getColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
 const AreaChart = ({ data, field, index, chartType }) => {
@@ -9,7 +10,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
     const [chartdata, setChartData] = useState([]);
     
     useEffect(() => {
-      if (!svgContainerRef.current || !data || !data[field] || Object.keys(data[field]).length === 0) return;
+      if (!svgContainerRef.current || !data || !data[field] || Object.keys(data[field]).length === 0) return; 
       
       const timeFormat = d3.timeFormat('%H:%M');
       // const timeParse = d3.timeParse('%Y-%m-%d %H:%M:%S');
@@ -108,9 +109,9 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr('id', (d, i) => `line-${i}`)
         .attr('class', `line ${type} ${index}`)
         .attr('clip-path', 'url(#clip)')
-        .style('fill', '#69b3a2')
+        .style('fill', getColor('default'))
         .style('stroke', 'black')
-        .style('stroke-width', 1)
+        .style('stroke-width', 0.5)
         .attr("fill-opacity", .3)
         .attr('d', areaGenerator)
 

@@ -24,7 +24,9 @@ function App() {
           setError(null); 
           setFields(Object.keys(data));  
           const trigFilt = Object.keys(data)
-            .filter((key) => key.includes('P1'))
+            .filter((key) => (key.includes('P1') 
+                                && !key.includes('Activity') 
+                                && !key.includes('prescale')))
             .reduce((obj, key) => {
               obj[key] = data[key];
               return obj;

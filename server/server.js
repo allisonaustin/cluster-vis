@@ -33,12 +33,27 @@ app.get('/farmData', (req, res) => {
 
 app.get('/files', (req, res) => {
     const dataPath = path.join(__dirname, 'data');
-    fs.readdir(dataPath, (err, files) => {
+    fs.readdir(dataPath, (err, folders) => {
         if (err) {
             res.status(500).send('Error reading folder');
-        } else {
-            res.json(files); 
+            return;
         }
+        const jsonFiles = [];
+
+        folders.forEach(folder => {
+            const folderPath = path.join(dataPath, folder);
+
+            if (fs.statSync(folderPath).isDirectory()) {
+                const files = fs.readdirSync(folderPath);
+                files.forEach(file => {
+                    if (path.extname(file) === '.json') {
+                        jsonFiles.push(path.join(folder, file)); 
+                    }
+                });
+            }
+        });
+
+        res.json(jsonFiles);
     });
 });
 

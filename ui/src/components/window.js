@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import App from '../App.js';
+import { generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
 const Window = ({ data }) => {
@@ -29,27 +29,31 @@ const Window = ({ data }) => {
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
-      let chartdata = [];
-      let field = 'Activity_P1';
+      let fields = ['Activity_P1'];
+      let chartdata = {};
 
-      Object.keys(data[field]).forEach(obj => {
-        chartdata.push({
-          timestamp: new Date(parseInt(obj)),
-          value: data[field][obj]
-        })
-      });
-
-      setChartData(chartdata);
-      
+      fields.forEach((field) => {
+        if (data[field]) { 
+            chartdata[field] = [];
+            
+            Object.keys(data[field]).forEach((obj) => {
+                chartdata[field].push({
+                    timestamp: new Date(parseInt(obj)), 
+                    value: data[field][obj], 
+                });
+            });
+        }
+    });    
+    
       const xScale = d3.scaleTime()
-        .domain(d3.extent(chartdata, d => d.timestamp))
-        .range([margin.left, size.width - margin.right])
+        .domain(d3.extent(chartdata[fields[0]], d => d.timestamp))
+        .range([margin.left, size.width - margin.right - 20])
         // .padding(0.1);
 
-    xScaleRef.current = xScale; 
+      xScaleRef.current = xScale; 
 
       const yScale = d3.scaleLinear()
-          .domain([0, d3.max(chartdata.map(v => v.value))])
+          .domain([0, d3.max(chartdata[fields[0]].map(v => v.value))])
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
@@ -63,14 +67,14 @@ const Window = ({ data }) => {
           .attr("transform", `translate(0,${size.height - margin.bottom})`)
           .call(xAxis);
 
-    //   svg.append("g")
-    //     .attr("class", "y-axis")
-    //       .attr("transform", `translate(${margin.left},0)`)
-    //       .call(yAxis)
-    //       .call(g => g.select(".domain").remove())
-    //       .call(g => g.selectAll(".tick line").clone()
-    //           .attr("x2", size.width - margin.left - margin.right)
-    //           .attr("stroke-opacity", 0.1))
+      svg.append("g")
+        .attr("class", "y-axis")
+          .attr("transform", `translate(${margin.left},0)`)
+          .call(yAxis)
+          .call(g => g.select(".domain").remove())
+          .call(g => g.selectAll(".tick line").clone()
+              .attr("x2", size.width - margin.left - margin.right - 20)
+              .attr("stroke-opacity", 0.1))
 
       svg.append("defs").append("svg:clipPath")
         .attr("id", "clip")
@@ -78,8 +82,53 @@ const Window = ({ data }) => {
         .attr("width", size.width )
         .attr("height", size.height )
 
-      const start = chartdata[Math.floor(chartdata.length * 0.3)].timestamp;
-      const end = chartdata[Math.floor(chartdata.length * 0.5)].timestamp;
+      // adding areas
+
+      var areaGenerator = d3.area()
+        .x(function(d) { return xScale(d.timestamp) })
+        .y0(yScale(0))
+        .y1(function(d) { return yScale(d.value) })
+
+    fields.forEach((field) => {
+        svg.append('path')
+            .datum(chartdata[field])
+            .attr('id', `context-${field}`)
+            .attr('clip-path', 'url(#clip)')
+            .style('fill', (d, i) => generateColor(i))
+            .style('stroke', 'black')
+            .style('stroke-width', 0.3)
+            .style('stroke-opacity', 0.5)
+            .attr("fill-opacity", .3)
+            .attr('d', areaGenerator)
+    });
+
+    // adding legend 
+    const legend = svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(${size.width-margin.right}, 0)`)
+
+    fields.forEach((field, i) => {
+        const legendItem = legend.append('g')
+            .attr('transform', `translate(${i * 100}, 0)`)
+        
+        legendItem.append('rect')
+            .attr('width', 15)
+            .attr('height', 15)
+            .attr('fill', generateColor(i))
+            .attr('fill-opacity', 0.4)
+        
+        legendItem.append('text')
+            .attr('x', 20)
+            .attr('y', 7)
+            .text(field)
+            .style('font-size', '10px')
+            .attr('alignment-baseline', 'middle')
+    })
+
+     // adding brush
+
+      const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
+      const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.5)].timestamp;
 
       const defaultWindow = [
         xScale(start),
@@ -90,7 +139,7 @@ const Window = ({ data }) => {
       setBrushEnd(end);
 
       const brush = d3.brushX(xScale)
-        .extent([[0, 20 ], [size.width, size.height - margin.bottom]])
+        .extent([[0, 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
         // .on('brush', (event) => brushed(event, chartdata))
         .on('brush end', (event) => {
             const selection = event.selection;
@@ -104,6 +153,7 @@ const Window = ({ data }) => {
     
         svg.append('g')
             .attr('class', 'x-brush')
+            .attr('transform', `translate(0, ${-margin.top})`)
             .call(brush)
             .call(brush.move, defaultWindow)
       
