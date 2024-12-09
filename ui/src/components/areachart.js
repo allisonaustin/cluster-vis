@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { COLORS, getColor } from '../utils/colors.js';
+import { COLORS, getColor, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
 const AreaChart = ({ data, field, index, chartType }) => {
@@ -115,6 +115,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr("fill-opacity", .3)
         .attr('d', areaGenerator)
 
+
       focus.append("text")
         .attr("class", "grid-title")
         .attr("x", size.width / 2)
@@ -139,9 +140,17 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
         if (!xScale || !yScale) return;
 
+        if (newdata.length == 0) return;
+
         // updating scales
         xScale.domain(newDomain);
-        yScale.domain([0, d3.max(newdata.map(v => v.value))])
+        
+        let newY = d3.extent(newdata.map(v => v.value));
+        if (newY[1] != 0) {
+          yScale.domain([0, newY[1] + 1])
+        } else {
+          yScale.domain([0, newY[1]])
+        }
 
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));

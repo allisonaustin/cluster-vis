@@ -6,14 +6,34 @@ import Window from './components/window.js';
 import Dropdown from './components/dropdown.js';
 
 function App() {
-
+  const [farmData, setFarmData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
-  const [fields, setFields] = useState([]);
 
   useEffect(() => {
+    const getFarmData = async () => {
+      try {
+        const response = await fetch('http://localhost:5009/farmData');
+        const data = await response.json();
+        
+        if (response.ok) {
+          console.log(data)
+          setFarmData(data);  
+          setError(null); 
+
+        } else {
+          setFarmData(null);  
+          setError("Failed to fetch farm data. Please check that the server is running.");
+        }
+      } catch (error) {
+        setFarmData(null);    
+        setError("Failed to fetch farm data. Please check that the server is running.");
+        console.error(error);     
+      }
+    };
+
     const getMgrData = async () => {
       try {
         const response = await fetch('http://localhost:5009/mgrData');
@@ -22,9 +42,9 @@ function App() {
         if (response.ok) {
           setMgrData(data);  
           setError(null); 
-          setFields(Object.keys(data));  
           const trigFilt = Object.keys(data)
             .filter((key) => (key.includes('P1') 
+                                && (key.includes('Data Driven') || (key.includes('Trigger')))
                                 && !key.includes('Activity') 
                                 && !key.includes('prescale')))
             .reduce((obj, key) => {
@@ -45,21 +65,21 @@ function App() {
 
         } else {
           setMgrData(null);  
-          setFields([]); 
           setTriggerData(null);   
           setPerfData(null);   
-          setError("Failed to fetch data. Please check that the server is running.");
+          setError("Failed to fetch manager data. Please check that the server is running.");
         }
       } catch (error) {
         setMgrData(null);    
-        setFields([]);  
         setTriggerData(null);
         setPerfData(null);
-        setError("Failed to fetch data. Please check that the server is running.");
+        setError("Failed to fetch manager data. Please check that the server is running.");
         console.error(error);     
       }
     };
-    getMgrData();
+    Promise.all([getFarmData(), getMgrData()])
+      .then(() => console.log("Data fetched successfully"))
+      .catch((err) => console.error("Error fetching data in parallel:", err));
   }, []);
 
   return (
@@ -69,29 +89,31 @@ function App() {
           <p>{error}</p>
       </header>)
       : (
-        <div className="wrapper_main">
-           <div className="wrapper_top">
-              <div className="view_title">Data Selection</div>
-              <Dropdown />
-              <Window data={mgrData} />
-            </div>
-          <div className="wrapper_bottom">
-            <div className="wrapper_left">
-              <div className="view_title">Performance</div>
-                {Object.keys(perfData).map((field, index) => (
-                  <AreaChart key={field} data={perfData} field={field} index={index} chartType={'perf'} />
-                ))}
-            </div>
-            <div className="wrapper_left">
-              <div className="view_title">Triggers</div>
-                {Object.keys(triggerData).map((field, index) => (
-                  <AreaChart key={field} data={triggerData} field={field} index={index} chartType={'trigger'} />
-                ))}
-            </div>
-            <div className="wrapper_right">
-                <div className="view_title">MS Plot</div>
-            </div>
+        <div className="wrapper_app"> 
+          <div className="wrapper_main">
+            <div className="wrapper_top">
+                <div className="view_title">Resource Manager</div>
+                <Dropdown />
+                <Window data={mgrData} />
+              </div>
+            <div className="wrapper_bottom">
+              <div className="wrapper_left">
+                <div className="view_title">Performance Metrics</div>
+                  {Object.keys(perfData).map((field, index) => (
+                    <AreaChart key={field} data={perfData} field={field} index={index} chartType={'perf'} />
+                  ))}
+              </div>
+              <div className="wrapper_left">
+                <div className="view_title">Triggers</div>
+                  {Object.keys(triggerData).map((field, index) => (
+                    <AreaChart key={field} data={triggerData} field={field} index={index} chartType={'trigger'} />
+                  ))}
+              </div>
+            </div> 
           </div>
+          <div className="wrapper_right">
+                <div className="view_title">Buffer Nodes</div>
+            </div>
         </div>
       )}
     </div>

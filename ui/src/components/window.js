@@ -9,13 +9,14 @@ const Window = ({ data }) => {
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
-    const [chartData, setChartData] = useState([]);
+    const [currentDate, setCurrentDate] = useState(null);
+    const [fields, setFields] = useState(['Activity_P1']);
     
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
       
       const timeFormat = d3.timeFormat('%H:%M');
-      // const timeParse = d3.timeParse('%Y-%m-%d %H:%M:%S');
+      const dateFormat = d3.timeFormat('%Y-%m-%d'); 
       const margin = { top: 10, right: 30, bottom: 70, left: 30 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
@@ -29,7 +30,6 @@ const Window = ({ data }) => {
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
-      let fields = ['Activity_P1'];
       let chartdata = {};
 
       fields.forEach((field) => {
@@ -123,12 +123,26 @@ const Window = ({ data }) => {
             .text(field)
             .style('font-size', '10px')
             .attr('alignment-baseline', 'middle')
+            .on('mouseover', (event, d) => {
+
+            })
+
     })
+
+    const firstTimestamp = chartdata[fields[0]][0]?.timestamp;
+    const formattedDate = dateFormat(firstTimestamp);
+    setCurrentDate(formattedDate)
+    legend.append("text")
+        .attr("class", "date-text")
+        .attr("x", 0)
+        .attr("y", size.height/2 + 10) 
+        .text(`Date: ${formattedDate}`)
+        .style("font-size", "10px")
 
      // adding brush
 
       const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
-      const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.5)].timestamp;
+      const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
 
       const defaultWindow = [
         xScale(start),
@@ -163,9 +177,20 @@ const Window = ({ data }) => {
         const chart = d3.select(`#focus-perf-1`);
         const xScale = chart.node()?.xScale;
         const timeFormat = d3.timeFormat('%H:%M');
+        const dateFormat = d3.timeFormat('%Y-%m-%d');
 
         if (!xScale) {
             return
+        }
+
+        const newStartDate = dateFormat(newDomain[0]);
+
+        // updating the displayed date only if it's different
+        if (newStartDate !== currentDate) {
+            setCurrentDate(newStartDate);
+
+            d3.select('.date-text')
+                .text(`Date: ${newStartDate}`);
         }
         
         // updating x axes
