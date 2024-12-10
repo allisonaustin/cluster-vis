@@ -11,7 +11,7 @@ const Window = ({ data }) => {
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
     const [fields, setFields] = useState(['Activity_P1']);
-    
+      
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
       
@@ -158,7 +158,7 @@ const Window = ({ data }) => {
                 const [start, end] = selection.map(xScale.invert);
                 setBrushStart(start);
                 setBrushEnd(end);
-                updateAreaChart([start, end]);
+                updateCharts([start, end]);
             }
         })
     
@@ -170,7 +170,7 @@ const Window = ({ data }) => {
       
       }, [data]);
 
-    const updateAreaChart = (newDomain) => {
+    const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-perf-1`);
         const xScale = chart.node()?.xScale;
         const timeFormat = d3.timeFormat('%H:%M');
@@ -181,7 +181,6 @@ const Window = ({ data }) => {
         }
 
         const newStartDate = dateFormat(newDomain[0]);
-
         // updating the displayed date only if it's different
         if (newStartDate !== currentDate) {
             setCurrentDate(newStartDate);
@@ -200,6 +199,7 @@ const Window = ({ data }) => {
                 Promise.resolve().then(() => {
                     window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
                     window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
+                    window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
                 })
             )
         ).then(() => {
