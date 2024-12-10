@@ -36,6 +36,7 @@ const Bubble = ({ data }) => {
         const start = chartdata[groups[0]][Math.floor(chartdata[groups[0]].length * 0.3)].timestamp;
         const end = chartdata[groups[0]][Math.floor(chartdata[groups[0]].length * 0.5)].timestamp;
        
+        // filtering based on initial time window of data
         const filtered = Object.keys(chartdata).reduce((acc, group) => {
             if (start && end) {
                 acc[group] = chartdata[group].filter(d => d.timestamp >= start && d.timestamp <= end);
@@ -45,97 +46,114 @@ const Bubble = ({ data }) => {
             return acc;
         }, {});
 
-        const baseTriggers = Object.keys(filtered)
-            .filter(key => key.includes("rate"))
-            .map(key => {
-                const baseName = key.replace(/ rate_P1$/, "").trim();
-                return { baseName, avg: d3.mean(filtered[key].map(d => d.value)) };
-            });
+        // using regex to extract trigger info 
+        const baseTrig = Object.keys(filtered)
+            .reduce((acc, key) => {
+                const baseName = key.replace(/ (rate|avg delay|avg decision|avg length|Delay|Rate)_P1$/, "").trim();
 
-            const aggregatedData = Array.from(
-                baseTriggers.reduce((acc, item) => {
-                    if (!acc.has(item.baseName)) {
-                        acc.set(item.baseName, { trigger: item.baseName, avg: 0, count: 0 });
+                if (!acc[baseName]) {
+                    acc[baseName] = { trigger: baseName, avgRate: 0, avgDelay: 0, avgDec: 0};
+                } else {
+                    if (key.includes('rate')) {
+                        acc[baseName].avgRate += d3.mean(filtered[key].map(d => d.value));
+                    } else if (key.includes('delay')) {
+                        acc[baseName].avgDelay += d3.mean(filtered[key].map(d => d.value)); 
+                    } else if (key.includes('decision')) {
+                        acc[baseName].avgDec += d3.mean(filtered[key].map(d => d.value)); 
                     }
-                    const entry = acc.get(item.baseName);
-                    entry.avg += item.avg;
-                    entry.count += 1;
-                    return acc;
-                }, new Map()).values()
-            ).map(d => ({ trigger: d.trigger, avg: d.avg / d.count }));
+                }
+
+                return acc;
+            }, {});
         
-            const r_scale = d3.scaleLinear()
-                .domain([0, d3.max(aggregatedData, d => d.avg)])
-                .range(sizeRange);
-        
-            const nodes = aggregatedData.map(d => ({
-                ...d,
-                radius: r_scale(d.avg),
-                x: Math.random() * size.width,
-                y: Math.random() * size.height
+        // flattening data
+        const aggregated = Object.values(baseTrig)
+            .map(d => ({
+                trigger: d.trigger,
+                avgRate: d.avgRate, 
+                avgDelay: d.avgDelay,
+                avgDec: d.avgDec
             }));
+        
+        const r_scale = d3.scaleLinear()
+            .domain([0, d3.max(aggregated, d => d.avgRate)])
+            .range([20, 180]);  
+        
+        const d_scale = d3.scaleLinear()
+            .domain([0, d3.max(aggregated, d => d.avgDelay)]) 
+            .range([0, 100]);  
 
-            setNodes(nodes);
-        
-            const color = d3.scaleOrdinal(d3.schemeTableau10);
-        
-            const svg = d3.select(svgContainerRef.current)
-                .append('svg')
-                .attr('id', 'bubble-svg')
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("viewBox", `0 0 ${size.width} ${size.height}`)
-                .attr("preserveAspectRatio", "xMidYMid meet");
-        
-            // Append groups for each node
-            const node = svg.selectAll('g')
-                .data(nodes)
-                .join('g')
-                .attr('transform', d => `translate(${d.x}, ${d.y})`);
-        
-            node.append('circle')
-                .attr('r', d => d.radius)
-                .attr('fill-opacity', 0.7)
-                .attr('fill', d => color(d.trigger))
-                .on('mouseover', function() {
-                    d3.select(this).style('cursor', 'pointer');
-                    d3.select(this).attr('fill-opacity', 0.9);
-                })
-                .on('mouseout', function() {
-                    d3.select(this).style('cursor', 'default'); 
-                    d3.select(this).attr('fill-opacity', 0.7);
-                });
-        
-            node.append('text')
-                .attr('text-anchor', 'middle')
-                .style('font-size', d => Math.min(d.radius / 2, 16) + 'px')
-                .style('fill', '#000')
-                .selectAll('tspan')
-                .data(d => d.trigger.split(' '))
-                .join('tspan')
-                .attr('x', 0)
-                .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
-                .text(d => d);
-        
-            const simulation = d3.forceSimulation()
-                .nodes(nodes) 
-                .force('x', d3.forceX(size.width / 2).strength(0.01))
-                .force('y', d3.forceY(size.height / 2).strength(0.01)) 
-                .force('collision', d3.forceCollide().radius(d => d.radius + 2))
-                .on('tick', () => {
-                    node.attr('transform', d => `translate(${d.x}, ${d.y})`);
-                });
-        
-            node.select('circle')
-                .transition()
-                .duration(1000)
-                .attr('r', d => d.radius);
+        // coloring based on delay 
+        const colorScale = createColorScale(d_scale);  
 
-            createSizeLegend(svg, r_scale); 
-        
-            return () => {
-                svg.remove();
-            };
+        const nodes = aggregated.map(d => ({
+            ...d,
+            radius: r_scale(d.avgRate),
+            x: Math.random() * size.width,
+            y: Math.random() * size.height
+        }));
+
+        setNodes(nodes);
+    
+        // const color = d3.scaleOrdinal(d3.schemeTableau10);
+    
+        const svg = d3.select(svgContainerRef.current)
+            .append('svg')
+            .attr('id', 'bubble-svg')
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("viewBox", `0 0 ${size.width} ${size.height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet");
+    
+        // Append groups for each node
+        const node = svg.selectAll('g')
+            .data(nodes)
+            .join('g')
+            .attr('transform', d => `translate(${d.x}, ${d.y})`);
+    
+        node.append('circle')
+            .attr('r', d => d.radius)
+            .attr('fill-opacity', 0.7)
+            .attr('fill', d => colorScale(d.avgDelay))
+            .on('mouseover', function() {
+                d3.select(this).style('cursor', 'pointer');
+                d3.select(this).attr('fill-opacity', 0.9);
+            })
+            .on('mouseout', function() {
+                d3.select(this).style('cursor', 'default'); 
+                d3.select(this).attr('fill-opacity', 0.7);
+            });
+    
+        node.append('text')
+            .attr('text-anchor', 'middle')
+            .style('font-size', d => Math.min(d.radius / 2, 16) + 'px')
+            .style('fill', '#000')
+            .selectAll('tspan')
+            .data(d => d.trigger.split(' '))
+            .join('tspan')
+            .attr('x', 0)
+            .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
+            .text(d => d);
+    
+        const simulation = d3.forceSimulation()
+            .nodes(nodes) 
+            .force('x', d3.forceX(size.width / 2).strength(0.01))
+            .force('y', d3.forceY(size.height / 2).strength(0.01)) 
+            .force('collision', d3.forceCollide().radius(d => d.radius + 2))
+            .on('tick', () => {
+                node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+            });
+    
+        node.select('circle')
+            .transition()
+            .duration(1000)
+            .attr('r', d => d.radius);
+
+        createSizeLegend(svg, r_scale); 
+    
+        return () => {
+            svg.remove();
+        };
         
     }, [data]);
 
@@ -148,8 +166,8 @@ const Bubble = ({ data }) => {
             .attr('transform', `translate(0, ${size.height - 60})`); 
 
         legend.append('text')
-            .attr('x', 20)
-            .attr('y', 10)
+            .attr('x', size.width / 1.7)
+            .attr('y', 17)
             .text('Avg rate')
             .style('font-size', '18px');
 
@@ -157,7 +175,7 @@ const Bubble = ({ data }) => {
             .data(legendData)
             .enter()
             .append('circle')
-            .attr('cx', (d, i) => i * legendSpacing + 130) 
+            .attr('cx', (d, i) => (size.width / 1.7) + i * legendSpacing + 100) 
             .attr('cy', 10) 
             .attr('r', d => rScale(d / 10))
             .style('fill', 'none')
@@ -167,14 +185,23 @@ const Bubble = ({ data }) => {
         //     .data(legendData)
         //     .enter()
         //     .append('text')
-        //     .attr('x', (d, i) => i * legendSpacing + 50)  
-        //     .attr('y', 0) 
+        //     .attr('x', (d, i) => i * legendSpacing + 130)  
+        //     .attr('y', 10) 
         //     .attr('dy', '0.35em') 
         //     .text(d => d)
         //     .style('font-size', '12px')
         //     .style('fill', 'black');
     };
     
+    const createColorScale = (dScale) => {
+        return d3.scaleSequential(function(t) {
+            return d3.interpolateRdYlBu(1 - t); // Reverse the interpolation by subtracting t from 1
+        }).domain(dScale.domain());
+    };
+
+    const getColor = (group, domain) => {
+        
+    }
 
     const updateChart = (newDomain) => {
         if (!newDomain || !nodes.length) return;
