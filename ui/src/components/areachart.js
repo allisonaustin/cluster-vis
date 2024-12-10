@@ -40,14 +40,16 @@ const AreaChart = ({ data, field, index, chartType }) => {
       let chartdata = [];
 
       Object.keys(data[field]).forEach(obj => {
+        const date = new Date(parseInt(obj));
+        const utcDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
         chartdata.push({
-          timestamp: new Date(parseInt(obj)),
+          timestamp: utcDate,
           value: data[field][obj]
         })
       });
 
       setChartData(chartdata);
-        
+      
       const start = chartdata[Math.floor(chartdata.length * 0.3)].timestamp;
       const end = chartdata[Math.floor(chartdata.length * 0.5)].timestamp;
       const filtered = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
@@ -55,7 +57,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
       const xScale = d3.scaleTime()
         .domain(d3.extent(filtered, d => d.timestamp))
         .range([margin.left, size.width - margin.right])
-
+        
       const yScale = d3.scaleLinear()
           .domain([0, d3.max(filtered.map(v => v.value))])
           .range([size.height - margin.bottom, margin.top]);
@@ -146,11 +148,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         xScale.domain(newDomain);
         
         let newY = d3.extent(newdata.map(v => v.value));
-        if (newY[1] != 0) {
-          yScale.domain([0, newY[1] + 1])
-        } else {
-          yScale.domain([0, newY[1]])
-        }
+        yScale.domain([0, newY[1]])
 
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));

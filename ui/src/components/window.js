@@ -37,8 +37,10 @@ const Window = ({ data }) => {
             chartdata[field] = [];
             
             Object.keys(data[field]).forEach((obj) => {
+                let date = new Date(parseInt(obj));
+                let utcDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
                 chartdata[field].push({
-                    timestamp: new Date(parseInt(obj)), 
+                    timestamp: utcDate, 
                     value: data[field][obj], 
                 });
             });
@@ -123,14 +125,12 @@ const Window = ({ data }) => {
             .text(field)
             .style('font-size', '10px')
             .attr('alignment-baseline', 'middle')
-            .on('mouseover', (event, d) => {
-
-            })
-
     })
 
-    const firstTimestamp = chartdata[fields[0]][0]?.timestamp;
-    const formattedDate = dateFormat(firstTimestamp);
+    const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
+    const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
+
+    const formattedDate = dateFormat(start);
     setCurrentDate(formattedDate)
     legend.append("text")
         .attr("class", "date-text")
@@ -140,9 +140,6 @@ const Window = ({ data }) => {
         .style("font-size", "10px")
 
      // adding brush
-
-      const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
-      const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
 
       const defaultWindow = [
         xScale(start),

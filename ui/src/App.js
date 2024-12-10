@@ -4,6 +4,8 @@ import './App.css';
 import AreaChart from './components/areachart.js';
 import Window from './components/window.js';
 import Dropdown from './components/dropdown.js';
+import Matrix from './components/matrix.js';
+import Bubble from './components/bubblechart.js';
 
 function App() {
   const [farmData, setFarmData] = useState(null);
@@ -19,10 +21,35 @@ function App() {
         const data = await response.json();
         
         if (response.ok) {
-          console.log(data)
-          setFarmData(data);  
+          const farmFilt = Object.keys(data)
+            .filter((key) => (
+                !key.includes('P0') &&
+                !key.includes('P2') &&
+                !key.includes('P3') &&
+                !key.includes('Trigger') &&
+                !key.includes('Data Driven') &&
+                !key.includes('rate') &&
+                !key.includes('delay') &&
+                !key.includes('RC') &&
+                !key.includes('Activity') &&
+                !key.includes('prescale')
+            ))
+            .reduce((obj, key) => {
+              obj[key] = Object.entries(data[key]).map(([compositeKey, value]) => {
+                  const [timestamp, nodeId] = compositeKey
+                      .replace(/[()]/g, '') 
+                      .split(', ')        
+                      .map(item => item.trim().replace(/['"]/g, "")); 
+                  return {
+                      timestamp: new Date(timestamp.replace('Timestamp', '').trim()).getTime(), 
+                      nodeId,
+                      value, 
+                  };
+              });
+              return obj;
+            }, {});
+          setFarmData(farmFilt);  
           setError(null); 
-
         } else {
           setFarmData(null);  
           setError("Failed to fetch farm data. Please check that the server is running.");
@@ -43,10 +70,12 @@ function App() {
           setMgrData(data);  
           setError(null); 
           const trigFilt = Object.keys(data)
-            .filter((key) => (key.includes('P1') 
-                                && (key.includes('Data Driven') || (key.includes('Trigger')))
-                                && !key.includes('Activity') 
-                                && !key.includes('prescale')))
+            .filter((key) => (
+                key.includes('P1') &&
+                (key.includes('Data Driven') || (key.includes('Trigger'))) &&
+                !key.includes('Activity') &&
+                !key.includes('prescale')
+              ))
             .reduce((obj, key) => {
               obj[key] = data[key];
               return obj;
@@ -79,7 +108,7 @@ function App() {
     };
     Promise.all([getFarmData(), getMgrData()])
       .then(() => console.log("Data fetched successfully"))
-      .catch((err) => console.error("Error fetching data in parallel:", err));
+      .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
   return (
@@ -113,6 +142,17 @@ function App() {
           </div>
           <div className="wrapper_right">
                 <div className="view_title">Buffer Nodes</div>
+                {farmData ? (
+                    <Matrix data={farmData} />
+                  ) : (
+                    <p>Loading farm data...</p>
+                  )}
+              <div className="wrapper_bottom">
+                <div className="view">
+                  <div className="view_title">Triggers</div>
+                    <Bubble data={triggerData}/>
+                </div>
+              </div>
             </div>
         </div>
       )}

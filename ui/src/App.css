@@ -58,6 +58,9 @@
   height: 80%;
   display: flex;
   flex-direction:row;
+  border-style: solid;
+  border-width: thin;
+  border-color: #DDDDDD;
 }
 
 .wrapper_top {
@@ -81,6 +84,13 @@
   border-style: solid;
   border-width: thin;
   border-color: #DDDDDD;
+  display:flex;
+  flex-direction: column;
+}
+
+.view {
+  height: 100%;
+  width:100%;
 }
 
 .view_title {
