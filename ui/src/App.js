@@ -141,18 +141,18 @@ function App() {
             </div> 
           </div>
           <div className="wrapper_right">
-                <div className="view_title">Buffer Nodes</div>
-                {farmData ? (
-                    <Matrix data={farmData} />
-                  ) : (
-                    <p>Loading farm data...</p>
-                  )}
               <div className="wrapper_bottom">
                 <div className="view">
                   <div className="view_title">Triggers</div>
                     <Bubble data={triggerData}/>
                 </div>
               </div>
+              <div className="view_title">Buffer Nodes</div>
+                {farmData ? (
+                    <Matrix data={farmData} />
+                  ) : (
+                    <p>Loading farm data...</p>
+                  )}
             </div>
         </div>
       )}
