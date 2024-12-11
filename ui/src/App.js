@@ -13,6 +13,7 @@ function App() {
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01.json');
 
   useEffect(() => {
     const getFarmData = async () => {
@@ -61,9 +62,10 @@ function App() {
       }
     };
 
-    const getMgrData = async () => {
+    const getMgrData = async (filePath) => {
+      if (!filePath) return;
       try {
-        const response = await fetch('http://localhost:5009/mgrData');
+        const response = await fetch(`http://localhost:5009/mgrData?file=${filePath}`);
         const data = await response.json();
         
         if (response.ok) {
@@ -106,10 +108,15 @@ function App() {
         console.error(error);     
       }
     };
-    Promise.all([getFarmData(), getMgrData()])
+    Promise.all([getFarmData(), getMgrData(selectedFile)])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
+
   }, []);
+
+  const onFileChange = (newFile) => {
+    setSelectedFile(newFile); 
+  };
 
   return (
     <div className="App">
@@ -121,19 +128,19 @@ function App() {
         <div className="wrapper_app"> 
           <div className="wrapper_main">
             <div className="wrapper_top">
-                <div className="view_title">Resource Manager</div>
-                <Dropdown />
+                <div className="view_title" style={{width: "120px"}}>Resource Manager</div>
+                <Dropdown selectedFile={selectedFile} onFileChange={onFileChange}/>
                 <Window data={mgrData} />
               </div>
             <div className="wrapper_bottom">
               <div className="wrapper_left">
-                <div className="view_title">Performance Metrics</div>
+                <div className="view_title" style={{width: "120px"}}>Performance Metrics</div>
                   {Object.keys(perfData).map((field, index) => (
                     <AreaChart key={field} data={perfData} field={field} index={index} chartType={'perf'} />
                   ))}
               </div>
               <div className="wrapper_left">
-                <div className="view_title">Triggers</div>
+                <div className="view_title" style={{width: "50px"}}>Triggers</div>
                   {Object.keys(triggerData).map((field, index) => (
                     <AreaChart key={field} data={triggerData} field={field} index={index} chartType={'trigger'} />
                   ))}
@@ -141,18 +148,18 @@ function App() {
             </div> 
           </div>
           <div className="wrapper_right">
-              <div className="wrapper_bottom">
-                <div className="view">
-                  <div className="view_title">Triggers</div>
-                    <Bubble data={triggerData}/>
-                </div>
+              <div className="wrapper_top2">
+                <div className="view_title" style={{width: "50px"}}>Triggers</div>
+                  <Bubble data={triggerData}/>
               </div>
-              <div className="view_title">Buffer Nodes</div>
-                {farmData ? (
-                    <Matrix data={farmData} />
-                  ) : (
-                    <p>Loading farm data...</p>
-                  )}
+              <div className="wrapper_bottom2">
+                <div className="view_title" style={{width: "80px"}}>Buffer Nodes</div>
+                  {farmData ? (
+                      <Matrix data={farmData} />
+                    ) : (
+                      <p>Loading farm data...</p>
+                    )}
+                </div>
             </div>
         </div>
       )}

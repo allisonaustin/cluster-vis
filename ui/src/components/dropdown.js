@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-const Dropdown = () => {
+const Dropdown = (params) => {
     const [files, setFiles] = useState([]);
-
-    const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01.json');
+    const [selectedFile, setSelectedFile] = useState(params.selectedFile);
 
     useEffect(() => {
         const fetchFiles = async () => {
@@ -18,13 +17,19 @@ const Dropdown = () => {
         fetchFiles();
     }, []);
 
+    const handleChange = (e) => {
+        const newFile = e.target.value;
+        setSelectedFile(newFile);
+        params.onFileChange(newFile);
+    };
+
     return (
         <div>
             <label htmlFor="Dropdown">Select file: </label>
             <select 
                 id="dropdown"
                 value={selectedFile}
-                onChange={(e) => setSelectedFile(e.target.value)}
+                onChange={handleChange}
                 >
                 {files.map((file) => (
                     <option key={file} value={file}>

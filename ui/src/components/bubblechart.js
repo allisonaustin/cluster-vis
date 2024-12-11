@@ -7,7 +7,7 @@ const Bubble = ({ data }) => {
     const [chartData, setChartData] = useState([]);
     const [nodes, setNodes] = useState([]);
     const [groups, setGroups] = useState([]);
-    const [size, setSize] = useState({ width: 900, height: 900 });
+    const [size, setSize] = useState({ width: 700, height: 850 });
     const [sizeRange, setSizeRange] = useState([20, 180]);
 
     useEffect(() => {
@@ -49,16 +49,19 @@ const Bubble = ({ data }) => {
         // using regex to extract trigger info 
         const baseTrig = Object.keys(filtered)
             .reduce((acc, key) => {
-                const baseName = key.replace(/ (rate|avg delay|avg decision|avg length|Delay|Rate)_P1$/, "").trim();
+                const baseName = key.replace(/ (rate|avg delay|avg decision|avg length|Max Delay|Min Delay|Avg Delay|Std Delay|Rate)_P1$/, "").trim();
 
                 if (!acc[baseName]) {
                     acc[baseName] = { trigger: baseName, avgRate: 0, avgDelay: 0, avgDec: 0};
                 } else {
                     if (key.includes('rate')) {
                         acc[baseName].avgRate += d3.mean(filtered[key].map(d => d.value));
-                    } else if (key.includes('delay')) {
+                    } else if (key.toLowerCase().includes('delay') && 
+                                !key.toLowerCase().includes('min') && 
+                                !key.toLowerCase().includes('max') && 
+                                !key.toLowerCase().includes('std')) {
                         acc[baseName].avgDelay += d3.mean(filtered[key].map(d => d.value)); 
-                    } else if (key.includes('decision')) {
+                    } else if (key.toLowerCase().includes('decision')) {
                         acc[baseName].avgDec += d3.mean(filtered[key].map(d => d.value)); 
                     }
                 }
@@ -137,8 +140,8 @@ const Bubble = ({ data }) => {
     
         const simulation = d3.forceSimulation()
             .nodes(nodes) 
-            .force('x', d3.forceX(size.width / 2).strength(0.01))
-            .force('y', d3.forceY(size.height / 2).strength(0.01)) 
+            .force('x', d3.forceX(size.width / 2).strength(0.02))
+            .force('y', d3.forceY(size.height / 2).strength(0.02)) 
             .force('collision', d3.forceCollide().radius(d => d.radius + 2))
             .on('tick', () => {
                 node.attr('transform', d => `translate(${d.x}, ${d.y})`);
@@ -149,7 +152,8 @@ const Bubble = ({ data }) => {
             .duration(1000)
             .attr('r', d => d.radius);
 
-        createSizeLegend(svg, r_scale); 
+        // createSizeLegend(svg, r_scale); 
+        createColorLegend(svg, d_scale, colorScale);
     
         return () => {
             svg.remove();
@@ -158,50 +162,122 @@ const Bubble = ({ data }) => {
     }, [data]);
 
     const createSizeLegend = (svg, rScale) => {
-        const legendData = [parseInt(rScale.domain()[0]), parseInt((rScale.domain()[1] - rScale.domain()[0]) / 2), parseInt(rScale.domain()[1])]; 
-        const legendSpacing = 70; 
-
+        // circle size color legend
+        const legendData = [
+            parseInt(rScale.domain()[0]), 
+            parseInt((rScale.domain()[1] - rScale.domain()[0]) / 2), 
+            parseInt(rScale.domain()[1])
+        ]; 
+        const edgeSpacing = 10;
+        const baselineY = 40;
+    
         const legend = svg.append('g')
-            .attr('class', 'size-legend')
+            .attr('class', 'legend')
             .attr('transform', `translate(0, ${size.height - 60})`); 
-
+    
         legend.append('text')
-            .attr('x', size.width / 1.7)
-            .attr('y', 17)
+            .attr('x', size.width / 1.6)
+            .attr('y', baselineY - 10)  
             .text('Avg rate')
             .style('font-size', '18px');
 
+        let currentX = size.width / 1.4; 
+    
         legend.selectAll('circle')
             .data(legendData)
             .enter()
             .append('circle')
-            .attr('cx', (d, i) => (size.width / 1.7) + i * legendSpacing + 100) 
-            .attr('cy', 10) 
+            .attr('cx', (d, i, nodes) => {
+                const radius = rScale(d / 10);
+                currentX += i === 0 ? radius : rScale(legendData[i - 1] / 10) + radius + edgeSpacing;
+                return currentX;
+            })
+            .attr('cy', d => baselineY - rScale(d / 10)) 
             .attr('r', d => rScale(d / 10))
             .style('fill', 'none')
             .style('stroke', 'black');
 
-        // legend.selectAll('text')
-        //     .data(legendData)
-        //     .enter()
-        //     .append('text')
-        //     .attr('x', (d, i) => i * legendSpacing + 130)  
-        //     .attr('y', 10) 
-        //     .attr('dy', '0.35em') 
-        //     .text(d => d)
-        //     .style('font-size', '12px')
-        //     .style('fill', 'black');
-    };
-    
-    const createColorScale = (dScale) => {
-        return d3.scaleSequential(function(t) {
-            return d3.interpolateRdYlBu(1 - t); // Reverse the interpolation by subtracting t from 1
-        }).domain(dScale.domain());
     };
 
-    const getColor = (group, domain) => {
+    const createColorLegend = (svg, dScale, colorScale) => {
+        // delay color legend
+        const colorLegendWidth = 200;
+        const colorLegendHeight = 20;
+        const baselineY = 40;
+        const colorLegendX = size.width / 2;
+        const colorLegendY = baselineY + 50;
+
+        const colorLegend = svg.append('g')
+            .attr('class', 'color-legend')
+            .attr('transform', `translate(${size.width / 2},${size.height / 1.3})`);
+
+        const defs = svg.append('defs');
+        const gradient = defs.append('linearGradient')
+            .attr('id', 'color-gradient')
+            .attr('x1', '0%')
+            .attr('y1', '0%')
+            .attr('x2', '100%')
+            .attr('y2', '0%');
+
+            gradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', colorScale(dScale.domain()[0]));
+    
+        gradient.append('stop')
+            .attr('offset', '50%')
+            .attr('stop-color', colorScale((dScale.domain()[0] + dScale.domain()[1]) / 2));
+    
+        gradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', colorScale(dScale.domain()[1]));
+    
+        colorLegend.append('rect')
+            .attr('x', colorLegendX)
+            .attr('y', colorLegendY)
+            .attr('width', colorLegendWidth)
+            .attr('height', colorLegendHeight)
+            .style('fill', 'url(#color-gradient)');
+    
+        colorLegend.append('text')
+            .attr('x', colorLegendX)
+            .attr('y', colorLegendY + colorLegendHeight + 15)
+            .text(parseInt(dScale.domain()[0]))
+            .style('font-size', '12px')
+            .style('fill', 'black')
+            .attr('text-anchor', 'start');
+    
+        colorLegend.append('text')
+            .attr('x', colorLegendX + colorLegendWidth / 2)
+            .attr('y', colorLegendY + colorLegendHeight + 15)
+            .text(parseInt((dScale.domain()[0] + dScale.domain()[1]) / 2))
+            .style('font-size', '12px')
+            .style('fill', 'black')
+            .attr('text-anchor', 'middle');
+    
+        colorLegend.append('text')
+            .attr('x', colorLegendX + colorLegendWidth)
+            .attr('y', colorLegendY + colorLegendHeight + 15)
+            .text(parseInt(dScale.domain()[1]))
+            .style('font-size', '12px')
+            .style('fill', 'black')
+            .attr('text-anchor', 'end');
         
+        colorLegend.append('text')
+            .attr('x', colorLegendX + colorLegendWidth / 2.8)
+            .attr('y', colorLegendY + colorLegendHeight + 35)
+            .style('font-size', '14px')
+            .text('Avg Delay')
     }
+    
+    const createColorScale = (dScale) => {
+        return d3.scaleDiverging(function(t) {
+            return d3.interpolateRgbBasis([
+                `#B5E8EB`, 
+                `#A78D73`, 
+                `#F45909`  
+            ])(t);
+        }).domain([dScale.domain()[0], (dScale.domain()[0] + dScale.domain()[1]) / 2, dScale.domain()[1]]);
+    };
 
     const updateChart = (newDomain) => {
         if (!newDomain || !nodes.length) return;
@@ -265,7 +341,7 @@ const Bubble = ({ data }) => {
 
       window.addEventListener(`update-bubble-chart`, handleUpdateEvent);
 
-    return <div ref={svgContainerRef} style={{ width: '100%', height: '600px' }}></div>;
+    return <div ref={svgContainerRef} style={{ width: '100%', height: '94%' }}></div>;
 };
 
 export default Bubble;

@@ -9,3 +9,5 @@ farm/
 mgr/
 
 scripts/
+
+.DS_Store

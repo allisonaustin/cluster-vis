@@ -11,7 +11,10 @@ const farmFilePath = path.join(__dirname, './data/farm/novadaq-far-farm.json');
 const mgrFilePath = path.join(__dirname, './data/mgr/novadaq-far-mgr-01.json'); 
 
 app.get('/mgrData', (req, res) => {
-    fs.readFile(mgrFilePath, 'utf8', (err, data) => {
+    const { file } = req.query;
+    const filePath = path.join(__dirname, `./data/${file}`);
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             return res.status(500).json({ error: 'Error reading file' });
         }
@@ -38,15 +41,17 @@ app.get('/files', (req, res) => {
         const jsonFiles = [];
 
         folders.forEach(folder => {
-            const folderPath = path.join(dataPath, folder);
+            if (!folder.includes('farm')) {
+                const folderPath = path.join(dataPath, folder);
 
-            if (fs.statSync(folderPath).isDirectory()) {
-                const files = fs.readdirSync(folderPath);
-                files.forEach(file => {
-                    if (path.extname(file) === '.json') {
-                        jsonFiles.push(path.join(folder, file)); 
-                    }
-                });
+                if (fs.statSync(folderPath).isDirectory()) {
+                    const files = fs.readdirSync(folderPath);
+                    files.forEach(file => {
+                        if (path.extname(file) === '.json') {
+                            jsonFiles.push(path.join(folder, file)); 
+                        }
+                    });
+                }
             }
         });
 
