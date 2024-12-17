@@ -9,6 +9,7 @@ const Bubble = ({ data }) => {
     const [groups, setGroups] = useState([]);
     const [size, setSize] = useState({ width: 600, height: 600 });
     const [sizeRange, setSizeRange] = useState([20, 180]);
+    const [simulation, setSimulation] = useState();
 
     useEffect(() => {
         if (!svgContainerRef.current || !data || data.length == 0 ) return;
@@ -138,14 +139,16 @@ const Bubble = ({ data }) => {
             .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
             .text(d => d);
     
-        const simulation = d3.forceSimulation()
+        const sim = d3.forceSimulation()
             .nodes(nodes) 
-            .force('x', d3.forceX(size.width / 2).strength(0.02))
-            .force('y', d3.forceY(size.height / 2).strength(0.02)) 
+            .force('x', d3.forceX(size.width / 2).strength(0.01))
+            .force('y', d3.forceY(size.height / 2).strength(0.01)) 
             .force('collision', d3.forceCollide().radius(d => d.radius + 2))
             .on('tick', () => {
                 node.attr('transform', d => `translate(${d.x}, ${d.y})`);
             });
+
+        setSimulation(sim)
     
         node.select('circle')
             .transition()
@@ -239,6 +242,7 @@ const Bubble = ({ data }) => {
             .style('fill', 'url(#color-gradient)');
     
         colorLegend.append('text')
+            .attr('class', 'legend-min')
             .attr('x', colorLegendX)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt(dScale.domain()[0]))
@@ -247,6 +251,7 @@ const Bubble = ({ data }) => {
             .attr('text-anchor', 'start');
     
         colorLegend.append('text')
+            .attr('class', 'legend-mid')
             .attr('x', colorLegendX + colorLegendWidth / 2)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt((dScale.domain()[0] + dScale.domain()[1]) / 2))
@@ -255,6 +260,7 @@ const Bubble = ({ data }) => {
             .attr('text-anchor', 'middle');
     
         colorLegend.append('text')
+            .attr('class', 'legend-mid')
             .attr('x', colorLegendX + colorLegendWidth)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt(dScale.domain()[1]))
@@ -350,6 +356,14 @@ const Bubble = ({ data }) => {
             .duration(2000)
             .attr('fill', d => colorScale(d.avgDelay))
             .attr("r", d => d.radius); 
+
+        simulation.nodes(updatedNodes)
+        simulation.alpha(0.5).restart();
+
+        // updating legend
+        d3.select('.color-legend .legend-min').text(parseInt(d_scale.domain()[0]))
+        d3.select('.color-legend .legend-mid').text(parseInt((d_scale.domain()[0] + d_scale.domain()[1]) / 2))
+        d3.select('.color-legend .legend-max').text(parseInt(d_scale.domain()[1]))
     }
     
     const handleUpdateEvent = (event) => {
