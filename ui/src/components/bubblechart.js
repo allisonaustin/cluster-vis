@@ -7,7 +7,7 @@ const Bubble = ({ data }) => {
     const [chartData, setChartData] = useState([]);
     const [nodes, setNodes] = useState([]);
     const [groups, setGroups] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 850 });
+    const [size, setSize] = useState({ width: 600, height: 600 });
     const [sizeRange, setSizeRange] = useState([20, 180]);
 
     useEffect(() => {
@@ -201,7 +201,7 @@ const Bubble = ({ data }) => {
 
     const createColorLegend = (svg, dScale, colorScale) => {
         // delay color legend
-        const colorLegendWidth = 200;
+        const colorLegendWidth = 250;
         const colorLegendHeight = 20;
         const baselineY = 40;
         const colorLegendX = size.width / 2;
@@ -209,7 +209,7 @@ const Bubble = ({ data }) => {
 
         const colorLegend = svg.append('g')
             .attr('class', 'color-legend')
-            .attr('transform', `translate(${size.width / 2},${size.height / 1.3})`);
+            .attr('transform', `translate(0,${size.height / 1.4})`);
 
         const defs = svg.append('defs');
         const gradient = defs.append('linearGradient')
@@ -242,7 +242,7 @@ const Bubble = ({ data }) => {
             .attr('x', colorLegendX)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt(dScale.domain()[0]))
-            .style('font-size', '12px')
+            .style('font-size', '18px')
             .style('fill', 'black')
             .attr('text-anchor', 'start');
     
@@ -250,7 +250,7 @@ const Bubble = ({ data }) => {
             .attr('x', colorLegendX + colorLegendWidth / 2)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt((dScale.domain()[0] + dScale.domain()[1]) / 2))
-            .style('font-size', '12px')
+            .style('font-size', '18px')
             .style('fill', 'black')
             .attr('text-anchor', 'middle');
     
@@ -258,14 +258,14 @@ const Bubble = ({ data }) => {
             .attr('x', colorLegendX + colorLegendWidth)
             .attr('y', colorLegendY + colorLegendHeight + 15)
             .text(parseInt(dScale.domain()[1]))
-            .style('font-size', '12px')
+            .style('font-size', '18px')
             .style('fill', 'black')
             .attr('text-anchor', 'end');
         
         colorLegend.append('text')
             .attr('x', colorLegendX + colorLegendWidth / 2.8)
-            .attr('y', colorLegendY + colorLegendHeight + 35)
-            .style('font-size', '14px')
+            .attr('y', colorLegendY + colorLegendHeight + 40)
+            .style('font-size', '18px')
             .text('Avg Delay')
     }
     
@@ -281,57 +281,75 @@ const Bubble = ({ data }) => {
 
     const updateChart = (newDomain) => {
         if (!newDomain || !nodes.length) return;
-       
-        // const newdata = Object.keys(chartData).reduce((acc, group) => {
-        //     acc[group] = chartData[group].filter(
-        //             d => d.timestamp >= newDomain[0] && 
-        //             d.timestamp <= newDomain[1]
-        //         );
-        //     return acc;
-        // }, {});
 
-        // if (newdata.length == 0) return;
+        // filtering based on initial time window of data
+        const newdata = Object.keys(chartData).reduce((acc, group) => {
+            acc[group] = chartData[group].filter(d => d.timestamp >= newDomain[0] && d.timestamp <= newDomain[1]);
+            return acc;
+        }, {});
 
-        // const baseTriggers = Object.keys(newdata)
-        //     .filter(key => key.includes("rate"))
-        //     .map(key => {
-        //         const baseName = key.replace(/ rate_P1$/, "").trim();
-        //         return { baseName, avg: d3.mean(newdata[key].map(d => d.value)) };
-        //     });
+        if (newdata.length == 0) return;
 
-        //     const aggregatedData = Array.from(
-        //         baseTriggers.reduce((acc, item) => {
-        //             if (!acc.has(item.baseName)) {
-        //                 acc.set(item.baseName, { trigger: item.baseName, avg: 0, count: 0 });
-        //             }
-        //             const entry = acc.get(item.baseName);
-        //             entry.avg += item.avg;
-        //             entry.count += 1;
-        //             return acc;
-        //         }, new Map()).values()
-        //     ).map(d => ({ trigger: d.trigger, avg: d.avg / d.count }));
+        const baseTrig = Object.keys(newdata)
+            .reduce((acc, key) => {
+                const baseName = key.replace(/ (rate|avg delay|avg decision|avg length|Max Delay|Min Delay|Avg Delay|Std Delay|Rate)_P1$/, "").trim();
 
-        // const r_scale = d3.scaleLinear()
-        //     .domain([0, d3.max(aggregatedData, d => d.avg)])
-        //     .range([20, 180]);
+                if (!acc[baseName]) {
+                    acc[baseName] = { trigger: baseName, avgRate: 0, avgDelay: 0, avgDec: 0};
+                } else {
+                    if (key.includes('rate')) {
+                        acc[baseName].avgRate += d3.mean(newdata[key].map(d => d.value));
+                    } else if (key.toLowerCase().includes('delay') && 
+                                !key.toLowerCase().includes('min') && 
+                                !key.toLowerCase().includes('max') && 
+                                !key.toLowerCase().includes('std')) {
+                        acc[baseName].avgDelay += d3.mean(newdata[key].map(d => d.value)); 
+                    } else if (key.toLowerCase().includes('decision')) {
+                        acc[baseName].avgDec += d3.mean(newdata[key].map(d => d.value)); 
+                    }
+                }
 
-        // const updatedNodes = aggregatedData.map(d => ({
-        //     ...d,
-        //     radius: r_scale(d.avg),
-        //     x: Math.random() * size.width,
-        //     y: Math.random() * size.height
-        // }));
+                return acc;
+            }, {});
+        
+        const aggregated = Object.values(baseTrig)
+            .map(d => ({
+                trigger: d.trigger,
+                avgRate: d.avgRate, 
+                avgDelay: d.avgDelay,
+                avgDec: d.avgDec
+            }));
 
-        // setNodes(updatedNodes);
+        const r_scale = d3.scaleLinear()
+            .domain([0, d3.max(aggregated, d => d.avgRate)])
+            .range([20, 180]);  
+        
+        const d_scale = d3.scaleLinear()
+            .domain([0, d3.max(aggregated, d => d.avgDelay)]) 
+            .range([0, 100]);  
 
-        // const svg = d3.select(svgContainerRef.current).select('svg');
-        // const node = svg.selectAll('g')
-        //     .data(updatedNodes, d => d.trigger);
+        // coloring based on delay 
+        const colorScale = createColorScale(d_scale);  
 
-        // node.select('circle')
-        //     .transition()
-        //     .duration(1000)
-        //     .attr('r', d => d.radius);
+        const updatedNodes = aggregated.map(d => {
+            const existingNode = nodes.find(node => node.trigger === d.trigger);
+            return {
+                ...d,
+                radius: r_scale(d.avgRate),
+                x: existingNode ? existingNode.x : Math.random() * size.width,
+                y: existingNode ? existingNode.y : Math.random() * size.height
+            };
+        })
+
+        setNodes(updatedNodes);
+
+        const svg = d3.select(svgContainerRef.current).select('svg');
+        const node = svg.selectAll('g').data(updatedNodes)
+        node.select("circle")
+            .transition()
+            .duration(2000)
+            .attr('fill', d => colorScale(d.avgDelay))
+            .attr("r", d => d.radius); 
     }
     
     const handleUpdateEvent = (event) => {

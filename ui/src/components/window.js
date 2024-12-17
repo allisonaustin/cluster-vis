@@ -152,7 +152,7 @@ const Window = ({ data }) => {
       const brush = d3.brushX(xScale)
         .extent([[0, 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
         // .on('brush', (event) => brushed(event, chartdata))
-        .on('brush end', (event) => {
+        .on('end', (event) => {
             const selection = event.selection;
             if (selection) {
                 const [start, end] = selection.map(xScale.invert);
@@ -189,9 +189,13 @@ const Window = ({ data }) => {
                 .text(`Date: ${newStartDate}`);
         }
         
+        const t = d3.transition()
+            .duration(400) 
+            .ease(d3.easeCubicInOut);
+            
         // updating x axes
         xScale.domain(newDomain)
-        d3.selectAll('.focus .x-axis').call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0));
+        d3.selectAll('.focus .x-axis').transition(t).call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0));
 
         // updating charts
         Promise.all(
@@ -199,10 +203,10 @@ const Window = ({ data }) => {
                 Promise.resolve().then(() => {
                     window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
                     window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
-                    window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
                 })
             )
         ).then(() => {
+            window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
             console.log("All charts updated");
         });
       };

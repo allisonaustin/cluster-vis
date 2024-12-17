@@ -150,9 +150,13 @@ const AreaChart = ({ data, field, index, chartType }) => {
         let newY = d3.extent(newdata.map(v => v.value));
         yScale.domain([0, newY[1]])
 
+        const t = d3.transition()
+            .duration(400) 
+            .ease(d3.easeCubicInOut);
+
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').call(d3.axisLeft(yScale));
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale));
 
         // updating line
         chart.select('.line')
