@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { COLORS, getColor, generateColor } from '../utils/colors.js';
+import { createColorScale } from '../utils/colors.js';
+import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
 
 const Bubble = ({ data }) => {
@@ -8,11 +9,19 @@ const Bubble = ({ data }) => {
     const [nodes, setNodes] = useState([]);
     const [groups, setGroups] = useState([]);
     const [size, setSize] = useState({ width: 600, height: 600 });
-    const [sizeRange, setSizeRange] = useState([20, 180]);
+    const [sizeRange, setSizeRange] = useState([20, 150]);
     const [simulation, setSimulation] = useState();
+    const [tooltip, setTooltip] = useState({
+        visible: false,
+        content: '',
+        x: 0,
+        y: 0
+    });
 
     useEffect(() => {
         if (!svgContainerRef.current || !data || data.length == 0 ) return;
+
+        d3.select(svgContainerRef.current).selectAll("*").remove();
 
         let chartdata = [];
         let groups = Object.keys(data);
@@ -81,7 +90,7 @@ const Bubble = ({ data }) => {
         
         const r_scale = d3.scaleLinear()
             .domain([0, d3.max(aggregated, d => d.avgRate)])
-            .range([20, 180]);  
+            .range(sizeRange);  
         
         const d_scale = d3.scaleLinear()
             .domain([0, d3.max(aggregated, d => d.avgDelay)]) 
@@ -119,25 +128,37 @@ const Bubble = ({ data }) => {
             .attr('r', d => d.radius)
             .attr('fill-opacity', 0.7)
             .attr('fill', d => colorScale(d.avgDelay))
-            .on('mouseover', function() {
+            .on('mouseover', function(event, d) {
                 d3.select(this).style('cursor', 'pointer');
                 d3.select(this).attr('fill-opacity', 0.9);
+                setTooltip({
+                    visible: true,
+                    content: `${d.trigger}`,
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
             })
-            .on('mouseout', function() {
+            .on('mouseout', function(event, d) {
                 d3.select(this).style('cursor', 'default'); 
                 d3.select(this).attr('fill-opacity', 0.7);
+                setTooltip({
+                    visible: false,
+                    content: '',
+                    x: 0,
+                    y: 0,
+                  });
             });
     
-        node.append('text')
-            .attr('text-anchor', 'middle')
-            .style('font-size', d => Math.min(d.radius / 2, 16) + 'px')
-            .style('fill', '#000')
-            .selectAll('tspan')
-            .data(d => d.trigger.split(' '))
-            .join('tspan')
-            .attr('x', 0)
-            .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
-            .text(d => d);
+        // node.append('text')
+        //     .attr('text-anchor', 'middle')
+        //     .style('font-size', d => Math.min(d.radius / 2, 16) + 'px')
+        //     .style('fill', '#000')
+        //     .selectAll('tspan')
+        //     .data(d => d.trigger.split(' '))
+        //     .join('tspan')
+        //     .attr('x', 0)
+        //     .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
+        //     .text(d => d);
     
         const sim = d3.forceSimulation()
             .nodes(nodes) 
@@ -209,10 +230,12 @@ const Bubble = ({ data }) => {
         const baselineY = 40;
         const colorLegendX = size.width / 2;
         const colorLegendY = baselineY + 50;
+        const legendSvg = d3.select('legend-svg');
 
-        const colorLegend = svg.append('g')
-            .attr('class', 'color-legend')
-            .attr('transform', `translate(0,${size.height / 1.4})`);
+        const colorLegend = svg
+            .append('g')
+                .attr('class', 'color-legend')
+            .attr('transform', `translate(${size.width / 2.6 },${size.height / 1.4})`);
 
         const defs = svg.append('defs');
         const gradient = defs.append('linearGradient')
@@ -274,16 +297,6 @@ const Bubble = ({ data }) => {
             .style('font-size', '18px')
             .text('Avg Delay')
     }
-    
-    const createColorScale = (dScale) => {
-        return d3.scaleDiverging(function(t) {
-            return d3.interpolateRgbBasis([
-                `#B5E8EB`, 
-                `#A78D73`, 
-                `#F45909`  
-            ])(t);
-        }).domain([dScale.domain()[0], (dScale.domain()[0] + dScale.domain()[1]) / 2, dScale.domain()[1]]);
-    };
 
     const updateChart = (newDomain) => {
         if (!newDomain || !nodes.length) return;
@@ -328,7 +341,7 @@ const Bubble = ({ data }) => {
 
         const r_scale = d3.scaleLinear()
             .domain([0, d3.max(aggregated, d => d.avgRate)])
-            .range([20, 180]);  
+            .range(sizeRange);  
         
         const d_scale = d3.scaleLinear()
             .domain([0, d3.max(aggregated, d => d.avgDelay)]) 
@@ -353,7 +366,7 @@ const Bubble = ({ data }) => {
         const node = svg.selectAll('g').data(updatedNodes)
         node.select("circle")
             .transition()
-            .duration(2000)
+            .duration(1000)
             .attr('fill', d => colorScale(d.avgDelay))
             .attr("r", d => d.radius); 
 
@@ -373,7 +386,18 @@ const Bubble = ({ data }) => {
 
       window.addEventListener(`update-bubble-chart`, handleUpdateEvent);
 
-    return <div ref={svgContainerRef} style={{ width: '100%', height: '94%' }}></div>;
+    return (
+        <div id="chart-container" style={{ width: '100%', height: '95%'}}>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>
+            <svg id='legend-svg' class='legend'></svg>
+            <Tooltip
+                visible={tooltip.visible}
+                content={tooltip.content}
+                x={tooltip.x}
+                y={tooltip.y}
+            />
+        </div>
+        );
 };
 
 export default Bubble;

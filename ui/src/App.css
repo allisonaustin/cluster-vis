@@ -122,3 +122,8 @@
   border-radius: 2.5px;
   font-family: 'Lucida Grande', sans-serif;
 }
+
+.legend {
+  width: 100%;
+  height: 40px;
+}
