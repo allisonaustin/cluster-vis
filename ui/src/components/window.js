@@ -198,17 +198,22 @@ const Window = ({ data }) => {
         d3.selectAll('.focus .x-axis').transition(t).call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0));
 
         // updating charts
-        Promise.all(
-            Object.keys(data).map((field, i) => 
-                Promise.resolve().then(() => {
-                    window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
-                    window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
-                })
-            )
-        ).then(() => {
-            window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
-            console.log("All charts updated");
-        });
+        // Promise.all(
+        //     Object.keys(data).map((field, i) => 
+        //         Promise.resolve().then(() => {
+        //             window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
+        //             window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
+        //         })
+        //     )
+        // ).then(() => {
+        //     window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
+        //     console.log("All charts updated");
+        // });
+        setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('batch-update-charts', { detail: newDomain }));
+            console.log("Batch update triggered asynchronously");
+        }, 0);
+
       };
 
       return <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>;
