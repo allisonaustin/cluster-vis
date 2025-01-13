@@ -8,7 +8,6 @@ const PORT = 5009;
 app.use(cors());
 
 const farmFilePath = path.join(__dirname, './data/farm/novadaq-far-farm.json');
-const mgrFilePath = path.join(__dirname, './data/mgr/novadaq-far-mgr-01.json'); 
 
 app.get('/mgrData', (req, res) => {
     const { file } = req.query;

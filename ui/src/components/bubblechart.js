@@ -130,7 +130,7 @@ const Bubble = ({ data }) => {
             .attr('fill', d => colorScale(d.avgDelay))
             .on('mouseover', function(event, d) {
                 d3.select(this).style('cursor', 'pointer');
-                d3.select(this).attr('fill-opacity', 0.9);
+                d3.select(this).attr('fill-opacity', 1);
                 setTooltip({
                     visible: true,
                     content: `${d.trigger}`,
@@ -407,7 +407,7 @@ const Bubble = ({ data }) => {
     return (
         <div id="chart-container" style={{ width: '100%', height: '95%'}}>
             <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>
-            <svg id='legend-svg' class='legend'></svg>
+            <svg id='legend-svg' className='legend'></svg>
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}

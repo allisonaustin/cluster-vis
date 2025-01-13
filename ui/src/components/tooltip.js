@@ -15,7 +15,7 @@ const Tooltip = ({ visible, content, x, y }) => {
         zIndex: 1000,
       };
 
-    return <div class="tooltip" style={tooltipStyle}>{content}</div>
+    return <div className="tooltip" style={tooltipStyle}>{content}</div>
 };
 
 export default Tooltip;

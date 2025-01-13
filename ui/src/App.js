@@ -13,7 +13,7 @@ function App() {
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
-  const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01.json');
+  const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
 
   useEffect(() => {
     Promise.all([getFarmData(), getMgrData(selectedFile)])
@@ -129,7 +129,7 @@ function App() {
         <div className="wrapper_app"> 
           <div className="wrapper_main">
             <div className="wrapper_top">
-                <div className="view_title" style={{width: "120px"}}>Resource Manager</div>
+                <div className="view_title" style={{width: "120px"}}>Manager Node</div>
                 <Dropdown selectedFile={selectedFile} onFileChange={onFileChange}/>
                 <Window data={mgrData} />
               </div>

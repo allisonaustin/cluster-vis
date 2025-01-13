@@ -10,9 +10,9 @@ const Matrix = ({ data }) => {
     useEffect(() => {
         if (!svgContainerRef.current) return;
         setMatData(data);
+        console.log(data)
         
-        
-    });
+    }, [data]);
 
     return <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>;
 };
