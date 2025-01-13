@@ -160,14 +160,32 @@ const Bubble = ({ data }) => {
         //     .attr('y', (d, i, nodes) => `${i - nodes.length / 2 + 0.5}em`)
         //     .text(d => d);
     
-        const sim = d3.forceSimulation()
-            .nodes(nodes) 
-            .force('x', d3.forceX(size.width / 2).strength(0.01))
-            .force('y', d3.forceY(size.height / 2).strength(0.01)) 
-            .force('collision', d3.forceCollide().radius(d => d.radius + 2))
-            .on('tick', () => {
-                node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+        // const sim = d3.forceSimulation()
+        //     .nodes(nodes) 
+        //     .force('x', d3.forceX(size.width / 2).strength(0.01))
+        //     .force('y', d3.forceY(size.height / 2).strength(0.01)) 
+        //     .force('collision', d3.forceCollide().radius(d => d.radius + 2))
+        //     .on('tick', () => {
+        //         node.attr('transform', d => `translate(${d.x}, ${d.y})`);
+        //     });
+        
+        const padding=5;
+
+        const sim = d3.forceSimulation(nodes)
+        .force('x', d3.forceX(d => {
+            return Math.max(d.radius + padding, Math.min(size.width - d.radius - padding, d.x));
+        }).strength(0.05))
+        .force('y', d3.forceY(d => {
+            return Math.max(d.radius + padding, Math.min(size.height - d.radius - padding, d.y));
+        }).strength(0.05))
+        .force('collision', d3.forceCollide().radius(d => d.radius + padding).strength(1))
+        .on('tick', () => {
+            node.attr('transform', d => {
+                d.x = Math.max(d.radius + padding, Math.min(size.width - d.radius - padding, d.x));
+                d.y = Math.max(d.radius + padding, Math.min(size.height - d.radius - padding, d.y));
+                return `translate(${d.x}, ${d.y})`;
             });
+        });
 
         setSimulation(sim)
     
@@ -384,7 +402,7 @@ const Bubble = ({ data }) => {
         updateChart(newDomain);
       };
 
-      window.addEventListener(`update-bubble-chart`, handleUpdateEvent);
+      window.addEventListener(`batch-update-charts`, handleUpdateEvent);
 
     return (
         <div id="chart-container" style={{ width: '100%', height: '95%'}}>

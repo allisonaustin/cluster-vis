@@ -26,12 +26,22 @@ const AreaChart = ({ data, field, index, chartType }) => {
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
+      // svg.append('defs')
+      //   .append('clipPath')
+      //     .attr('id', 'clip')
+      //   .append('rect')
+      //     .attr('width', size.width)
+      //     .attr('height', size.height)
+
       svg.append('defs')
         .append('clipPath')
-          .attr('id', 'clip')
+        .attr('id', `clip-${type}-${index}`)  
         .append('rect')
-          .attr('width', size.width)
-          .attr('height', size.height)
+        .attr('x', margin.left)  
+        .attr('y', margin.top)   
+        .attr('width', size.width - margin.left - margin.right)
+        .attr('height', size.height - margin.top - margin.bottom);
+    
 
       const focus = svg.append('g')
         .attr('class', 'focus')
@@ -110,7 +120,8 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .datum(filtered)
         .attr('id', (d, i) => `line-${i}`)
         .attr('class', `line ${type} ${index}`)
-        .attr('clip-path', 'url(#clip)')
+        // .attr('clip-path', 'url(#clip)')
+        .attr('clip-path', `url(#clip-${type}-${index})`)
         .style('fill', getColor('default'))
         .style('stroke', 'black')
         .style('stroke-width', 0.5)
@@ -173,7 +184,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         updateChart(newDomain);
       };
 
-      window.addEventListener(`update-chart-${type}-${chartId}`, handleUpdateEvent);
+      window.addEventListener(`batch-update-charts`, handleUpdateEvent);
     
       return <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>;
 
