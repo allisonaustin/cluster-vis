@@ -149,15 +149,68 @@ export default function DTWMatrix() {
             .append('g')
             .attr('transform', `translate(${margin.left}, 0)`)
             .call(d3.axisLeft(yScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`));
-    };
 
-    const handleSortMatrix = () => {
-      const sortedMatrix = [...matrixData].sort((a, b) => a.value - b.value); // Sort by ascending distance
-      setSortedMatrixData(sortedMatrix); // Update the sorted matrix data for the sorted list
-      renderMatrix(sortedMatrix, true); // Render the matrix with the new order
-  };
-  
-  
+        // Legend dimensions
+        const legendWidth = 20;
+        const legendHeight = 150;
+
+        const legendX = size.width - margin.right; // Position to the right of the matrix
+        const legendY = margin.top; // Align with the top margin
+
+        // Legend scale
+        const legendScale = d3.scaleLinear()
+            .domain(colorScale.domain()) // Use the same domain as colorScale
+            .range([legendHeight, 0]); // Vertical orientation
+
+        const legendAxis = d3.axisRight(legendScale)
+            .ticks(5)
+            .tickFormat((d) => {
+                const numericValue = Number(d); // Convert NumberValue to number
+                return numericValue.toExponential(1); // Format in scientific notation with 1 decimal place
+            });
+        
+        
+
+        // Define the gradient for the legend
+        const defs = svg.append('defs');
+        const gradientId = 'vertical-legend-gradient';
+        const linearGradient = defs.append('linearGradient')
+            .attr('id', gradientId)
+            .attr('x1', '0%')
+            .attr('y1', '100%') // Start gradient at the bottom
+            .attr('x2', '0%')
+            .attr('y2', '0%'); // End gradient at the top
+
+        // Gradient stops
+        linearGradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', colorScale(d3.max(data, (d) => d.value) ?? 1)); // Lightest color for largest DTW distance
+
+        linearGradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', colorScale(0)); // Darkest color for smallest DTW distance
+
+        // Draw the gradient rectangle
+        svg.append('rect')
+            .attr('x', legendX)
+            .attr('y', legendY)
+            .attr('width', legendWidth)
+            .attr('height', legendHeight)
+            .style('fill', `url(#${gradientId})`);
+
+        // Add the legend axis
+        svg.append('g')
+            .attr('transform', `translate(${legendX + legendWidth}, ${legendY})`)
+            .call(legendAxis)
+            .selectAll('text')
+            .style('font-size', '12px');
+        };
+
+        const handleSortMatrix = () => {
+            const sortedMatrix = [...matrixData].sort((a, b) => a.value - b.value); // Sort by ascending distance
+            setSortedMatrixData(sortedMatrix); // Update the sorted matrix data for the sorted list
+            renderMatrix(sortedMatrix, true); // Render the matrix with the new order
+        };
 
     const handleResetMatrix = () => {
         renderMatrix(originalMatrixData); // Render original matrix without modifying the order
@@ -166,8 +219,31 @@ export default function DTWMatrix() {
     const handleSearchClick = () => {
         const idx = parseInt(searchValue, 10);
         setSearchIdx(idx);
-        document.getElementById(`field-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
-    };
+    
+        // Highlight the dictionary entry
+        const dictionaryElement = document.getElementById(`field-${idx}`);
+        if (dictionaryElement) {
+            dictionaryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            dictionaryElement.classList.add('highlight'); // Add highlight class
+            setTimeout(() => {
+                dictionaryElement.classList.remove('highlight'); // Remove highlight after 2 seconds
+            }, 2000);
+        }
+    
+        // Highlight the corresponding matrix cells
+        const svg = d3.select('#matrix');
+        svg.selectAll('.cell')
+            .filter(
+                (d: any) =>
+                    d.field1 === targetFields[idx - 1] || d.field2 === targetFields[idx - 1]
+            )
+            .classed('highlight-cell', true) // Add highlight class
+            .transition()
+            .duration(2000)
+            .on('end', function () {
+                d3.select(this).classed('highlight-cell', false); // Remove highlight class after 2 seconds
+            });
+    };    
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -233,19 +309,19 @@ export default function DTWMatrix() {
 
                     {/* Lower Part: Sorted Distances */}
                     <div style={{ flex: 1, overflowY: 'scroll', padding: '10px', backgroundColor: '#eef1f5' }}>
-    <h4>Sorted Distances</h4>
-    <div>
-        {sortedMatrixData.map((d, idx) => {
-            const idx1 = targetFields.findIndex((field) => field === d.field1) + 1;
-            const idx2 = targetFields.findIndex((field) => field === d.field2) + 1;
-            return (
-                <div key={idx}>
-                    {`${idx + 1}: ${idx1} - ${idx2} (DTW: ${d.value.toFixed(2)})`}
-                </div>
-            );
-        })}
-    </div>
-</div>
+                        <h4>Sorted Distances</h4>
+                        <div>
+                            {sortedMatrixData.map((d, idx) => {
+                                const idx1 = targetFields.findIndex((field) => field === d.field1) + 1;
+                                const idx2 = targetFields.findIndex((field) => field === d.field2) + 1;
+                                return (
+                                    <div key={idx}>
+                                        <span style={{ fontWeight: 'bold' }}>{`Rank ${idx + 1}:`}</span> {`${idx1} - ${idx2} (DTW: ${d.value.toFixed(2)})`}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
                 </div>
 

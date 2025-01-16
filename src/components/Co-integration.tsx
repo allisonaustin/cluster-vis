@@ -191,6 +191,63 @@ export default function CoIntegrationMatrix() {
             .append('g')
             .attr('transform', `translate(${margin.left}, 0)`)
             .call(d3.axisLeft(yScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`));
+
+        // Legend dimensions
+        const legendWidth = 20;
+        const legendHeight = 150;
+
+        const legendX = size.width - margin.right; // Position to the right of the matrix
+        const legendY = margin.top; // Align with the top margin
+
+        // Legend scale
+        const legendScale = d3.scaleLinear()
+            .domain(colorScale.domain()) // Use the same domain as colorScale
+            .range([legendHeight, 0]); // Vertical orientation
+
+        // Legend axis
+        const legendAxis = d3.axisRight(legendScale)
+        .ticks(5) // Number of ticks
+        .tickFormat((d) => {
+            const numericValue = Number(d); // Convert NumberValue to number
+            if (numericValue === -50) return '-inf'; // Special case for -inf
+            return numericValue.toFixed(1); // Format other values to 1 decimal place
+        });
+
+
+        // Define the gradient for the legend
+        const defs = svg.append('defs');
+        const gradientId = 'vertical-legend-gradient';
+        const linearGradient = defs.append('linearGradient')
+            .attr('id', gradientId)
+            .attr('x1', '0%')
+            .attr('y1', '0%') // Darkest color at the top
+            .attr('x2', '0%')
+            .attr('y2', '100%'); // Lightest color at the bottom
+
+
+        // Gradient stops
+        linearGradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', colorScale(-50)); // Darkest color for -inf
+
+        linearGradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', colorScale(0)); // Lightest color for 0
+
+        // Draw the gradient rectangle
+        svg.append('rect')
+            .attr('x', legendX)
+            .attr('y', legendY)
+            .attr('width', legendWidth)
+            .attr('height', legendHeight)
+            .style('fill', `url(#${gradientId})`);
+
+        // Add the legend axis
+        svg.append('g')
+            .attr('transform', `translate(${legendX + legendWidth}, ${legendY})`)
+            .call(legendAxis)
+            .selectAll('text')
+            .style('font-size', '12px');
     };
 
     const handleSortMatrix = () => {
@@ -208,9 +265,43 @@ export default function CoIntegrationMatrix() {
     const handleSearchClick = () => {
         const idx = parseInt(searchValue, 10);
         setSearchIdx(idx);
-        document.getElementById(`field-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
+    
+        // Highlight the dictionary entry
+        const dictionaryElement = document.getElementById(`field-${idx}`);
+        if (dictionaryElement) {
+            dictionaryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            dictionaryElement.classList.add('highlight'); // Add highlight class
+            setTimeout(() => {
+                dictionaryElement.classList.remove('highlight'); // Remove highlight after 2 seconds
+            }, 2000);
+        }
+    
+        // Highlight the corresponding matrix cells
+        const svg = d3.select('#matrix');
+        svg.selectAll('.cell')
+            .filter(
+                (d: any) =>
+                    d.field1 === targetFields[idx - 1] || d.field2 === targetFields[idx - 1]
+            )
+            .classed('highlight-cell', true) // Add highlight class
+            .transition()
+            .duration(2000)
+            .on('end', function () {
+                d3.select(this).classed('highlight-cell', false); // Remove highlight class after 2 seconds
+            });
     };
 
+    const handleScrollAndHighlight = (dictionaryIdx: number) => {
+        const element = document.getElementById(`field-${dictionaryIdx}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Smooth scroll
+            element.classList.add('highlight'); // Add highlight class
+            setTimeout(() => {
+                element.classList.remove('highlight'); // Remove highlight after 2 seconds
+            }, 2000);
+        }
+    };
+    
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
             <div
@@ -272,11 +363,21 @@ export default function CoIntegrationMatrix() {
                     <div style={{ flex: 1, overflowY: 'scroll', padding: '10px', backgroundColor: '#eef1f5' }}>
                         <h4>Fields by Significant Relationships</h4>
                         <div>
-                            {sortedMatrixData.map((d, idx) => (
-                                <div key={idx}>
-                                    {`${idx + 1}: ${d.field} (Significant Relationships: ${d.count})`}
-                                </div>
-                            ))}
+                            {sortedMatrixData.map((d, idx) => {
+                                const dictionaryIdx = targetFields.indexOf(d.field) + 1; // Get corresponding dictionary index
+                                return (
+                                    <div
+                                        key={idx}
+                                        onClick={() => handleScrollAndHighlight(dictionaryIdx)} // Add click handler
+                                        style={{
+                                            cursor: 'pointer',
+                                        }}
+                                        className="rank-item"
+                                    >
+                                        <span style={{ fontWeight: 'bold' }}>{`Rank ${idx + 1}:`}</span> {`${d.field} (Significant Relationships: ${d.count})`}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

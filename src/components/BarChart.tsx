@@ -16,7 +16,7 @@ interface AnomalyPoint {
   type: 'Zero Value' | 'Sharp Change';
 }
 
-export default function BidirectionalBarChart() {
+export default function BarChart() {
   const [targetFields, setTargetFields] = useState<string[]>([]);
   const [zeroValueAnomalies, setZeroValueAnomalies] = useState<AnomalyPoint[]>([]);
   const [sharpChangeAnomalies, setSharpChangeAnomalies] = useState<AnomalyPoint[]>([]);
@@ -27,7 +27,7 @@ export default function BidirectionalBarChart() {
   const [searchValue, setSearchValue] = useState('');
   const brushStateRef = useRef<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [selectedTimeText, setSelectedTimeText] = useState<string>('None');
-
+  const searchTriggered = useRef(false);
 
   const size = { width: 800, height: 100 }; // Timeline size
   const chartSize = { width: 600, height: 600 }; // Individual bar chart size
@@ -73,18 +73,6 @@ export default function BidirectionalBarChart() {
     loadData();
   }, []);
 
-  // useEffect(() => {
-  //   if (!targetFields.length || (!zeroValueAnomalies.length && !sharpChangeAnomalies.length)) return;
-  //   initTimeline();
-  //   updateBarCharts();
-  // }, [targetFields, zeroValueAnomalies, sharpChangeAnomalies, brushStart, brushEnd]); // Add brushStart and brushEnd
-  // useEffect(() => {
-  //   if (!targetFields.length || (!zeroValueAnomalies.length && !sharpChangeAnomalies.length)) return;
-  
-  //   initTimeline();
-  //   updateBarCharts(); // Initialize bar charts with the full dataset
-  // }, [targetFields, zeroValueAnomalies, sharpChangeAnomalies]); // Run only when data changes
-
   useEffect(() => {
     if (!targetFields.length || (!zeroValueAnomalies.length && !sharpChangeAnomalies.length)) return;
   
@@ -93,12 +81,6 @@ export default function BidirectionalBarChart() {
     updateSharpBarChart(); // Initialize Sharp Change Bar Chart
   }, [targetFields, zeroValueAnomalies, sharpChangeAnomalies]); // Run only when data changes
   
-
-  // useEffect(() => {
-  //   if (brushStart && brushEnd) {
-  //     updateBarCharts(); // Update bar charts based on the selected time range
-  //   }
-  // }, [brushStart, brushEnd]); // Trigger only on brush selection changes
   useEffect(() => {
     if (brushStart && brushEnd) {
       updateZeroBarChart(); // Update Zero Value Bar Chart based on the selected time range
@@ -155,179 +137,133 @@ export default function BidirectionalBarChart() {
   
     svg.append('g').attr('class', 'brush').call(brush);
   };
+
+  const handleSearchClick = () => {
+    const idx = parseInt(searchValue, 10);
+    if (isNaN(idx)) return;
   
-  // const updateBarCharts = () => {
-  //   const indexedFields = targetFields.map((field, idx) => ({ idx: idx + 1, field }));
+    // Highlight the bar in both charts
+    d3.selectAll<SVGRectElement, { idx: number }>('.bar')
+      .attr('fill', function (d) {
+        return d.idx === idx ? 'orange' : d3.select(this).attr('fill');
+      });
   
-  //   const renderBarChart = (
-  //     id: string,
-  //     data: { idx: number; field: string; value: number }[],
-  //     color: string
-  //   ) => {
-  //     const dynamicHeight = margin.top + margin.bottom + data.length * 20; // Increase based on number of bars
-  //     const svg = d3.select(id)
-  //       .attr("width", chartSize.width)
-  //       .attr("height", dynamicHeight); // Dynamically set SVG height
+    // Locate the bar in both charts
+    locateBarInChart('#zero-bar-container', '#zero-bar-chart', idx);
+    locateBarInChart('#sharp-bar-container', '#sharp-bar-chart', idx);
   
-  //     svg.selectAll('*').remove();
+    // Locate and highlight the dictionary entry
+    const dictionaryEntry = document.getElementById(`field-${idx}`);
+    if (dictionaryEntry) {
+      dictionaryEntry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      dictionaryEntry.style.backgroundColor = '#ffeb3b'; // Highlight the background
+      setTimeout(() => {
+        dictionaryEntry.style.backgroundColor = ''; // Remove highlight after 2 seconds
+      }, 2000);
+    }
   
-  //     const yScale = d3
-  //       .scaleBand()
-  //       .domain(data.map((d) => d.idx.toString()))
-  //       .range([margin.top, dynamicHeight - margin.bottom])
-  //       .padding(0.15);
+    // Reset bar highlights after 2 seconds
+    setTimeout(() => {
+      d3.selectAll<SVGRectElement, { idx: number }>('.bar').attr('fill', function () {
+        const originalColor = d3.select(this).attr('data-original-color');
+        return originalColor || d3.select(this).attr('fill'); // Reset to original color or keep current
+      });
+    }, 2000);
+  };
   
-  //     const xScale = d3
-  //       .scaleLinear()
-  //       .domain([0, d3.max(data, (d) => d.value) || 0])
-  //       .range([margin.left, chartSize.width - margin.right]);
+  const locateBarInChart = (containerId: string, chartId: string, idx: number) => {
+    const container = document.querySelector(containerId) as HTMLElement | null;
+    const targetBar = d3
+      .selectAll<SVGRectElement, { idx: number }>(`${chartId} .bar`)
+      .filter((d) => d.idx === idx)
+      .node();
   
-  //     const xAxis = d3.axisBottom(xScale).ticks(5);
-  //     const yAxis = d3.axisLeft(yScale);
+    if (container && targetBar) {
+      const containerRect = container.getBoundingClientRect();
+      const barRect = targetBar.getBoundingClientRect();
   
-  //     svg
-  //       .append('g')
-  //       .attr('transform', `translate(0, ${dynamicHeight - margin.bottom})`) // Adjust x-axis position
-  //       .call(xAxis);
+      // Calculate the position relative to the container
+      const offset = barRect.top - containerRect.top + container.scrollTop - container.clientHeight / 2;
+      container.scrollTo({ top: offset, behavior: 'smooth' });
+    }
+  };
+
+  const renderBarChart = (
+    id: string,
+    data: { idx: number; field: string; value: number }[],
+    color: string,
+    sortOrder: 'desc' | 'original'
+  ) => {
+    let sortedData = [...data];
+    if (sortOrder === 'desc') {
+      sortedData.sort((a, b) => b.value - a.value);
+    }
   
-  //     svg
-  //       .append('g')
-  //       .attr('transform', `translate(${margin.left}, 0)`)
-  //       .call(yAxis);
+    const dynamicHeight = margin.top + margin.bottom + sortedData.length * 20;
+    const svg = d3.select(id).attr('width', chartSize.width).attr('height', dynamicHeight);
   
-  //     const tooltip = d3.select('#tooltip'); // Use d3.select for the tooltip
+    svg.selectAll('*').remove();
   
-  //     svg
-  //       .selectAll('.bar')
-  //       .data(data)
-  //       .join('rect')
-  //       .attr('class', 'bar')
-  //       .attr('x', margin.left)
-  //       .attr('y', (d) => yScale(d.idx.toString()) ?? 0)
-  //       .attr('width', (d) => xScale(d.value) - margin.left)
-  //       .attr('height', yScale.bandwidth())
-  //       .attr('fill', color)
-  //       .on('mouseover', (event, d) => {
-  //         tooltip
-  //           .style('left', `${event.pageX + 5}px`)
-  //           .style('top', `${event.pageY + 5}px`)
-  //           .style('display', 'block')
-  //           .html(
-  //             `<strong>Idx:</strong> ${d.idx}<br>` +
-  //             `<strong>Field:</strong> ${d.field}<br>` +
-  //             `<strong>Value:</strong> ${d.value}`
-  //           );
-  //       })
-  //       .on('mouseout', () => {
-  //         tooltip
-  //           .style('display', 'none') // Ensure tooltip is hidden
-  //           .style('left', `-9999px`); // Move it out of view as a fallback
-  //       });
-  //   };
+    const yScale = d3
+      .scaleBand()
+      .domain(sortedData.map((d) => d.idx.toString()))
+      .range([margin.top, dynamicHeight - margin.bottom])
+      .padding(0.15);
   
-  //   const zeroData = indexedFields.map((field) => ({
-  //     ...field,
-  //     value: zeroValueAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
-  //   }));
+    const xScale = d3
+      .scaleLinear()
+      .domain([0, d3.max(sortedData, (d) => d.value) || 0])
+      .range([margin.left, chartSize.width - margin.right]);
   
-  //   const sharpData = indexedFields.map((field) => ({
-  //     ...field,
-  //     value: sharpChangeAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
-  //   }));
+    const xAxis = d3.axisBottom(xScale).ticks(5);
+    const yAxis = d3.axisLeft(yScale);
   
-  //   renderBarChart('#zero-bar-chart', zeroData, 'blue');
-  //   renderBarChart('#sharp-bar-chart', sharpData, 'red');
-  // };
+    svg
+      .append('g')
+      .attr('transform', `translate(0, ${dynamicHeight - margin.bottom})`)
+      .call(xAxis);
   
-  // const updateBarCharts = (sortOrder: 'desc' | 'original' = 'original') => {
-  //   const indexedFields = targetFields.map((field, idx) => ({ idx: idx + 1, field }));
+    svg
+      .append('g')
+      .attr('transform', `translate(${margin.left}, 0)`)
+      .call(yAxis);
   
-  //   const renderBarChart = (
-  //     id: string,
-  //     data: { idx: number; field: string; value: number }[],
-  //     color: string,
-  //     sortOrder: 'desc' | 'original'
-  //   ) => {
-  //     let sortedData = [...data];
-  //     if (sortOrder === 'desc') {
-  //       sortedData.sort((a, b) => b.value - a.value);
-  //     } else if (sortOrder === 'original') {
-  //       sortedData = [...data]; // Use the original data order
-  //     }
+    const tooltip = d3.select('#tooltip'); // Tooltip element
   
-  //     const dynamicHeight = margin.top + margin.bottom + sortedData.length * 20; // Increase based on number of bars
-  //     const svg = d3.select(id).attr('width', chartSize.width).attr('height', dynamicHeight); // Dynamically set SVG height
-  
-  //     svg.selectAll('*').remove();
-  
-  //     const yScale = d3
-  //       .scaleBand()
-  //       .domain(sortedData.map((d) => d.idx.toString()))
-  //       .range([margin.top, dynamicHeight - margin.bottom])
-  //       .padding(0.15);
-  
-  //     const xScale = d3
-  //       .scaleLinear()
-  //       .domain([0, d3.max(sortedData, (d) => d.value) || 0])
-  //       .range([margin.left, chartSize.width - margin.right]);
-  
-  //     const xAxis = d3.axisBottom(xScale).ticks(5);
-  //     const yAxis = d3.axisLeft(yScale);
-  
-  //     svg
-  //       .append('g')
-  //       .attr('transform', `translate(0, ${dynamicHeight - margin.bottom})`) // Adjust x-axis position
-  //       .call(xAxis);
-  
-  //     svg
-  //       .append('g')
-  //       .attr('transform', `translate(${margin.left}, 0)`)
-  //       .call(yAxis);
-  
-  //     const tooltip = d3.select('#tooltip'); // Use d3.select for the tooltip
-  
-  //     svg
-  //       .selectAll('.bar')
-  //       .data(sortedData)
-  //       .join('rect')
-  //       .attr('class', 'bar')
-  //       .attr('x', margin.left)
-  //       .attr('y', (d) => yScale(d.idx.toString()) ?? 0)
-  //       .attr('width', (d) => xScale(d.value) - margin.left)
-  //       .attr('height', yScale.bandwidth())
-  //       .attr('fill', color)
-  //       .on('mouseover', (event, d) => {
-  //         tooltip
-  //           .style('left', `${event.pageX + 5}px`)
-  //           .style('top', `${event.pageY + 5}px`)
-  //           .style('display', 'block')
-  //           .html(
-  //             `<strong>Idx:</strong> ${d.idx}<br>` +
-  //             `<strong>Field:</strong> ${d.field}<br>` +
-  //             `<strong>Value:</strong> ${d.value}`
-  //           );
-  //       })
-  //       .on('mouseout', () => {
-  //         tooltip.style('display', 'none').style('left', `-9999px`); // Ensure tooltip is hidden
-  //       });
-  //   };
-  
-  //   const zeroData = indexedFields.map((field) => ({
-  //     ...field,
-  //     value: zeroValueAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
-  //   }));
-  
-  //   const sharpData = indexedFields.map((field) => ({
-  //     ...field,
-  //     value: sharpChangeAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
-  //   }));
-  
-  //   renderBarChart('#zero-bar-chart', zeroData, 'blue', sortOrder);
-  //   renderBarChart('#sharp-bar-chart', sharpData, 'red', sortOrder);
-  // };
-  
-  // Event handlers for sorting
-  
+    svg
+    .selectAll<SVGRectElement, { idx: number }>('.bar')
+    .data(sortedData)
+    .join('rect')
+    .attr('class', 'bar')
+    .attr('x', margin.left)
+    .attr('y', (d) => yScale(d.idx.toString()) ?? 0)
+    .attr('width', (d) => xScale(d.value) - margin.left)
+    .attr('height', yScale.bandwidth())
+    .attr('data-original-color', color) // Store the original color
+    .attr('fill', color) // Use the original color
+    .on('mouseover', (event, d) => {
+      tooltip
+        .style('left', `${event.pageX + 5}px`)
+        .style('top', `${event.pageY + 5}px`)
+        .style('display', 'block')
+        .html(
+          `<strong>Idx:</strong> ${d.idx}<br>` +
+          `<strong>Name:</strong> ${d.field}<br>` +
+          `<strong>Value:</strong> ${d.value}`
+        );
+    })
+    .on('mouseout', () => {
+      tooltip.style('display', 'none');
+    });
+
+    
+    // Reset scroll trigger after rendering
+    if (searchTriggered.current && searchIdx !== null) {
+      locateBarInChart(id === '#zero-bar-chart' ? '#zero-bar-container' : '#sharp-bar-container', id, searchIdx);
+      searchTriggered.current = false;
+    }
+  };
+
   const updateZeroBarChart = (sortOrder: 'desc' | 'original' = 'original') => {
     const indexedFields = targetFields.map((field, idx) => ({ idx: idx + 1, field }));
   
@@ -335,78 +271,8 @@ export default function BidirectionalBarChart() {
       ...field,
       value: zeroValueAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
     }));
-  
-    const renderBarChart = (
-      id: string,
-      data: { idx: number; field: string; value: number }[],
-      color: string
-    ) => {
-      let sortedData = [...data];
-      if (sortOrder === 'desc') {
-        sortedData.sort((a, b) => b.value - a.value);
-      }
-    
-      const dynamicHeight = margin.top + margin.bottom + sortedData.length * 20;
-      const svg = d3.select(id).attr('width', chartSize.width).attr('height', dynamicHeight);
-    
-      svg.selectAll('*').remove();
-    
-      const yScale = d3
-        .scaleBand()
-        .domain(sortedData.map((d) => d.idx.toString()))
-        .range([margin.top, dynamicHeight - margin.bottom])
-        .padding(0.15);
-    
-      const xScale = d3
-        .scaleLinear()
-        .domain([0, d3.max(sortedData, (d) => d.value) || 0])
-        .range([margin.left, chartSize.width - margin.right]);
-    
-      const xAxis = d3.axisBottom(xScale).ticks(5);
-      const yAxis = d3.axisLeft(yScale);
-    
-      svg
-        .append('g')
-        .attr('transform', `translate(0, ${dynamicHeight - margin.bottom})`)
-        .call(xAxis);
-    
-      svg
-        .append('g')
-        .attr('transform', `translate(${margin.left}, 0)`)
-        .call(yAxis);
-    
-      const tooltip = d3.select('#tooltip'); // Tooltip element
-    
-      svg
-        .selectAll('.bar')
-        .data(sortedData)
-        .join('rect')
-        .attr('class', 'bar')
-        .attr('x', margin.left)
-        .attr('y', (d) => yScale(d.idx.toString()) ?? 0)
-        .attr('width', (d) => xScale(d.value) - margin.left)
-        .attr('height', yScale.bandwidth())
-        .attr('fill', color)
-        .on('mouseover', (event, d) => {
-          // Show tooltip on mouseover
-          tooltip
-            .style('left', `${event.pageX + 5}px`)
-            .style('top', `${event.pageY + 5}px`)
-            .style('display', 'block')
-            .html(
-              `<strong>Idx:</strong> ${d.idx}<br>` +
-              `<strong>Name:</strong> ${d.field}<br>` +
-              `<strong>Value:</strong> ${d.value}`
-            );
-        })
-        .on('mouseout', () => {
-          // Hide tooltip on mouseout
-          tooltip.style('display', 'none');
-        });
-    };
-    
-  
-    renderBarChart('#zero-bar-chart', zeroData, 'blue');
+
+    renderBarChart('#zero-bar-chart', zeroData, 'blue', sortOrder);
   };
   
   const updateSharpBarChart = (sortOrder: 'desc' | 'original' = 'original') => {
@@ -416,78 +282,8 @@ export default function BidirectionalBarChart() {
       ...field,
       value: sharpChangeAnomalies.filter((a) => a.field === field.field && withinBrush(a.timestamp)).length,
     }));
-  
-    const renderBarChart = (
-      id: string,
-      data: { idx: number; field: string; value: number }[],
-      color: string
-    ) => {
-      let sortedData = [...data];
-      if (sortOrder === 'desc') {
-        sortedData.sort((a, b) => b.value - a.value);
-      }
-    
-      const dynamicHeight = margin.top + margin.bottom + sortedData.length * 20;
-      const svg = d3.select(id).attr('width', chartSize.width).attr('height', dynamicHeight);
-    
-      svg.selectAll('*').remove();
-    
-      const yScale = d3
-        .scaleBand()
-        .domain(sortedData.map((d) => d.idx.toString()))
-        .range([margin.top, dynamicHeight - margin.bottom])
-        .padding(0.15);
-    
-      const xScale = d3
-        .scaleLinear()
-        .domain([0, d3.max(sortedData, (d) => d.value) || 0])
-        .range([margin.left, chartSize.width - margin.right]);
-    
-      const xAxis = d3.axisBottom(xScale).ticks(5);
-      const yAxis = d3.axisLeft(yScale);
-    
-      svg
-        .append('g')
-        .attr('transform', `translate(0, ${dynamicHeight - margin.bottom})`)
-        .call(xAxis);
-    
-      svg
-        .append('g')
-        .attr('transform', `translate(${margin.left}, 0)`)
-        .call(yAxis);
-    
-      const tooltip = d3.select('#tooltip'); // Tooltip element
-    
-      svg
-        .selectAll('.bar')
-        .data(sortedData)
-        .join('rect')
-        .attr('class', 'bar')
-        .attr('x', margin.left)
-        .attr('y', (d) => yScale(d.idx.toString()) ?? 0)
-        .attr('width', (d) => xScale(d.value) - margin.left)
-        .attr('height', yScale.bandwidth())
-        .attr('fill', color)
-        .on('mouseover', (event, d) => {
-          // Show tooltip on mouseover
-          tooltip
-            .style('left', `${event.pageX + 5}px`)
-            .style('top', `${event.pageY + 5}px`)
-            .style('display', 'block')
-            .html(
-              `<strong>Idx:</strong> ${d.idx}<br>` +
-              `<strong>Name:</strong> ${d.field}<br>` +
-              `<strong>Value:</strong> ${d.value}`
-            );
-        })
-        .on('mouseout', () => {
-          // Hide tooltip on mouseout
-          tooltip.style('display', 'none');
-        });
-    };
-    
-  
-    renderBarChart('#sharp-bar-chart', sharpData, 'red');
+
+    renderBarChart('#sharp-bar-chart', sharpData, 'red', sortOrder);
   };
   
 // Event handlers for sorting
@@ -499,18 +295,10 @@ const handleSortSharp = (sortOrder: 'desc' | 'original') => {
   updateSharpBarChart(sortOrder); // Only update the Sharp Change Bar Chart
 };
 
-  
-
   const withinBrush = (timestamp: string) => {
     const date = new Date(timestamp);
     return (!brushStart || date >= brushStart) && (!brushEnd || date <= brushEnd);
   };  
-
-  const handleSearchClick = () => {
-    const idx = parseInt(searchValue, 10);
-    setSearchIdx(idx);
-    document.getElementById(`field-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -615,6 +403,7 @@ const handleSortSharp = (sortOrder: 'desc' | 'original') => {
 >
   <h4 style={{ marginBottom: '20px' }}>Zero Value Anomalies</h4>
   {/* Buttons Section */}
+  {/* Remove the Reset Labels button */}
   <div
     style={{
       position: 'absolute',
@@ -626,7 +415,7 @@ const handleSortSharp = (sortOrder: 'desc' | 'original') => {
     }}
   >
     <button onClick={() => updateZeroBarChart('desc')}>Sort Desc</button>
-    <button onClick={() => updateZeroBarChart('original')}>Reset</button>
+    <button onClick={() => updateZeroBarChart('original')}>Reset Order</button>
   </div>
   <svg id="zero-bar-chart"></svg>
 </div>
@@ -653,8 +442,8 @@ const handleSortSharp = (sortOrder: 'desc' | 'original') => {
       gap: '10px', // Adds space between buttons
     }}
   >
-    <button onClick={() => updateSharpBarChart('desc')}>Sort Desc</button>
-    <button onClick={() => updateSharpBarChart('original')}>Reset</button>
+    <button onClick={() => updateZeroBarChart('desc')}>Sort Desc</button>
+    <button onClick={() => updateZeroBarChart('original')}>Reset Order</button>
   </div>
   <svg id="sharp-bar-chart"></svg>
 </div>

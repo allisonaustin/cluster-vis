@@ -30,3 +30,23 @@ body {
   height: 100vh; /* Full viewport height for each chart */
   width: 100%; /* Full width */
 }
+
+.highlight {
+  background-color: yellow; /* Highlight color */
+  font-weight: bold; /* Optional: Make the text bold */
+  transition: background-color 0.3s ease-out; /* Smooth transition for fade-out */
+}
+
+.highlight-cell {
+  stroke: red;
+  stroke-width: 2px;
+  transition: stroke 0.5s ease, stroke-width 0.5s ease;
+}
+
+.rank-item {
+  transition: text-decoration 0.2s ease-in-out; /* Smooth transition for underline */
+}
+
+.rank-item:hover {
+  text-decoration: underline;
+}

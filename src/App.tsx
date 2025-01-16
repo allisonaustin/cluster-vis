@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Example from './components/LineChart';
-import BidirectionalBarChart from './components/BarChart';
+import BarChart from './components/BarChart';
+import BidirectionalBarChart from './components/BidirectionalChart';
 import CoOccurrenceMatrix from './components/Cross-correlation';
 import GrangerTestMatrix from './components/GrangerTest';
 import DTWMatrix from './components/DTW';
@@ -31,7 +32,9 @@ function Layout() {
     switch (activeComponent) {
       case 'Example':
         return <Example />;
-      case 'BidirectionalBarChart':
+      case 'BarChart':
+        return <BarChart />;
+      case 'BidirectionalChart':
         return <BidirectionalBarChart />;
       case 'CoOccurrenceMatrix':
         return <CoOccurrenceMatrix />;
@@ -81,9 +84,16 @@ function Layout() {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => setActiveComponent('BidirectionalBarChart')}
+            onClick={() => setActiveComponent('BarChart')}
           >
             Bar Chart
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setActiveComponent('BidirectionalChart')}
+          >
+            BidirectionalBar Chart
           </Button>
           <Button
             variant="contained"

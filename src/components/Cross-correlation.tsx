@@ -9,8 +9,9 @@
     const [searchValue, setSearchValue] = useState('');
     const [searchIdx, setSearchIdx] = useState<number | null>(null);
 
+    const margin = { top: 50, right: 20, bottom: 65, left: 50 }; // Increase right margin for legend
     const size = { width: 800, height: 800 }; // Matrix size
-    const margin = { top: 50, right: 20, bottom: 65, left: 50 };
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -72,108 +73,127 @@
 
     const renderMatrix = (data: any[], isSorted = false) => {
         const svg = d3
-        .select('#matrix')
-        .attr('width', size.width)
-        .attr('height', size.height)
-        .attr('viewBox', `0 0 ${size.width} ${size.height}`)
-        .attr('preserveAspectRatio', 'xMidYMid meet');
+            .select('#matrix')
+            .attr('width', size.width + margin.right) // Increase width to accommodate legend
+            .attr('height', size.height)
+            .attr('viewBox', `0 0 ${size.width + margin.right} ${size.height}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet');
     
         svg.selectAll('*').remove();
     
-        // Determine the field order for the current rendering
         const currentFieldOrder = isSorted
-        ? Array.from(new Set(data.flatMap((d) => [d.field1, d.field2])))
-        : targetFields;
+            ? Array.from(new Set(data.flatMap((d) => [d.field1, d.field2])))
+            : targetFields;
     
         const xScale = d3
-        .scaleBand()
-        .domain(currentFieldOrder)
-        .range([margin.left, size.width - margin.right])
-        .padding(0.1);
+            .scaleBand()
+            .domain(currentFieldOrder)
+            .range([margin.left, size.width - margin.right])
+            .padding(0.1);
     
         const yScale = d3
-        .scaleBand()
-        .domain(currentFieldOrder)
-        .range([margin.top, size.height - margin.bottom])
-        .padding(0.1);
+            .scaleBand()
+            .domain(currentFieldOrder)
+            .range([margin.top, size.height - margin.bottom])
+            .padding(0.1);
     
         const colorScale = d3
-        .scaleSequential(d3.interpolateBlues) // Use a sequential color scheme
-        .domain([0.65, 1.0]); // Adjust the domain to focus on the range of interest
+            .scaleSequential(d3.interpolateBlues)
+            .domain([0.65, 1.0]);
     
         // Draw grid cells
         svg
-        .selectAll('.cell')
-        .data(data)
-        .join('rect')
-        .attr('class', 'cell')
-        .attr('x', (d) => xScale(d.field2) ?? 0)
-        .attr('y', (d) => yScale(d.field1) ?? 0)
-        .attr('width', xScale.bandwidth())
-        .attr('height', yScale.bandwidth())
-        .attr('fill', (d) => colorScale(d.value))
-        .on('mouseover', (event, d) => {
-            const tooltip = d3.select('#tooltip');
-            
-            // Set initial content and position
-            tooltip
-                .style('left', `${event.pageX + 5}px`)
-                .style('top', `${event.pageY + 5}px`)
-                .style('display', 'block')
-                .html(
-                    `<strong>Field1 (Idx):</strong> ${d.field1} (${targetFields.indexOf(d.field1) + 1})<br>` +
-                    `<strong>Field2 (Idx):</strong> ${d.field2} (${targetFields.indexOf(d.field2) + 1})<br>` +
-                    `<strong>Correlation:</strong> ${d.value.toFixed(2)}<br>` +
-                    `<strong>Lag:</strong> ${d.lag}`
-                );
-        
-            // Get tooltip node and ensure it's not null
-            const tooltipNode = tooltip.node() as HTMLElement | null;
-        
-            if (tooltipNode) {
-                const tooltipWidth = tooltipNode.offsetWidth;
-                const tooltipHeight = tooltipNode.offsetHeight;
-        
-                // Get viewport dimensions
-                const viewportWidth = window.innerWidth;
-                const viewportHeight = window.innerHeight;
-        
-                // Adjust tooltip position if it exceeds boundaries
-                let left = event.pageX + 5;
-                let top = event.pageY + 5;
-        
-                if (left + tooltipWidth > viewportWidth) {
-                    left = event.pageX - tooltipWidth - 5; // Move left if it exceeds right boundary
-                }
-                if (top + tooltipHeight > viewportHeight) {
-                    top = event.pageY - tooltipHeight - 5; // Move up if it exceeds bottom boundary
-                }
-        
-                tooltip.style('left', `${left}px`).style('top', `${top}px`);
-            }
-        })
-        .on('mouseout', () => {
-            d3.select('#tooltip').style('display', 'none');
-        });
-        
+            .selectAll('.cell')
+            .data(data)
+            .join('rect')
+            .attr('class', 'cell')
+            .attr('x', (d) => xScale(d.field2) ?? 0)
+            .attr('y', (d) => yScale(d.field1) ?? 0)
+            .attr('width', xScale.bandwidth())
+            .attr('height', yScale.bandwidth())
+            .attr('fill', (d) => colorScale(d.value))
+            .on('mouseover', (event, d) => {
+                const tooltip = d3.select('#tooltip');
+                tooltip
+                    .style('left', `${event.pageX + 5}px`)
+                    .style('top', `${event.pageY + 5}px`)
+                    .style('display', 'block')
+                    .html(
+                        `<strong>Field1 (Idx):</strong> ${d.field1} (${targetFields.indexOf(d.field1) + 1})<br>` +
+                        `<strong>Field2 (Idx):</strong> ${d.field2} (${targetFields.indexOf(d.field2) + 1})<br>` +
+                        `<strong>Correlation:</strong> ${d.value.toFixed(2)}<br>` +
+                        `<strong>Lag:</strong> ${d.lag}`
+                    );
+            })
+            .on('mouseout', () => {
+                d3.select('#tooltip').style('display', 'none');
+            });
     
-        // Draw x-axis with original idx mapping
+        // Draw x-axis
         svg
-        .append('g')
-        .attr('transform', `translate(0, ${size.height - margin.bottom})`)
-        .call(d3.axisBottom(xScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`))
-        .selectAll('text')
-        .style('text-anchor', 'end')
-        .attr('dx', '-0.8em')
-        .attr('dy', '0.15em')
-        .attr('transform', 'rotate(-45)');
+            .append('g')
+            .attr('transform', `translate(0, ${size.height - margin.bottom})`)
+            .call(d3.axisBottom(xScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`))
+            .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('dx', '-0.8em')
+            .attr('dy', '0.15em')
+            .attr('transform', 'rotate(-45)');
     
-        // Draw y-axis with original idx mapping
+        // Draw y-axis
         svg
-        .append('g')
-        .attr('transform', `translate(${margin.left}, 0)`)
-        .call(d3.axisLeft(yScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`));
+            .append('g')
+            .attr('transform', `translate(${margin.left}, 0)`)
+            .call(d3.axisLeft(yScale).tickFormat((d) => `${targetFields.indexOf(d) + 1}`));
+    
+        // Add vertical legend
+        const legendWidth = 20;
+        const legendHeight = 150;
+    
+        const legendX = size.width - margin.right; // Place it in the reserved right margin
+        const legendY = margin.top; // Top alignment
+    
+        const legendScale = d3.scaleLinear()
+            .domain(colorScale.domain())
+            .range([legendHeight, 0]); // Vertical range
+    
+        const legendAxis = d3.axisRight(legendScale)
+            .ticks(5)
+            .tickFormat(d3.format('.2f'));
+    
+        const defs = svg.append('defs');
+        const gradientId = 'vertical-legend-gradient';
+        const linearGradient = defs.append('linearGradient')
+            .attr('id', gradientId)
+            .attr('x1', '0%')
+            .attr('y1', '100%')
+            .attr('x2', '0%')
+            .attr('y2', '0%'); // Vertical gradient
+    
+        linearGradient.append('stop')
+            .attr('offset', '0%')
+            .attr('stop-color', colorScale(0.65));
+    
+        linearGradient.append('stop')
+            .attr('offset', '100%')
+            .attr('stop-color', colorScale(1.0));
+    
+        svg.append('rect')
+            .attr('x', legendX)
+            .attr('y', legendY)
+            .attr('width', legendWidth)
+            .attr('height', legendHeight)
+            .style('fill', `url(#${gradientId})`);
+    
+        svg.append('g')
+            .attr('transform', `translate(${legendX + legendWidth}, ${legendY})`)
+            .call(legendAxis)
+            .selectAll('text')
+            .style('font-size', '12px');
     };
+    
+    
+    
     const handleSortMatrix = () => {
         const sortedMatrix = [...matrixData].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
         renderMatrix(sortedMatrix, true); // Pass isSorted as true to update positions
@@ -183,14 +203,42 @@
         renderMatrix(originalMatrixData); // Render original matrix without modifying the order
     };
     
-    
-    
+    const handleScrollAndHighlight = (dictionaryIdx: number) => {
+        const element = document.getElementById(`field-${dictionaryIdx}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Scroll to the element
+            element.classList.add('highlight'); // Add highlight class
+            setTimeout(() => {
+                element.classList.remove('highlight'); // Remove highlight after 2 seconds
+            }, 2000); // Adjust duration as needed
+        }
+    };
 
     const handleSearchClick = () => {
         const idx = parseInt(searchValue, 10);
         setSearchIdx(idx);
-        document.getElementById(`field-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
-    };
+    
+        // Highlight the dictionary entry
+        const dictionaryElement = document.getElementById(`field-${idx}`);
+        if (dictionaryElement) {
+            dictionaryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            dictionaryElement.classList.add('highlight'); // Add highlight class
+            setTimeout(() => {
+                dictionaryElement.classList.remove('highlight'); // Remove highlight after 2 seconds
+            }, 2000);
+        }
+    
+        // Highlight the corresponding matrix cells
+        const svg = d3.select('#matrix');
+        svg.selectAll('.cell')
+            .filter((d: any) => d.field1 === targetFields[idx - 1] || d.field2 === targetFields[idx - 1])
+            .classed('highlight-cell', true) // Add highlight class
+            .transition()
+            .duration(2000)
+            .on('end', function () {
+                d3.select(this).classed('highlight-cell', false); // Remove highlight class after 2 seconds
+            });
+    };    
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -257,11 +305,21 @@
                 <div style={{ flex: 1, overflowY: 'scroll', padding: '10px', backgroundColor: '#eef1f5' }}>
                     <h4>Sorted Correlations</h4>
                     <div>
-                        {sortedMatrixData.map((d, idx) => (
-                            <div key={idx}>
-                                {`${idx + 1}: ${d.field} (Relationships: ${d.count})`}
-                            </div>
-                        ))}
+                        {sortedMatrixData.map((d, idx) => {
+                            const dictionaryIdx = targetFields.indexOf(d.field) + 1; // Get corresponding dictionary index
+                            return (
+                                <div
+                                    key={idx}
+                                    onClick={() => handleScrollAndHighlight(dictionaryIdx)} // Add click handler
+                                    style={{
+                                        cursor: 'pointer',
+                                    }}
+                                    className="rank-item"
+                                >
+                                    <span style={{ fontWeight: 'bold' }}>{`Rank ${idx + 1}:`}</span> {`${d.field} (Relationships: ${d.count})`}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
                 </div>
