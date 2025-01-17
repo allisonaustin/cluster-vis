@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 // import { fetchData } from './utils/api.js';
+import { Tab, Tabs, Box } from '@mui/material';
 import './App.css';
 import AreaChart from './components/areachart.js';
 import Window from './components/window.js';
 import Dropdown from './components/dropdown.js';
-import Matrix from './components/matrix.js';
+import Coordinates from './components/coordinates.js';
 import Bubble from './components/bubblechart.js';
 
 function App() {
+  const [activeTab, setActiveTab] = useState(0);
   const [farmData, setFarmData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
@@ -119,50 +121,89 @@ function App() {
     getMgrData(newFile);
   };
 
+  const onTabChange = (event, newTab) => {
+      setActiveTab(newTab);
+  }
+
   return (
     <div className="App">
       {error ? (
         <header className="App-header">
           <p>{error}</p>
-      </header>)
-      : (
-        <div className="wrapper_app"> 
-          <div className="wrapper_main">
-            <div className="wrapper_top">
-                <div className="view_title" style={{width: "120px"}}>Manager Node</div>
-                <Dropdown selectedFile={selectedFile} onFileChange={onFileChange}/>
-                <Window data={mgrData} />
-              </div>
-            <div className="wrapper_bottom">
-              <div className="wrapper_left">
-                <div className="view_title" style={{width: "120px"}}>Performance Metrics</div>
-                  {Object.keys(perfData).map((field, index) => (
-                    <AreaChart key={field} data={perfData} field={field} index={index} chartType={'perf'} />
-                  ))}
-              </div>
-              <div className="wrapper_left">
-                <div className="view_title" style={{width: "50px"}}>Triggers</div>
-                  {Object.keys(triggerData).map((field, index) => (
-                    <AreaChart key={field} data={triggerData} field={field} index={index} chartType={'trigger'} />
-                  ))}
-              </div>
-            </div> 
-          </div>
-          <div className="wrapper_right">
-              <div className="wrapper_top2">
-                <div className="view_title" style={{width: "50px"}}>Triggers</div>
-                  <Bubble data={triggerData}/>
-              </div>
-              <div className="wrapper_bottom2">
-                <div className="view_title" style={{width: "80px"}}>Buffer Nodes</div>
-                  {farmData ? (
-                      <Matrix data={farmData} />
-                    ) : (
-                      <p>Loading farm data...</p>
-                    )}
+        </header>
+      ) : (
+        <>
+          {/* Tab Navigation */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f5f5f5' }}>
+            <Tabs
+              value={activeTab}
+              onChange={onTabChange}
+              textColor="primary"
+              indicatorColor="primary"
+              centered
+            >
+              <Tab label="Static Analysis" />
+              <Tab label="Streaming Analysis" />
+            </Tabs>
+          </Box>
+
+          {/* Static Analysis Tab */}
+          {activeTab === 0 && (
+            <div className="wrapper_app">
+              <div className="wrapper_main">
+                <div className="wrapper_top">
+                  <div className="view_title" style={{ width: '120px' }}>
+                    Manager Node
+                  </div>
+                  <Dropdown selectedFile={selectedFile} onFileChange={(e) => setSelectedFile(e.target.value)} />
+                  <Window data={mgrData} />
                 </div>
+                <div className="wrapper_bottom">
+                  <div className="wrapper_left">
+                    <div className="view_title" style={{ width: '120px' }}>
+                      Performance Metrics
+                    </div>
+                    {Object.keys(perfData).map((field, index) => (
+                      <AreaChart key={field} data={perfData} field={field} index={index} chartType="perf" />
+                    ))}
+                  </div>
+                  <div className="wrapper_left">
+                    <div className="view_title" style={{ width: '50px' }}>
+                      Triggers
+                    </div>
+                    {Object.keys(triggerData).map((field, index) => (
+                      <AreaChart key={field} data={triggerData} field={field} index={index} chartType="trigger" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="wrapper_right">
+                <div className="wrapper_top2">
+                  <div className="view_title" style={{ width: '50px' }}>
+                    Triggers
+                  </div>
+                  <Bubble data={triggerData} />
+                </div>
+                <div className="wrapper_bottom2">
+                  <div className="view_title" style={{ width: '80px' }}>
+                    Buffer Nodes
+                  </div>
+                  {farmData ? (
+                    <Coordinates data={farmData} />
+                  ) : (
+                    <p>Loading farm data...</p>
+                  )}
+                </div>
+              </div>
             </div>
-        </div>
+          )}
+
+          {activeTab === 1 && (
+            <div className="streaming-analysis">
+              <p>This is the Streaming Analysis tab. Implement streaming logic here.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
