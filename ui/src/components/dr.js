@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { COLORS, getColor, generateColor } from '../utils/colors.js';
+import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
 
@@ -7,6 +8,7 @@ const DR = ({ data }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 470, height: 320 });
+    const [selectedMethod, setSelectedMethod] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
         visible: false,
         content: '',
@@ -26,18 +28,22 @@ const DR = ({ data }) => {
         const width = size.width;
         const height = size.height;
 
+        const xKey = selectedMethod + '1';
+        const yKey = selectedMethod + '2';
+
         const xScale = d3.scaleLinear()
-            .domain([d3.min(data, d => +d.UMAP1), d3.max(data, d => +d.UMAP1) + 1])
+            .domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
             .range([margin.left, width - margin.right]);
 
         const yScale = d3.scaleLinear()
-            .domain([d3.min(data, d => +d.UMAP1), d3.max(data, d => +d.UMAP2) + 1])
+            .domain([d3.min(data, d => +d[yKey]) - 1, d3.max(data, d => +d[yKey]) + 1])
             .range([height - margin.bottom, margin.top]);
         
         const xAxis = d3.axisBottom(xScale);
         
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
+          .attr('id', 'dr-chart-svg')
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
@@ -50,10 +56,11 @@ const DR = ({ data }) => {
 
         // x axis label
         svg.append('text')
+            .attr('id', 'x-axis-label-dr')
             .attr("x", width/2)
             .attr("y", height)
             .style('text-anchor', 'middle')
-            .text('UMAP1')
+            .text(xKey)
             .style('font-size', '12px');
 
 
@@ -63,22 +70,23 @@ const DR = ({ data }) => {
             .attr("transform", `translate(${margin.left},0)`)
             .call(yAxis)
             .call(g => g.append("text")
+                .attr('id', 'y-axis-label-dr')
                 .attr("x", -height/2)
                 .attr("y", -margin.right)
                 .attr("fill", "currentColor")
                 .attr("text-anchor", "start")
                 .attr("transform", "rotate(-90)")
                 .style('font-size', '12px')
-                .text("UMAP2")); // Y label
+                .text(yKey)); // Y label
 
-        svg.selectAll(".dr-circle")
+        let circs = svg.selectAll(".dr-circle")
             .data(data)
             .enter()
             .append("circle")
             .attr("class", (d, i) => "dr-circle")
             .attr('id', (d, i) => `${d.Measurement}`)
-            .attr("cx", d => xScale(d.UMAP1))
-            .attr("cy", d => yScale(d.UMAP2))
+            .attr("cx", d => xScale(d[xKey]))
+            .attr("cy", d => yScale(d[yKey]))
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 3)
@@ -98,7 +106,16 @@ const DR = ({ data }) => {
                     x: 0,
                     y: 0,
                   });
-            });
+            })
+            .style('opacity', 0);
+
+            circs
+                .transition()
+                .duration(800)
+                .style("opacity", 1);
+
+            svg.node().xScale = xScale;
+            svg.node().yScale = yScale;
     
         return () => {
             svg.remove();
@@ -106,8 +123,55 @@ const DR = ({ data }) => {
         
     }, [data]);
 
+    const updateChart = (method) => {
+        const chart = d3.select(svgContainerRef.current).select("svg");
+        setSelectedMethod(method)
+
+        const xKey = method + '1';
+        const yKey = method + '2';
+
+        const xScale = chart.node()?.xScale;
+        const yScale = chart.node()?.yScale;
+
+        xScale.domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
+        yScale.domain([d3.min(data, d => +d[yKey]) - 1, d3.max(data, d => +d[yKey]) + 1])
+
+        chart.select("#x-axis-label-dr")
+            .text(xKey);
+
+        chart.select("#y-axis-label-dr")
+            .text(yKey);
+
+        const t = d3.transition()
+            .duration(400) 
+            .ease(d3.easeCubicInOut);
+        
+        chart.select('.x-axis').call(d3.axisBottom(xScale));
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale));
+
+        chart.selectAll(".dr-circle")
+            .data(data)
+            .join("circle")  
+            .transition()
+            .duration(1000)
+            .attr("cx", d => xScale(+d[xKey]))
+            .attr("cy", d => yScale(+d[yKey]))
+    }
+
     return (
         <div id="chart-container">
+            <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
+                <InputLabel>Method</InputLabel>
+                <Select
+                    value={selectedMethod}
+                    onChange={(e) => {
+                        updateChart(e.target.value);
+                    }}
+                >
+                    <MenuItem value="UMAP">UMAP</MenuItem>
+                    <MenuItem value="tSNE">t-SNE</MenuItem>
+                </Select>
+            </FormControl>
             <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}></div>
             <Tooltip
                 visible={tooltip.visible}

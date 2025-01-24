@@ -179,7 +179,11 @@ function App() {
                   <div className="view_title" style={{ width: '50px' }}>
                     DR
                   </div>
-                  <DR data={drData} />
+                  {drData ? (
+                    <DR data={drData} />
+                  ) : (
+                    <p>Loading DR results...</p>
+                  )}
                 </div>
                 <div className="wrapper_bottom2">
                   <div className="view_title" style={{ width: '80px' }}>
