@@ -32,6 +32,25 @@ app.get('/farmData', (req, res) => {
     });
   });
 
+  app.get('/drData', (req, res) => {
+    const drFile = path.join(__dirname, './data/farm/multiDR_results.csv');
+
+    new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(drFile)
+            .pipe(csv()) 
+            .on('data', (data) => results.push(data))
+            .on('end', () => resolve(results)) 
+            .on('error', (err) => reject(err)); 
+    })
+    .then((data) => {
+        res.json(data); 
+    })
+    .catch((err) => {
+        res.status(500).json({ error: 'Error reading CSV file', details: err }); 
+    });
+});
+
 app.get('/files', (req, res) => {
     const dataPath = path.join(__dirname, 'data');
     fs.readdir(dataPath, (err, folders) => {

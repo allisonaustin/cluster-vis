@@ -405,7 +405,7 @@ const Bubble = ({ data }) => {
       window.addEventListener(`batch-update-charts`, handleUpdateEvent);
 
     return (
-        <div id="chart-container" style={{ width: '100%', height: '95%'}}>
+        <div id="circle-container" style={{ width: '100%', height: '95%'}}>
             <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>
             <svg id='legend-svg' className='legend'></svg>
             <Tooltip

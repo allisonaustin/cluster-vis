@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
-const Window = ({ mgrData, farmData }) => {
+const Window = ({ mgrData }) => {
 
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 600, height: 140 });
@@ -10,18 +10,16 @@ const Window = ({ mgrData, farmData }) => {
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
-    const [fields, setFields] = useState(['Activity_P1', 'Missed Buffers_P1']);
+    const [fields, setFields] = useState(['Activity_P1']);
       
     useEffect(() => {
-      if (!svgContainerRef.current || !mgrData || !farmData ) return;
+      if (!svgContainerRef.current || !mgrData ) return;
       
       const timeFormat = d3.timeFormat('%H:%M');
       const dateFormat = d3.timeFormat('%Y-%m-%d'); 
       const margin = { top: 10, right: 30, bottom: 70, left: 30 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
-
-      console.log(farmData)
 
       const svg = d3.select(svgContainerRef.current)
           .append("svg")
@@ -46,29 +44,18 @@ const Window = ({ mgrData, farmData }) => {
                     nodeId: 'mgr-01'
                 });
             });
-        } else if (farmData[field] && typeof farmData[field] == "object") {
-            chartdata[field] = [];
-            
-            Object.values(farmData[field]).forEach((obj) => {
-                let date = new Date(parseInt(obj.timestamp));
-                chartdata[field].push({
-                    timestamp: date, 
-                    value: obj.value, 
-                    nodeId: obj.nodeId
-                });
-            });
         }
     });    
     
       const xScale = d3.scaleTime()
-        .domain(d3.extent(chartdata[fields[1]], d => d.timestamp))
+        .domain(d3.extent(chartdata[fields[0]], d => d.timestamp))
         .range([margin.left, size.width - margin.right - 20])
         // .padding(0.1);
 
       xScaleRef.current = xScale; 
 
       const yScale = d3.scaleLinear()
-          .domain([0, d3.max(chartdata[fields[1]].map(v => v.value)) == 0 ? 1 : d3.max(chartdata[fields[1]].map(v => v.value))])
+          .domain([0, d3.max(chartdata[fields[0]].map(v => v.value)) == 0 ? 1 : d3.max(chartdata[fields[0]].map(v => v.value))])
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
@@ -140,10 +127,9 @@ const Window = ({ mgrData, farmData }) => {
             .attr('alignment-baseline', 'middle')
     })
 
-    // const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
-    // const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
-    const start = chartdata[fields[1]][0].timestamp;
-    const end = chartdata[fields[1]][200].timestamp
+    const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
+    const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
+
     const formattedDate = dateFormat(start);
     setCurrentDate(formattedDate)
     legend.append("text")
@@ -182,7 +168,7 @@ const Window = ({ mgrData, farmData }) => {
             .call(brush)
             .call(brush.move, defaultWindow)
       
-      }, [mgrData, farmData]);
+      }, [mgrData]);
 
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-perf-1`);

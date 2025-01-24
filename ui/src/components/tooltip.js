@@ -9,7 +9,7 @@ const Tooltip = ({ visible, content, x, y }) => {
         top: y + 10,
         backgroundColor: 'white',
         padding: '8px',
-        border: '1px solid black',
+        border: '0.5px solid black',
         borderRadius: '4px',
         pointerEvents: 'none',
         zIndex: 1000,

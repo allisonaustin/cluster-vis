@@ -6,11 +6,12 @@ import AreaChart from './components/areachart.js';
 import Window from './components/window.js';
 import Dropdown from './components/dropdown.js';
 import Coordinates from './components/coordinates.js';
-import Bubble from './components/bubblechart.js';
+import DR from './components/dr.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [farmData, setFarmData] = useState(null);
+  const [drData, setDRData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
@@ -19,12 +20,12 @@ function App() {
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
 
   useEffect(() => {
-    Promise.all([getFarmData(farmFile), getMgrData(selectedFile)])
+    Promise.all([getDRData(), getMgrData(selectedFile)])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  const getFarmData = async (filePath) => {
+  const getFarmData = async(filePath) => {
     try {
       const response = await fetch(`http://localhost:5009/farmData?file=${filePath}`);
       const data = await response.json();
@@ -34,11 +35,31 @@ function App() {
         setError(null); 
       } else {
         setFarmData(null);  
-        setError("Failed to fetch farm data. Please check that the server is running.");
+        setError("Failed to fetch node data. Please check that the server is running.");
       }
     } catch (error) {
       setFarmData(null);    
-      setError("Failed to fetch farm data. Please check that the server is running.");
+      setError("Failed to fetch node data. Please check that the server is running.");
+      console.error(error);     
+    }
+  };
+
+  const getDRData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5009/drData`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setDRData(data);
+        setError(null); 
+      } else {
+        setDRData(null);  
+        setError("Failed to fetch DR data. Please check that the server is running.");
+      }
+
+    } catch (error) {
+      setDRData(null);    
+      setError("Failed to fetch DR data. Please check that the server is running.");
       console.error(error);     
     }
   };
@@ -128,10 +149,10 @@ function App() {
                     Timeline View
                   </div>
                   {/* <Dropdown selectedFile={selectedFile} onFileChange={(e) => setSelectedFile(e.target.value)} /> */}
-                  {farmData ? (
-                    <Window mgrData={mgrData} farmData={farmData} />
+                  {mgrData ? (
+                    <Window mgrData={mgrData} />
                   ) : (
-                    <p>Loading farm data...</p>
+                    <p>Loading data...</p>
                   )}
                 </div>
                 <div className="wrapper_bottom">
@@ -158,16 +179,16 @@ function App() {
                   <div className="view_title" style={{ width: '50px' }}>
                     DR
                   </div>
-                  {/* <Bubble data={triggerData} /> */}
+                  <DR data={drData} />
                 </div>
                 <div className="wrapper_bottom2">
                   <div className="view_title" style={{ width: '80px' }}>
                     Buffer Nodes
                   </div>
-                  {farmData ? (
-                    <Coordinates data={farmData} />
+                  {drData ? (
+                    <Coordinates data={drData} />
                   ) : (
-                    <p>Loading farm data...</p>
+                    <p>Loading DR results...</p>
                   )}
                 </div>
               </div>
