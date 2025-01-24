@@ -2,12 +2,11 @@ const express = require('express');
 const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
+const csv = require('csv-parser');
 const app = express();
 const PORT = 5009;
 
 app.use(cors());
-
-const farmFilePath = path.join(__dirname, './data/farm/novadaq-far-farm.json');
 
 app.get('/mgrData', (req, res) => {
     const { file } = req.query;
@@ -22,7 +21,10 @@ app.get('/mgrData', (req, res) => {
 });
 
 app.get('/farmData', (req, res) => {
-    fs.readFile(farmFilePath, 'utf8', (err, data) => {
+    const { file } = req.query;
+    const filePath = path.join(__dirname, `./data/${file}`);
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             return res.status(500).json({ error: 'Error reading file' });
         }

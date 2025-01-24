@@ -8,7 +8,6 @@ const Coordinates = ({ data }) => {
     useEffect(() => {
         if (!svgContainerRef.current) return;
         setPlotData(data);
-        console.log(data)
         
     }, [data]);
 

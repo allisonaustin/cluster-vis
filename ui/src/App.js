@@ -15,48 +15,22 @@ function App() {
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
+  const [farmFile, setFarmFile] = useState('farm/novadaq-far-farm-01.json');
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
 
   useEffect(() => {
-    Promise.all([getFarmData(), getMgrData(selectedFile)])
+    Promise.all([getFarmData(farmFile), getMgrData(selectedFile)])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  const getFarmData = async () => {
+  const getFarmData = async (filePath) => {
     try {
-      const response = await fetch('http://localhost:5009/farmData');
+      const response = await fetch(`http://localhost:5009/farmData?file=${filePath}`);
       const data = await response.json();
       
       if (response.ok) {
-        const farmFilt = Object.keys(data)
-          .filter((key) => (
-              !key.includes('P0') &&
-              !key.includes('P2') &&
-              !key.includes('P3') &&
-              !key.includes('Trigger') &&
-              !key.includes('Data Driven') &&
-              !key.includes('rate') &&
-              !key.includes('delay') &&
-              !key.includes('RC') &&
-              !key.includes('Activity') &&
-              !key.includes('prescale')
-          ))
-          .reduce((obj, key) => {
-            obj[key] = Object.entries(data[key]).map(([compositeKey, value]) => {
-                const [timestamp, nodeId] = compositeKey
-                    .replace(/[()]/g, '') 
-                    .split(', ')        
-                    .map(item => item.trim().replace(/['"]/g, "")); 
-                return {
-                    timestamp: new Date(timestamp.replace('Timestamp', '').trim()).getTime(), 
-                    nodeId,
-                    value, 
-                };
-            });
-            return obj;
-          }, {});
-        setFarmData(farmFilt);  
+        setFarmData(data);
         setError(null); 
       } else {
         setFarmData(null);  
@@ -133,7 +107,6 @@ function App() {
         </header>
       ) : (
         <>
-          {/* Tab Navigation */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f5f5f5' }}>
             <Tabs
               value={activeTab}
@@ -147,16 +120,19 @@ function App() {
             </Tabs>
           </Box>
 
-          {/* Static Analysis Tab */}
           {activeTab === 0 && (
             <div className="wrapper_app">
               <div className="wrapper_main">
                 <div className="wrapper_top">
                   <div className="view_title" style={{ width: '120px' }}>
-                    Manager Node
+                    Timeline View
                   </div>
-                  <Dropdown selectedFile={selectedFile} onFileChange={(e) => setSelectedFile(e.target.value)} />
-                  <Window data={mgrData} />
+                  {/* <Dropdown selectedFile={selectedFile} onFileChange={(e) => setSelectedFile(e.target.value)} /> */}
+                  {farmData ? (
+                    <Window mgrData={mgrData} farmData={farmData} />
+                  ) : (
+                    <p>Loading farm data...</p>
+                  )}
                 </div>
                 <div className="wrapper_bottom">
                   <div className="wrapper_left">
@@ -180,9 +156,9 @@ function App() {
               <div className="wrapper_right">
                 <div className="wrapper_top2">
                   <div className="view_title" style={{ width: '50px' }}>
-                    Triggers
+                    DR
                   </div>
-                  <Bubble data={triggerData} />
+                  {/* <Bubble data={triggerData} /> */}
                 </div>
                 <div className="wrapper_bottom2">
                   <div className="view_title" style={{ width: '80px' }}>

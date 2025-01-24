@@ -51,7 +51,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
       Object.keys(data[field]).forEach(obj => {
         const date = new Date(parseInt(obj));
-        const utcDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+        const utcDate = new Date(date.getTime());
         chartdata.push({
           timestamp: utcDate,
           value: data[field][obj]
