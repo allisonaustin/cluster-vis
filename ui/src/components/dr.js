@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 const DR = ({ data }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
-    const [size, setSize] = useState({ width: 470, height: 320 });
+    const [size, setSize] = useState({ width: 470, height: 300 });
     const [selectedPoints, setSelectedPoints] = useState([]);
     const [selectedMethod, setSelectedMethod] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
@@ -26,7 +26,7 @@ const DR = ({ data }) => {
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
-        const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+        const margin = { top: 10, right: 30, bottom: 30, left: 40 };
         const width = size.width;
         const height = size.height;
 
@@ -170,6 +170,7 @@ const DR = ({ data }) => {
             .style('fill', (d) => (
                 selected.includes(d.Measurement) ? getColor('select') : getColor('default')
             ))
+            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.5);
 
         // updating parallel coordinates plot
         const coordChart = d3.select("#coord-svg"); 
@@ -179,7 +180,7 @@ const DR = ({ data }) => {
     };
 
     return (
-        <div id="chart-container">
+        <div id="chart-container" style={{ display: 'flex', alignItems: 'flex-start' }}>
             <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
                 <InputLabel>Method</InputLabel>
                 <Select
@@ -192,14 +193,15 @@ const DR = ({ data }) => {
                     <MenuItem value="tSNE">t-SNE</MenuItem>
                 </Select>
             </FormControl>
-            <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}>
+                <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
+            </div>
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}
                 x={tooltip.x}
                 y={tooltip.y}
             />
-            <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
         </div>
         );
 

@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { getColor } from '../utils/colors.js';
+import { Button, ButtonGroup } from '@mui/material';
 import * as d3 from 'd3';
 
 const Coordinates = ({ data }) => {
     const svgContainerRef = useRef();
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 600, height: 300 });
+    const [size, setSize] = useState({ width: 680, height: 300 });
+    const [key, setKey] = useState('cpu');
+    const [keyOptions, setKeyOptions] = useState({
+        cpu: ['cpu'],
+        memory: ['mem', 'disk', 'swap', 'part_max_used'],
+        load: ['load', 'boottime', 'proc'],
+        network: ['bytes', 'pkts', 'Missed Buffers'],
+        PoolSize: ['Pool Size'],
+        Retrans: ['Retrans'],
+    })
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -16,13 +26,15 @@ const Coordinates = ({ data }) => {
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
 
+        const selectedKeys = keyOptions[key];
+
         const dimensions = Object.keys(data[0]).filter(d => 
-            (d.includes('cpu'))
+            selectedKeys.some(subKey => d.includes(subKey))
         );
 
         const xScale = d3.scalePoint()
             .domain(dimensions)
-            .range([0, width]);
+            .range([margin.left, width]);
 
         const yScales = {}
 
@@ -62,7 +74,7 @@ const Coordinates = ({ data }) => {
                     .attr("stroke-dasharray", totalLength + " " + totalLength)
                     .attr("stroke-dashoffset", totalLength)
                     .transition()
-                    .duration(1200) 
+                    .duration(1000) 
                     .ease(d3.easeLinear)
                     .attr("stroke-dashoffset", 0);
             });
@@ -79,9 +91,23 @@ const Coordinates = ({ data }) => {
               .text(function(d) { return d; })
               .style("fill", "black")
         
-    }, [data]);
+    }, [key, data]);
 
-    return <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>;
+    return  <div>
+        <ButtonGroup size="small" aria-label="filter buttons" style={{ marginBottom: '10px' }}>
+            {Object.keys(keyOptions).map(option => (
+                <Button 
+                    key={option} 
+                    onClick={() => setKey(option)}
+                    variant={key === option ? "contained" : "outlined"}
+                >
+                    {option}
+                </Button>
+            ))}
+        </ButtonGroup>
+
+        <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>
+    </div>;
 };
 
 export default Coordinates;
