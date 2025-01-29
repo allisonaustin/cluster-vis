@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 const DR = ({ data }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
-    const [size, setSize] = useState({ width: 470, height: 300 });
+    const [size, setSize] = useState({ width: 470, height: 280 });
     const [selectedPoints, setSelectedPoints] = useState([]);
     const [selectedMethod, setSelectedMethod] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
@@ -193,7 +193,7 @@ const DR = ({ data }) => {
                     <MenuItem value="tSNE">t-SNE</MenuItem>
                 </Select>
             </FormControl>
-            <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}>
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
             </div>
             <Tooltip

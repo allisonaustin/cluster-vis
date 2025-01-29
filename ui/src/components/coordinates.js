@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
-import { Button, ButtonGroup } from '@mui/material';
+import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemButton, ListItemIcon, Checkbox, Box } from '@mui/material';
 import * as d3 from 'd3';
 
 const Coordinates = ({ data }) => {
     const svgContainerRef = useRef();
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 680, height: 300 });
+    const [size, setSize] = useState({ width: 800, height: 480 });
     const [key, setKey] = useState('cpu');
     const [keyOptions, setKeyOptions] = useState({
         cpu: ['cpu'],
@@ -16,6 +16,16 @@ const Coordinates = ({ data }) => {
         PoolSize: ['Pool Size'],
         Retrans: ['Retrans'],
     })
+    const [selectedDims, setSelectedDims] = useState([
+        'cpu_idle',
+        'cpu_nice',
+        'cpu_num', 
+        'cpu_speed',
+        'cpu_aidle',
+        'cpu_system',
+        'cpu_user'
+    ]);
+    const [allKeys, setAllKeys] = useState([]);
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -26,19 +36,29 @@ const Coordinates = ({ data }) => {
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
 
-        const selectedKeys = keyOptions[key];
+        // const selectedKeys = keyOptions[key];
 
-        const dimensions = Object.keys(data[0]).filter(d => 
-            selectedKeys.some(subKey => d.includes(subKey))
-        );
+        // const selectedDims = Object.keys(data[0]).filter(d => 
+        //     selectedKeys.some(subKey => d.includes(subKey))
+        // );
+
+        const allFeatures = Object.keys(data[0])
+        setAllKeys(allFeatures.filter(d => 
+            !(d.includes('Retrans')) && 
+            !(d.includes('UMAP')) &&
+            !(d.includes('tSNE')) &&
+            !(d.includes('Measurement'))
+        ).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})}))
+
+        console.log(allKeys)
 
         const xScale = d3.scalePoint()
-            .domain(dimensions)
+            .domain(selectedDims)
             .range([margin.left, width]);
 
         const yScales = {}
 
-        dimensions.forEach(dim => {
+        selectedDims.forEach(dim => {
             yScales[dim] = d3.scaleLinear()
                 .domain(d3.extent(data, d => parseFloat(d[dim])))
                 .range([height, 0])
@@ -54,7 +74,7 @@ const Coordinates = ({ data }) => {
     
         
         function path(d) {
-            return d3.line()(dimensions.map(function(p) { return [xScale(p), yScales[p](d[p]) + margin.top]; }));
+            return d3.line()(selectedDims.map(function(p) { return [xScale(p), yScales[p](d[p]) + margin.top]; }));
         }
         
         svg
@@ -80,7 +100,7 @@ const Coordinates = ({ data }) => {
             });
 
         svg.selectAll("myAxis")
-            .data(dimensions).enter()
+            .data(selectedDims).enter()
             .append("g")
             .attr("class", "axis")
             .attr("transform", function(d) { return `translate(${xScale(d)},${margin.top})`; })
@@ -91,10 +111,21 @@ const Coordinates = ({ data }) => {
               .text(function(d) { return d; })
               .style("fill", "black")
         
-    }, [key, data]);
+    }, [key, selectedDims]);
 
-    return  <div>
-        <ButtonGroup size="small" aria-label="filter buttons" style={{ marginBottom: '10px' }}>
+    const handleCheckboxChange = (key) => {
+        setSelectedDims(prevSelectedDims => {
+            if (prevSelectedDims.includes(key)) {
+                return prevSelectedDims.filter(dim => dim !== key);
+            } else {
+                return [...prevSelectedDims, key];
+            }
+        });
+    };
+
+    return  (
+        <div style={{ display:'flex', alignItems: 'flex-start' }}>
+        {/* <ButtonGroup size="small" aria-label="filter buttons" style={{ marginBottom: '10px' }}>
             {Object.keys(keyOptions).map(option => (
                 <Button 
                     key={option} 
@@ -104,10 +135,41 @@ const Coordinates = ({ data }) => {
                     {option}
                 </Button>
             ))}
-        </ButtonGroup>
+        </ButtonGroup> */}
+            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 300, overflowY: 'auto', marginRight: '10px' }}>
+                {allKeys.map((key, index) => {
+                    const labelId = `checkbox-list-label-${index}`;
 
-        <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}></div>
-    </div>;
+                    return (
+                        <ListItem
+                            key={key}
+                            disablePadding
+                            sx={{ paddingTop: 0, paddingBottom: 0 }}
+                        >
+                            <ListItemButton
+                                role={undefined}
+                                onClick={() => handleCheckboxChange(key)}
+                                dense
+                            >
+                                <Checkbox
+                                    edge="start"
+                                    size="small"
+                                    style={{ width: "20px" }}
+                                    checked={selectedDims.includes(key)}
+                                    tabIndex={-1}
+                                    disableRipple
+                                    inputProps={{ 'aria-labelledby': labelId }}
+                                />
+                                <ListItemText id={labelId} primary={key} />
+                            </ListItemButton>
+                        </ListItem>
+                    );
+                })}
+            </List>
+
+            <div ref={svgContainerRef} style={{ width: '100%', height: '400px' }}></div>
+        </div>
+    );
 };
 
 export default Coordinates;

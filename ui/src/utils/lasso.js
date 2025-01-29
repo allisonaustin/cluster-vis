@@ -3,8 +3,6 @@ import { getColor } from './colors.js';
 import * as d3 from 'd3';
 
 const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
-  const lassoRef = useRef();
-
   useEffect(() => {
     const svg = d3.select(svgRef.current).select("svg");
 
