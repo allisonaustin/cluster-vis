@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { COLORS, getColor, generateColor } from '../utils/colors.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { getColor } from '../utils/colors.js';
+import LassoSelection from '../utils/lasso.js';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
@@ -8,6 +9,7 @@ const DR = ({ data }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 470, height: 320 });
+    const [selectedPoints, setSelectedPoints] = useState([]);
     const [selectedMethod, setSelectedMethod] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
         visible: false,
@@ -158,6 +160,15 @@ const DR = ({ data }) => {
             .attr("cy", d => yScale(+d[yKey]))
     }
 
+    const handleSelection = (selected) => {
+        const chart = d3.select(svgContainerRef.current).select("svg");
+        console.log("Selected Items:", selected);
+        chart.selectAll('.dr-circle')
+            .style('fill', (d) => (
+                selected.includes(d.Measurement) ? getColor('select') : getColor('default')
+            ))
+    };
+
     return (
         <div id="chart-container">
             <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
@@ -179,6 +190,7 @@ const DR = ({ data }) => {
                 x={tooltip.x}
                 y={tooltip.y}
             />
+            <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
         </div>
         );
 
