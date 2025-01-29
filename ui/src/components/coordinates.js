@@ -55,6 +55,17 @@ const Coordinates = ({ data }) => {
             .style("fill", "none" )
             .style("stroke", function(d){ return getColor('default')} )
             .style("opacity", 0.5)
+            .each(function(d) {
+                const totalLength = this.getTotalLength();
+        
+                d3.select(this)
+                    .attr("stroke-dasharray", totalLength + " " + totalLength)
+                    .attr("stroke-dashoffset", totalLength)
+                    .transition()
+                    .duration(1200) 
+                    .ease(d3.easeLinear)
+                    .attr("stroke-dashoffset", 0);
+            });
 
         svg.selectAll("myAxis")
             .data(dimensions).enter()

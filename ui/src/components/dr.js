@@ -162,11 +162,20 @@ const DR = ({ data }) => {
 
     const handleSelection = (selected) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
+        
         console.log("Selected Items:", selected);
+        setSelectedPoints(selected)
+        
         chart.selectAll('.dr-circle')
             .style('fill', (d) => (
                 selected.includes(d.Measurement) ? getColor('select') : getColor('default')
             ))
+
+        // updating parallel coordinates plot
+        const coordChart = d3.select("#coord-svg"); 
+        coordChart.selectAll(".line")
+            .style("stroke", (d) => selected.includes(d.Measurement) ? getColor('select') : getColor('default'))
+            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.4);
     };
 
     return (
