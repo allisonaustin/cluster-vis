@@ -6,7 +6,7 @@ import AreaChart from './components/areachart.js';
 import Window from './components/window.js';
 import Dropdown from './components/dropdown.js';
 import Coordinates from './components/coordinates.js';
-import DR from './components/dr.js';
+import DR from './components/dr-view.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
