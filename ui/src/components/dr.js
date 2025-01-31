@@ -191,6 +191,7 @@ const DR = ({ data }) => {
                 >
                     <MenuItem value="UMAP">UMAP</MenuItem>
                     <MenuItem value="tSNE">t-SNE</MenuItem>
+                    <MenuItem value="PC">PCA</MenuItem>
                 </Select>
             </FormControl>
             <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}>
