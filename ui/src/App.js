@@ -18,6 +18,7 @@ function App() {
   const [error, setError] = useState(null);
   const [farmFile, setFarmFile] = useState('farm/novadaq-far-farm-01.json');
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
+  const [selectedPoints, setSelectedPoints] = useState([]);
 
   useEffect(() => {
     Promise.all([getDRData(), getMgrData(selectedFile)])
@@ -180,7 +181,7 @@ function App() {
                     DR
                   </div>
                   {drData ? (
-                    <DR data={drData} />
+                    <DR data={drData} setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
                   ) : (
                     <p>Loading DR results...</p>
                   )}
@@ -190,7 +191,7 @@ function App() {
                     Buffer Nodes
                   </div>
                   {drData ? (
-                    <Coordinates data={drData} />
+                    <Coordinates data={drData} selectedPoints={selectedPoints} />  
                   ) : (
                     <p>Loading DR results...</p>
                   )}
