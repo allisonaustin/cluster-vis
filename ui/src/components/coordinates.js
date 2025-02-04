@@ -3,8 +3,9 @@ import { getColor } from '../utils/colors.js';
 import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemButton, ListItemIcon, Checkbox, Box } from '@mui/material';
 import * as d3 from 'd3';
 
-const Coordinates = ({ data }) => {
+const Coordinates = ({ data, selectedPoints = [] }) => {
     const svgContainerRef = useRef();
+    const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 800, height: 480 });
     const [key, setKey] = useState('cpu');
@@ -85,9 +86,11 @@ const Coordinates = ({ data }) => {
             .attr("class", function (d) { return "line " + d.Measurement } ) 
             .attr("d",  path)
             .style("fill", "none" )
-            .style("stroke", function(d){ return getColor('default')} )
+            // .style("stroke", function(d){ return getColor('default')} )
+            .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? 'red' : getColor('default'))
             .style("opacity", 0.5)
             .each(function(d) {
+              if (firstRenderRef.current) {
                 const totalLength = this.getTotalLength();
         
                 d3.select(this)
@@ -97,7 +100,10 @@ const Coordinates = ({ data }) => {
                     .duration(1000) 
                     .ease(d3.easeLinear)
                     .attr("stroke-dashoffset", 0);
+              }
             });
+
+            firstRenderRef.current = false;
 
         svg.selectAll("myAxis")
             .data(selectedDims).enter()

@@ -45,8 +45,9 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
     };
 
     function dragMove(event) {
-        let mouseX = event.sourceEvent.offsetX;
-        let mouseY = event.sourceEvent.offsetY;
+        // let mouseX = event.sourceEvent.offsetX;
+        // let mouseY = event.sourceEvent.offsetY;
+        let [mouseX, mouseY] = d3.pointer(event, svg.node());  
         coords.push([mouseX, mouseY]);
         drawPath();
     }

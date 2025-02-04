@@ -5,11 +5,11 @@ import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
 
-const DR = ({ data }) => {
+const DR = ({ data, setSelectedPoints, selectedPoints }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 470, height: 280 });
-    const [selectedPoints, setSelectedPoints] = useState([]);
+    // const [selectedPoints, setSelectedPoints] = useState([]);
     const [selectedMethod, setSelectedMethod] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
         visible: false,
