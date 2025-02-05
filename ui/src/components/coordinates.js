@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
 import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemButton, ListItemIcon, Checkbox, Box } from '@mui/material';
 import * as d3 from 'd3';
+import Tooltip from './tooltip.js';
 
 const Coordinates = ({ data, selectedPoints = [] }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 800, height: 480 });
+    const [size, setSize] = useState({ width: 800, height: 380 });
     const [key, setKey] = useState('cpu');
     const [keyOptions, setKeyOptions] = useState({
         cpu: ['cpu'],
@@ -27,6 +28,12 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
         'cpu_user'
     ]);
     const [allKeys, setAllKeys] = useState([]);
+    const [tooltip, setTooltip] = useState({
+        visible: false,
+        content: '',
+        x: 0,
+        y: 0
+    });
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -78,30 +85,51 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
             return d3.line()(selectedDims.map(function(p) { return [xScale(p), yScales[p](d[p]) + margin.top]; }));
         }
         
-        svg
-        .selectAll("myPath")
-        .data(data)
-        .enter()
-        .append("path")
-            .attr("class", function (d) { return "line " + d.Measurement } ) 
-            .attr("d",  path)
-            .style("fill", "none" )
-            // .style("stroke", function(d){ return getColor('default')} )
-            .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? 'red' : getColor('default'))
-            .style("opacity", 0.5)
-            .each(function(d) {
-              if (firstRenderRef.current) {
-                const totalLength = this.getTotalLength();
-        
-                d3.select(this)
-                    .attr("stroke-dasharray", totalLength + " " + totalLength)
-                    .attr("stroke-dashoffset", totalLength)
-                    .transition()
-                    .duration(1000) 
-                    .ease(d3.easeLinear)
-                    .attr("stroke-dashoffset", 0);
-              }
-            });
+        const paths = svg.selectAll("myPath")
+            .data(data)
+            .enter()
+            .append("path")
+                .attr("class", function (d) { return "line " + d.Measurement } ) 
+                .attr("d",  path)
+                .style("fill", "none" )
+                // .style("stroke", function(d){ return getColor('default')} )
+                .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? 'red' : getColor('default'))
+                .style("opacity", 0.5)
+                .each(function(d) {
+                if (firstRenderRef.current) {
+                    const totalLength = this.getTotalLength();
+            
+                    d3.select(this)
+                        .attr("stroke-dasharray", totalLength + " " + totalLength)
+                        .attr("stroke-dashoffset", totalLength)
+                        .transition()
+                        .duration(1000) 
+                        .ease(d3.easeLinear)
+                        .attr("stroke-dashoffset", 0);
+                }
+                });
+
+                paths.on('mouseover', function(event, d) {
+                    d3.select(this)
+                        .style("stroke-width", 3)
+                        .style("opacity", 1);     
+                        d3.select(this).attr("stroke", "orange"); // Highlight on hover
+
+                    // node ID tooltip
+                    setTooltip({
+                        visible: true,
+                        content: `${d.Measurement}`,
+                        x: event.clientX,
+                        y: event.clientY
+                    });
+                })
+                .on('mouseout', function(event, d) {
+                    d3.select(this)
+                        .style("stroke-width", 1) 
+                        .style("opacity", 0.5);  
+                    setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+                });
+                
 
             firstRenderRef.current = false;
 
@@ -142,7 +170,7 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
                 </Button>
             ))}
         </ButtonGroup> */}
-            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 300, overflowY: 'auto', marginRight: '10px' }}>
+            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 330, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
                     const labelId = `checkbox-list-label-${index}`;
 
@@ -173,7 +201,13 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
                 })}
             </List>
 
-            <div ref={svgContainerRef} style={{ width: '100%', height: '400px' }}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '380px' }}></div>
+            <Tooltip
+                visible={tooltip.visible}
+                content={tooltip.content}
+                x={tooltip.x}
+                y={tooltip.y}
+            />
         </div>
     );
 };
