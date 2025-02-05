@@ -58,19 +58,21 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
             !(d.includes('Measurement'))
         ).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})}))
 
-        console.log(allKeys)
-
         const xScale = d3.scalePoint()
             .domain(selectedDims)
             .range([margin.left, width]);
 
-        const yScales = {}
+        // const yScales = {}
 
-        selectedDims.forEach(dim => {
-            yScales[dim] = d3.scaleLinear()
-                .domain(d3.extent(data, d => parseFloat(d[dim])))
-                .range([height, 0])
-        });
+        // selectedDims.forEach(dim => {
+        //     yScales[dim] = d3.scaleLinear()
+        //         .domain(d3.extent(data, d => parseFloat(d[dim])))
+        //         .range([height, 0])
+        // });
+
+        const y = new Map(Array.from(selectedDims, key => 
+            [key, d3.scaleLinear(d3.extent(data, d => parseFloat(d[key])), [height, 0])]
+        ));
 
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
@@ -79,13 +81,54 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
             .attr("height", "100%")
             .attr("viewBox", `0 0 ${size.width} ${size.height}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
+
+         // brush behavior
+         const selections = new Map();
+         const brushWidth = 70;
+
+        // adding axes
+        selectedDims.forEach(dim => {
+            const axes = svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(${xScale(dim)},${margin.top})`);
+
+            axes.call(d3.axisLeft(y.get(dim)).ticks(5));
+
+            axes.append("text")
+                .attr("y", -9)
+                .style("text-anchor", "middle")
+                .style("fill", "black")
+                .text(dim);
+
+            const brush = d3.brushY()
+                .extent([[-(brushWidth / 2), 0], [brushWidth / 2, height]])
+                .on('start brush end', event => brushed(event, dim));
+
+            axes.call(brush);
+        });
+
+        function brushed({ selection }, key) {
+            if (selection === null) selections.delete(key);
+            else selections.set(key, selection.map(y.get(key).invert));
+
+            const selected = [];
+            paths.each(function (d) {
+                const active = Array.from(selections).every(([key, [min, max]]) => d[key] >= min && d[key] <= max);
+                d3.select(this).style("stroke", active ? getColor('select') : getColor('default'))
+                if (active) {
+                    d3.select(this).raise();
+                    selected.push(d)
+                }
+            });
+            svg.property("value", selected).dispatch("input");
+        }
     
         
         function path(d) {
-            return d3.line()(selectedDims.map(function(p) { return [xScale(p), yScales[p](d[p]) + margin.top]; }));
+            return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
         }
         
-        const paths = svg.selectAll("myPath")
+        const paths = svg.selectAll("pcp-path")
             .data(data)
             .enter()
             .append("path")
@@ -93,7 +136,7 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
                 .attr("d",  path)
                 .style("fill", "none" )
                 // .style("stroke", function(d){ return getColor('default')} )
-                .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? 'red' : getColor('default'))
+                .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
                 .style("opacity", 0.5)
                 .each(function(d) {
                 if (firstRenderRef.current) {
@@ -111,9 +154,9 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
 
                 paths.on('mouseover', function(event, d) {
                     d3.select(this)
-                        .style("stroke-width", 3)
-                        .style("opacity", 1);     
-                        d3.select(this).attr("stroke", "orange"); // Highlight on hover
+                        .style("stroke-width", 2.4)
+                        .style("opacity", 1) 
+                        .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
 
                     // node ID tooltip
                     setTooltip({
@@ -122,28 +165,39 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
                         x: event.clientX,
                         y: event.clientY
                     });
-                })
+
+                    d3.select(`#${d.Measurement}`)
+                        .transition().duration(200)
+                        .attr("r", 6)  
+                        .style("fill", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
+                    })
                 .on('mouseout', function(event, d) {
                     d3.select(this)
                         .style("stroke-width", 1) 
-                        .style("opacity", 0.5);  
-                    setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
-                });
-                
+                        .style("opacity", 0.5)
+                        .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default')) 
 
+                    setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+
+                    d3.select(`#${d.Measurement}`)
+                        .transition().duration(200)
+                        .attr("r", 3)
+                        .style("fill", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default')) 
+                });
+        
             firstRenderRef.current = false;
 
-        svg.selectAll("myAxis")
-            .data(selectedDims).enter()
-            .append("g")
-            .attr("class", "axis")
-            .attr("transform", function(d) { return `translate(${xScale(d)},${margin.top})`; })
-            .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(yScales[d])); })
-            .append("text")
-              .style("text-anchor", "middle")
-              .attr("y", -9)
-              .text(function(d) { return d; })
-              .style("fill", "black")
+        // svg.selectAll("myAxis")
+        //     .data(selectedDims).enter()
+        //     .append("g")
+        //     .attr("class", "axis")
+        //     .attr("transform", function(d) { return `translate(${xScale(d)},${margin.top})`; })
+        //     .each(function(d) { d3.select(this).call(d3.axisLeft().ticks(5).scale(yScales[d])); })
+        //     .append("text")
+        //       .style("text-anchor", "middle")
+        //       .attr("y", -9)
+        //       .text(function(d) { return d; })
+        //       .style("fill", "black")
         
     }, [key, selectedDims]);
 
@@ -159,17 +213,6 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
 
     return  (
         <div style={{ display:'flex', alignItems: 'flex-start' }}>
-        {/* <ButtonGroup size="small" aria-label="filter buttons" style={{ marginBottom: '10px' }}>
-            {Object.keys(keyOptions).map(option => (
-                <Button 
-                    key={option} 
-                    onClick={() => setKey(option)}
-                    variant={key === option ? "contained" : "outlined"}
-                >
-                    {option}
-                </Button>
-            ))}
-        </ButtonGroup> */}
             <List sx={{ width: '100%', maxWidth: 120, maxHeight: 330, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
                     const labelId = `checkbox-list-label-${index}`;

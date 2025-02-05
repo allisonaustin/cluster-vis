@@ -2,7 +2,8 @@ import * as d3 from 'd3';
 
 export const COLORS = {
     default: '#6f80b1',
-    select: '#F6828C'
+    select: '#F6828C',
+    highlight: '#4EA5D9'
 }
 
 export const getColor = (field) => {
