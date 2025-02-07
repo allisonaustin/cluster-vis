@@ -125,6 +125,15 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
         
     }, [data]);
 
+    useEffect(() => {
+        d3.select(svgContainerRef.current)
+            .selectAll(".dr-circle")
+            .transition()
+            .duration(300)
+            .style("fill", d => selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
+            .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.5);
+    }, [selectedPoints]); 
+
     const updateChart = (method) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
         setSelectedMethod(method)

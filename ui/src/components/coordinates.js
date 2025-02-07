@@ -4,7 +4,7 @@ import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemB
 import * as d3 from 'd3';
 import Tooltip from './tooltip.js';
 
-const Coordinates = ({ data, selectedPoints = [] }) => {
+const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
@@ -108,20 +108,36 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
         });
 
         function brushed({ selection }, key) {
-            if (selection === null) selections.delete(key);
-            else selections.set(key, selection.map(y.get(key).invert));
-
-            const selected = [];
-            paths.each(function (d) {
-                const active = Array.from(selections).every(([key, [min, max]]) => d[key] >= min && d[key] <= max);
-                d3.select(this).style("stroke", active ? getColor('select') : getColor('default'))
-                if (active) {
-                    d3.select(this).raise();
-                    selected.push(d)
-                }
-            });
-            svg.property("value", selected).dispatch("input");
+            if (!selection) {
+                selections.delete(key);
+            } else {
+                const [min, max] = selection.map(y.get(key).invert);
+                selections.set(key, [Math.min(min, max), Math.max(min, max)]);
+            }
+        
+            let selected = [];
+            if (selections.size === 0) {
+                setSelectedPoints([]);
+            } else {
+                paths.each(function (d) {
+                    const active = Array.from(selections).every(([key, [min, max]]) => {
+                        const value = +d[key]; 
+                        return value >= min && value <= max;
+                    });
+        
+                    d3.select(this).style("stroke", active ? getColor('select') : getColor('default'));
+        
+                    if (active) {
+                        d3.select(this).raise();
+                        selected.push(d.Measurement);
+                    }
+                });
+        
+                setSelectedPoints(selected);
+            }
         }
+        
+        
     
         
         function path(d) {
@@ -153,36 +169,42 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
                 });
 
                 paths.on('mouseover', function(event, d) {
+                    const tooltipWidth = 150; 
+                    const windowWidth = window.innerWidth;  
+                
+                    let tooltipX = event.clientX + 5;  
+                    if (tooltipX + tooltipWidth > windowWidth) {
+                        tooltipX = event.clientX - tooltipWidth - 5;  
+                    }
+
                     d3.select(this)
                         .style("stroke-width", 2.4)
                         .style("opacity", 1) 
-                        .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
+                    
 
                     // node ID tooltip
                     setTooltip({
                         visible: true,
                         content: `${d.Measurement}`,
-                        x: event.clientX,
+                        x: tooltipX,
                         y: event.clientY
                     });
 
                     d3.select(`#${d.Measurement}`)
                         .transition().duration(200)
                         .attr("r", 6)  
-                        .style("fill", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
+                        
                     })
                 .on('mouseout', function(event, d) {
                     d3.select(this)
                         .style("stroke-width", 1) 
-                        .style("opacity", 0.5)
-                        .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default')) 
+                        .style("opacity", 0.5);
 
                     setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
 
                     d3.select(`#${d.Measurement}`)
                         .transition().duration(200)
                         .attr("r", 3)
-                        .style("fill", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default')) 
                 });
         
             firstRenderRef.current = false;
@@ -199,7 +221,7 @@ const Coordinates = ({ data, selectedPoints = [] }) => {
         //       .text(function(d) { return d; })
         //       .style("fill", "black")
         
-    }, [key, selectedDims]);
+    }, [data, selectedDims]);
 
     const handleCheckboxChange = (key) => {
         setSelectedDims(prevSelectedDims => {
