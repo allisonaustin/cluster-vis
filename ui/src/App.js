@@ -191,7 +191,7 @@ function App() {
                     Buffer Nodes
                   </div>
                   {drData ? (
-                    <Coordinates data={drData} selectedPoints={selectedPoints} />  
+                    <Coordinates data={drData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} />
                   ) : (
                     <p>Loading DR results...</p>
                   )}
