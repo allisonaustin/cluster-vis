@@ -8,7 +8,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 800, height: 380 });
+    const [size, setSize] = useState({ width: 800, height: 520 });
     const [key, setKey] = useState('cpu');
     const [keyOptions, setKeyOptions] = useState({
         cpu: ['cpu'],
