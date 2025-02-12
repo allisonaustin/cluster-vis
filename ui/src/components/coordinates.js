@@ -34,6 +34,8 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
         x: 0,
         y: 0
     });
+    const [brushSelections, setBrushSelections] = useState(new Map());
+
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -82,6 +84,76 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
             .attr("viewBox", `0 0 ${size.width} ${size.height}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
 
+            
+            function path(d) {
+                return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
+            }
+            
+            const paths = svg.selectAll("pcp-path")
+                .data(data)
+                .enter()
+                .append("path")
+                    .attr("class", function (d) { return "line " + d.Measurement } ) 
+                    .attr("d",  path)
+                    .style("fill", "none" )
+                    // .style("stroke", function(d){ return getColor('default')} )
+                    .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
+                    .style("opacity", 0.5)
+                    .each(function(d) {
+                    if (firstRenderRef.current) {
+                        const totalLength = this.getTotalLength();
+                
+                        d3.select(this)
+                            .attr("stroke-dasharray", totalLength + " " + totalLength)
+                            .attr("stroke-dashoffset", totalLength)
+                            .transition()
+                            .duration(1000) 
+                            .ease(d3.easeLinear)
+                            .attr("stroke-dashoffset", 0);
+                    }
+                    });
+    
+                    paths.on('mouseover', function(event, d) {
+                        const tooltipWidth = 150; 
+                        const windowWidth = window.innerWidth;  
+                    
+                        let tooltipX = event.clientX + 5;  
+                        if (tooltipX + tooltipWidth > windowWidth) {
+                            tooltipX = event.clientX - tooltipWidth - 5;  
+                        }
+    
+                        d3.select(this)
+                            .style("stroke-width", 2.4)
+                            .style("opacity", 1) 
+                        
+    
+                        // node ID tooltip
+                        setTooltip({
+                            visible: true,
+                            content: `${d.Measurement}`,
+                            x: tooltipX,
+                            y: event.clientY
+                        });
+    
+                        d3.select(`#${d.Measurement}`)
+                            .transition().duration(200)
+                            .attr("r", 6)  
+                            
+                        })
+                    .on('mouseout', function(event, d) {
+                        d3.select(this)
+                            .style("stroke-width", 1) 
+                            .style("opacity", 0.5);
+    
+                        setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+    
+                        d3.select(`#${d.Measurement}`)
+                            .transition().duration(200)
+                            .attr("r", 3)
+                    });
+            
+                firstRenderRef.current = false;
+
          // brush behavior
          const selections = new Map();
          const brushWidth = 70;
@@ -104,15 +176,22 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                 .extent([[-(brushWidth / 2), 0], [brushWidth / 2, height]])
                 .on('start brush end', event => brushed(event, dim));
 
+            
             axes.call(brush);
+
+            if (brushSelections.has(dim)) {
+                axes.call(brush.move, brushSelections.get(dim));
+            }
         });
 
         function brushed({ selection }, key) {
             if (!selection) {
                 selections.delete(key);
+                brushSelections.delete(key);
             } else {
                 const [min, max] = selection.map(y.get(key).invert);
                 selections.set(key, [Math.min(min, max), Math.max(min, max)]);
+                brushSelections.set(key, selection);
             }
         
             let selected = [];
@@ -135,79 +214,10 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
         
                 setSelectedPoints(selected);
             }
+
+            setBrushSelections(new Map(brushSelections));
         }
         
-        
-    
-        
-        function path(d) {
-            return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
-        }
-        
-        const paths = svg.selectAll("pcp-path")
-            .data(data)
-            .enter()
-            .append("path")
-                .attr("class", function (d) { return "line " + d.Measurement } ) 
-                .attr("d",  path)
-                .style("fill", "none" )
-                // .style("stroke", function(d){ return getColor('default')} )
-                .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
-                .style("opacity", 0.5)
-                .each(function(d) {
-                if (firstRenderRef.current) {
-                    const totalLength = this.getTotalLength();
-            
-                    d3.select(this)
-                        .attr("stroke-dasharray", totalLength + " " + totalLength)
-                        .attr("stroke-dashoffset", totalLength)
-                        .transition()
-                        .duration(1000) 
-                        .ease(d3.easeLinear)
-                        .attr("stroke-dashoffset", 0);
-                }
-                });
-
-                paths.on('mouseover', function(event, d) {
-                    const tooltipWidth = 150; 
-                    const windowWidth = window.innerWidth;  
-                
-                    let tooltipX = event.clientX + 5;  
-                    if (tooltipX + tooltipWidth > windowWidth) {
-                        tooltipX = event.clientX - tooltipWidth - 5;  
-                    }
-
-                    d3.select(this)
-                        .style("stroke-width", 2.4)
-                        .style("opacity", 1) 
-                    
-
-                    // node ID tooltip
-                    setTooltip({
-                        visible: true,
-                        content: `${d.Measurement}`,
-                        x: tooltipX,
-                        y: event.clientY
-                    });
-
-                    d3.select(`#${d.Measurement}`)
-                        .transition().duration(200)
-                        .attr("r", 6)  
-                        
-                    })
-                .on('mouseout', function(event, d) {
-                    d3.select(this)
-                        .style("stroke-width", 1) 
-                        .style("opacity", 0.5);
-
-                    setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
-
-                    d3.select(`#${d.Measurement}`)
-                        .transition().duration(200)
-                        .attr("r", 3)
-                });
-        
-            firstRenderRef.current = false;
 
         // svg.selectAll("myAxis")
         //     .data(selectedDims).enter()
