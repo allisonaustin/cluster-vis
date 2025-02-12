@@ -32,8 +32,27 @@ app.get('/farmData', (req, res) => {
     });
   });
 
-  app.get('/drData', (req, res) => {
-    const drFile = path.join(__dirname, './data/farm/multiDR_results.csv');
+  app.get('/drFeatureData', (req, res) => {
+    const drFile = path.join(__dirname, './data/farm/multiDR_results1.csv');
+
+    new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(drFile)
+            .pipe(csv()) 
+            .on('data', (data) => results.push(data))
+            .on('end', () => resolve(results)) 
+            .on('error', (err) => reject(err)); 
+    })
+    .then((data) => {
+        res.json(data); 
+    })
+    .catch((err) => {
+        res.status(500).json({ error: 'Error reading CSV file', details: err }); 
+    });
+});
+
+app.get('/drTimeData', (req, res) => {
+    const drFile = path.join(__dirname, './data/farm/multiDR_results2.csv');
 
     new Promise((resolve, reject) => {
         const results = [];

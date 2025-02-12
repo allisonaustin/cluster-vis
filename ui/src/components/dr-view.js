@@ -5,12 +5,13 @@ import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
 
-const DR = ({ data, setSelectedPoints, selectedPoints }) => {
+const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 470, height: 280 });
     // const [selectedPoints, setSelectedPoints] = useState([]);
-    const [selectedMethod, setSelectedMethod] = useState("UMAP");
+    const [method1, setMethod1] = useState("PC");
+    const [method2, setMethod2] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
         visible: false,
         content: '',
@@ -30,8 +31,8 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
         const width = size.width;
         const height = size.height;
 
-        const xKey = selectedMethod + '1';
-        const yKey = selectedMethod + '2';
+        const xKey = method2 + '1';
+        const yKey = method2 + '2';
 
         const xScale = d3.scaleLinear()
             .domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
@@ -45,7 +46,7 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
         
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
-          .attr('id', 'dr-chart-svg')
+          .attr('id', `dr-chart-svg-${type}`)
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
@@ -123,7 +124,7 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
             svg.remove();
         };
         
-    }, [data]);
+    }, [data, type]);
 
     useEffect(() => {
         d3.select(svgContainerRef.current)
@@ -134,12 +135,12 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
             .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.5);
     }, [selectedPoints]); 
 
-    const updateChart = (method) => {
+    const updateChart = (method1, method2) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
-        setSelectedMethod(method)
+        setMethod2(method2)
 
-        const xKey = method + '1';
-        const yKey = method + '2';
+        const xKey = method2 + '1';
+        const yKey = method2 + '2';
 
         const xScale = chart.node()?.xScale;
         const yScale = chart.node()?.yScale;
@@ -189,20 +190,12 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
     };
 
     return (
-        <div id="chart-container" style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
-                <InputLabel>Method</InputLabel>
-                <Select
-                    value={selectedMethod}
-                    onChange={(e) => {
-                        updateChart(e.target.value);
-                    }}
-                >
-                    <MenuItem value="UMAP">UMAP</MenuItem>
-                    <MenuItem value="tSNE">t-SNE</MenuItem>
-                    <MenuItem value="PC">PCA</MenuItem>
-                </Select>
-            </FormControl>
+        <div id="chart-container">
+            {type == 'feature' ? (
+                <h3 style={{ dispaly: 'flex', flexDirection: 'row'}}>PCA Across Time Points</h3>
+            ) : (
+                <h3 style={{ dispaly: 'flex', flexDirection: 'row'}}>PCA Across Features</h3>
+            )}
             <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}>
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
             </div>
@@ -212,6 +205,34 @@ const DR = ({ data, setSelectedPoints, selectedPoints }) => {
                 x={tooltip.x}
                 y={tooltip.y}
             />
+            <div id="form-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150 }}>
+                <FormControl variant="standard" sx={{ m: 1, minWidth: 120, marginTop: 0 }}>
+                    <InputLabel>DR1 Method</InputLabel>
+                    <Select
+                        value={method1}
+                        onChange={(e) => {
+                            updateChart(e.target.value, method2);
+                        }}
+                    >
+                        <MenuItem value="UMAP">UMAP</MenuItem>
+                        <MenuItem value="tSNE">t-SNE</MenuItem>
+                        <MenuItem value="PC">PCA</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
+                    <InputLabel>DR2 Method</InputLabel>
+                    <Select
+                        value={method2}
+                        onChange={(e) => {
+                            updateChart(method1, e.target.value);
+                        }}
+                    >
+                        <MenuItem value="UMAP">UMAP</MenuItem>
+                        <MenuItem value="tSNE">t-SNE</MenuItem>
+                        <MenuItem value="PC">PCA</MenuItem>
+                    </Select>
+                </FormControl>
+            </div>
         </div>
         );
 

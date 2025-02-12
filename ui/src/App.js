@@ -11,7 +11,8 @@ import DR from './components/dr-view.js';
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [farmData, setFarmData] = useState(null);
-  const [drData, setDRData] = useState(null);
+  const [DRFData, setDRFData] = useState(null);
+  const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
@@ -21,7 +22,7 @@ function App() {
   const [selectedPoints, setSelectedPoints] = useState([]);
 
   useEffect(() => {
-    Promise.all([getDRData(), getMgrData(selectedFile)])
+    Promise.all([getDRFeatureData(), getDRTimeData(), getMgrData(selectedFile)])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
@@ -45,21 +46,41 @@ function App() {
     }
   };
 
-  const getDRData = async () => {
+  const getDRFeatureData = async () => {
     try {
-      const response = await fetch(`http://localhost:5009/drData`);
+      const response = await fetch(`http://localhost:5009/drFeatureData`);
       const data = await response.json();
       
       if (response.ok) {
-        setDRData(data);
+        setDRFData(data);
         setError(null); 
       } else {
-        setDRData(null);  
+        setDRFData(null);  
         setError("Failed to fetch DR data. Please check that the server is running.");
       }
 
     } catch (error) {
-      setDRData(null);    
+      setDRFData(null);    
+      setError("Failed to fetch DR data. Please check that the server is running.");
+      console.error(error);     
+    }
+  };
+
+  const getDRTimeData = async () => {
+    try {
+      const response = await fetch(`http://localhost:5009/drTimeData`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setDRTData(data);
+        setError(null); 
+      } else {
+        setDRTData(null);  
+        setError("Failed to fetch DR data. Please check that the server is running.");
+      }
+
+    } catch (error) {
+      setDRTData(null);    
       setError("Failed to fetch DR data. Please check that the server is running.");
       console.error(error);     
     }
@@ -180,8 +201,11 @@ function App() {
                   <div className="view_title" style={{ width: '50px' }}>
                     DR
                   </div>
-                  {drData ? (
-                    <DR data={drData} setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
+                  {DRFData && DRTData ? (
+                    <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
+                      <DR data={DRFData} type='feature' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
+                      <DR data={DRTData} type='time' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
+                    </div>
                   ) : (
                     <p>Loading DR results...</p>
                   )}
@@ -190,8 +214,8 @@ function App() {
                   <div className="view_title" style={{ width: '80px' }}>
                     Buffer Nodes
                   </div>
-                  {drData ? (
-                    <Coordinates data={drData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} />
+                  {DRFData ? (
+                    <Coordinates data={DRFData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} />
                   ) : (
                     <p>Loading DR results...</p>
                   )}
