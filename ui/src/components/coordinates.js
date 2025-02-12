@@ -8,7 +8,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 800, height: 520 });
+    const [size, setSize] = useState({ width: 800, height: 400 });
     const [key, setKey] = useState('cpu');
     const [keyOptions, setKeyOptions] = useState({
         cpu: ['cpu'],
@@ -276,7 +276,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                 })}
             </List>
 
-            <div ref={svgContainerRef} style={{ width: '100%', height: '380px' }}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '340px' }}></div>
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}

@@ -80,7 +80,7 @@
 }
 
 .wrapper_right {
-  width: 55%;
+  width: 60%;
   height:100%;
   border-style: solid;
   border-width: thin;
@@ -91,7 +91,7 @@
 
 .wrapper_top2 {
   width: 100%;
-  height: 45%;
+  height: 55%;
   border-style: solid;
   border-width: thin;
   border-color: #DDDDDD;
@@ -99,7 +99,7 @@
 
 .wrapper_bottom2 {
   width: 100%;
-  height: 55%;
+  height: 45%;
   border-style: solid;
   border-width: thin;
   border-color: #DDDDDD;
