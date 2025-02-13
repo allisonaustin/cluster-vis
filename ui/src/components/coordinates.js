@@ -57,6 +57,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
             !(d.includes('Retrans')) && 
             !(d.includes('UMAP')) &&
             !(d.includes('tSNE')) &&
+            !(d.includes('PC')) &&
             !(d.includes('Measurement'))
         ).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})}))
 
@@ -245,7 +246,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
 
     return  (
         <div style={{ display:'flex', alignItems: 'flex-start' }}>
-            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 330, overflowY: 'auto', marginRight: '10px' }}>
+            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
                     const labelId = `checkbox-list-label-${index}`;
 
@@ -276,7 +277,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                 })}
             </List>
 
-            <div ref={svgContainerRef} style={{ width: '100%', height: '340px' }}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}></div>
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}

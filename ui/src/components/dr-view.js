@@ -132,11 +132,12 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
             .transition()
             .duration(300)
             .style("fill", d => selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
-            .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.5);
+            .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.7);
     }, [selectedPoints]); 
 
     const updateChart = (method1, method2) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
+        setMethod1(method1)
         setMethod2(method2)
 
         const xKey = method2 + '1';
@@ -180,21 +181,21 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
             .style('fill', (d) => (
                 selected.includes(d.Measurement) ? getColor('select') : getColor('default')
             ))
-            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.5);
+            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.7);
 
         // updating parallel coordinates plot
         const coordChart = d3.select("#coord-svg"); 
         coordChart.selectAll(".line")
             .style("stroke", (d) => selected.includes(d.Measurement) ? getColor('select') : getColor('default'))
-            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.4);
+            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.5);
     };
 
     return (
         <div id="chart-container">
             {type == 'feature' ? (
-                <h3 style={{ dispaly: 'flex', flexDirection: 'row'}}>PCA Across Time Points</h3>
+                <h4 style={{ marginBottom: 0}}>{method1} Across Time Points</h4>
             ) : (
-                <h3 style={{ dispaly: 'flex', flexDirection: 'row'}}>PCA Across Features</h3>
+                <h4 style={{ marginBottom: 0}}>{method1} Across Features</h4>
             )}
             <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}>
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />

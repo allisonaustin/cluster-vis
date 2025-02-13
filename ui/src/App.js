@@ -150,7 +150,7 @@ function App() {
         </header>
       ) : (
         <>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f5f5f5' }}>
+          {/* <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f5f5f5' }}>
             <Tabs
               value={activeTab}
               onChange={onTabChange}
@@ -161,7 +161,7 @@ function App() {
               <Tab label="Static Analysis" />
               <Tab label="Streaming Analysis" />
             </Tabs>
-          </Box>
+          </Box> */}
 
           {activeTab === 0 && (
             <div className="wrapper_app">
@@ -211,8 +211,8 @@ function App() {
                   )}
                 </div>
                 <div className="wrapper_bottom2">
-                  <div className="view_title" style={{ width: '80px' }}>
-                    Buffer Nodes
+                  <div className="view_title" style={{ width: '100px' }}>
+                    Coordinate Plot
                   </div>
                   {DRFData ? (
                     <Coordinates data={DRFData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} />
