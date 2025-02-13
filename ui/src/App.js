@@ -48,7 +48,7 @@ function App() {
 
   const getDRFeatureData = async () => {
     try {
-      const response = await fetch(`http://localhost:5009/drFeatureData`);
+      const response = await fetch(`http://127.0.0.1:5010/drFeatureData`);
       const data = await response.json();
       
       if (response.ok) {
@@ -68,7 +68,7 @@ function App() {
 
   const getDRTimeData = async () => {
     try {
-      const response = await fetch(`http://localhost:5009/drTimeData`);
+      const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
       const data = await response.json();
       
       if (response.ok) {
@@ -89,7 +89,7 @@ function App() {
   const getMgrData = async (filePath) => {
     if (!filePath) return;
     try {
-      const response = await fetch(`http://localhost:5009/mgrData?file=${filePath}`);
+      const response = await fetch(`http://127.0.0.1:5010/mgrData`);
       const data = await response.json();
       
       if (response.ok) {
