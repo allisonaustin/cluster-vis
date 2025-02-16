@@ -20,6 +20,8 @@ function App() {
   const [farmFile, setFarmFile] = useState('farm/novadaq-far-farm-01.json');
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
   const [selectedPoints, setSelectedPoints] = useState([]);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
 
   useEffect(() => {
     Promise.all([getDRFeatureData(), getDRTimeData(), getMgrData(selectedFile)])
@@ -203,8 +205,9 @@ function App() {
                   </div>
                   {DRFData && DRTData ? (
                     <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
-                      <DR data={DRFData} type='feature' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
-                      <DR data={DRTData} type='time' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} />
+                      <DR data={DRFData} type='feature' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
+                      <DR data={DRTData} type='time' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
+
                     </div>
                   ) : (
                     <p>Loading DR results...</p>
@@ -215,7 +218,7 @@ function App() {
                     Coordinate Plot
                   </div>
                   {DRFData ? (
-                    <Coordinates data={DRFData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} />
+                    <Coordinates data={DRFData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
                   ) : (
                     <p>Loading DR results...</p>
                   )}

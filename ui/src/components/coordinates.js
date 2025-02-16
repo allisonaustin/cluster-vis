@@ -4,7 +4,7 @@ import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemB
 import * as d3 from 'd3';
 import Tooltip from './tooltip.js';
 
-const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
+const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
@@ -35,6 +35,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
         y: 0
     });
     const [brushSelections, setBrushSelections] = useState(new Map());
+    const [isLocalHover, setIsLocalHover] = useState(false);
 
 
     useEffect(() => {
@@ -115,6 +116,13 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                     });
     
                     paths.on('mouseover', function(event, d) {
+    
+                        const [mx, my] = d3.pointer(event, svg.node());
+                        if (isMouseInBrushZone(mx, selectedDims, xScale, brushWidth/2)) {
+                            return;
+                        }
+                        
+                        setIsLocalHover(true);
                         const tooltipWidth = 150; 
                         const windowWidth = window.innerWidth;  
                     
@@ -122,9 +130,10 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                         if (tooltipX + tooltipWidth > windowWidth) {
                             tooltipX = event.clientX - tooltipWidth - 5;  
                         }
+                        setHoveredPoint(d.Measurement); 
     
                         d3.select(this)
-                            .style("stroke-width", 2.4)
+                            .style("stroke-width", 3)
                             .style("opacity", 1) 
                         
     
@@ -136,21 +145,24 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
                             y: event.clientY
                         });
     
-                        d3.select(`#${d.Measurement}`)
-                            .transition().duration(200)
-                            .attr("r", 6)  
+                        // d3.select(`#${d.Measurement}`)
+                        //     .transition().duration(200)
+                        //     .attr("r", 6)  
                             
                         })
                     .on('mouseout', function(event, d) {
+                        setIsLocalHover(false);
+                        setHoveredPoint(null);
+
                         d3.select(this)
                             .style("stroke-width", 1) 
                             .style("opacity", 0.5);
     
                         setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
     
-                        d3.select(`#${d.Measurement}`)
-                            .transition().duration(200)
-                            .attr("r", 3)
+                        // d3.select(`#${d.Measurement}`)
+                        //     .transition().duration(200)
+                        //     .attr("r", 3)
                     });
             
                 firstRenderRef.current = false;
@@ -218,6 +230,16 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
 
             setBrushSelections(new Map(brushSelections));
         }
+
+        function isMouseInBrushZone(mx, dims, xScale, halfBrushWidth) {
+            for (let dim of dims) {
+              const axisX = xScale(dim);
+              if (mx >= axisX - halfBrushWidth && mx <= axisX + halfBrushWidth) {
+                return true; 
+              }
+            }
+            return false;
+          }
         
 
         // svg.selectAll("myAxis")
@@ -233,6 +255,72 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints }) => {
         //       .style("fill", "black")
         
     }, [data, selectedDims]);
+
+    useEffect(() => {
+        const svg = d3.select(svgContainerRef.current).select("#coord-svg");
+        if (!svg.empty()) {
+          svg.selectAll(".line")
+            .style("stroke-width", d => d.Measurement === hoveredPoint ? 3 : 1)
+            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.5);
+        }
+      }, [hoveredPoint]);
+
+      useEffect(() => {
+        if (!isLocalHover && hoveredPoint) {
+          const lineNode = d3
+            .select(svgContainerRef.current)
+            .select(`.line.${hoveredPoint}`)
+            .node();
+          if (lineNode) {
+            const lineBBox = lineNode.getBBox(); 
+            const svgNode = d3
+              .select(svgContainerRef.current)
+              .select("svg")
+              .node();
+            const svgRect = svgNode.getBoundingClientRect();
+      
+
+            let centerX = svgRect.x + lineBBox.x + lineBBox.width / 2;
+            let centerY = svgRect.y + lineBBox.y + lineBBox.height / 2;
+
+            const tooltipWidth = 150;   
+            const tooltipHeight = 30;   
+            const offset = 5;          
+      
+            const containerRect = svgContainerRef.current.getBoundingClientRect();
+      
+
+            if (centerX + tooltipWidth / 2 > containerRect.right) {
+              centerX = containerRect.right - tooltipWidth / 2 - offset;
+            }
+
+            else if (centerX - tooltipWidth / 2 < containerRect.left) {
+              centerX = containerRect.left + tooltipWidth / 2 + offset;
+            }
+      
+
+            if (centerY - tooltipHeight < containerRect.top) {
+              centerY = containerRect.top + tooltipHeight + offset;
+            }
+
+            else if (centerY + tooltipHeight > containerRect.bottom) {
+              centerY = containerRect.bottom - tooltipHeight - offset;
+            }
+      
+
+            setTooltip({
+              visible: true,
+              content: hoveredPoint,
+              x: centerX - tooltipWidth / 2,
+              y: centerY - tooltipHeight / 2,
+            });
+          }
+        } else if (!isLocalHover && !hoveredPoint) {
+
+          setTooltip({ visible: false, content: '', x: 0, y: 0 });
+        }
+      }, [hoveredPoint, isLocalHover]);
+      
 
     const handleCheckboxChange = (key) => {
         setSelectedDims(prevSelectedDims => {

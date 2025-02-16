@@ -5,7 +5,7 @@ import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from './tooltip.js';
 import * as d3 from 'd3';
 
-const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
+const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 470, height: 280 });
@@ -95,14 +95,12 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
             .attr("r", 3)
             .style('fill', getColor('default'))
             .on("mouseover", function (event, d) {
-                setTooltip({
-                    visible: true,
-                    content: `${d.Measurement}`,
-                    x: event.clientX,
-                    y: event.clientY,
-                  });
+                setHoveredPoint(d.Measurement); 
+
             })
-            .on("mouseout", function () {
+            .on("mouseout", function (event, d) {
+                setHoveredPoint(null);
+
                 setTooltip({
                     visible: false,
                     content: '',
@@ -134,6 +132,43 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints }) => {
             .style("fill", d => selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
             .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.7);
     }, [selectedPoints]); 
+
+    useEffect(() => {
+        d3.select(svgContainerRef.current)
+            .selectAll(".dr-circle")
+            .transition()
+            .duration(150)
+            .attr("r", d => d.Measurement === hoveredPoint ? 6 : 3)  
+            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.7);
+    }, [hoveredPoint]);
+
+    useEffect(() => {
+        if (hoveredPoint) {
+          const circleNode = d3.select(svgContainerRef.current).select(`#${hoveredPoint}`).node();
+          if (circleNode) {
+            const bbox = circleNode.getBoundingClientRect();
+            let tooltipX = bbox.x + bbox.width + 5;
+            let tooltipY = bbox.y + bbox.height / 2;
+            const tooltipWidth = 150; 
+            
+            const containerRect = svgContainerRef.current.getBoundingClientRect();
+            if (tooltipX + tooltipWidth > containerRect.right) {
+              tooltipX = bbox.x - tooltipWidth - 5;
+            }
+            
+            setTooltip({
+              visible: true,
+              content: hoveredPoint,
+              x: tooltipX,
+              y: tooltipY,
+            });
+          }
+        } else {
+          setTooltip({ visible: false, content: '', x: 0, y: 0 });
+        }
+      }, [hoveredPoint]);
+      
+      
 
     const updateChart = (method1, method2) => {
         const chart = d3.select(svgContainerRef.current).select("svg");

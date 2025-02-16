@@ -59,7 +59,7 @@ const Window = ({ mgrData }) => {
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
-          .tickFormat(timeFormat)
+          .tickFormat(d3.utcFormat('%H:%M'))
           .tickSizeOuter(0);
       
       const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
