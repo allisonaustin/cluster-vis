@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { getColor } from './colors.js';
 import * as d3 from 'd3';
 
@@ -20,7 +20,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
         const xi = vs[i][0], yi = vs[i][1];
         const xj = vs[j][0], yj = vs[j][1];
 
-        const intersect = (yi > y !== yj > y) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+        const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
         if (intersect) inside = !inside;
         }
         return inside;
@@ -66,7 +66,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
         });
         onSelect(Array.from(selectedIds));
 
-        if (selectedIds.size == 0) { // resetting plot
+        if (selectedIds.size === 0) { // resetting plot
             circles
                 .style('fill', getColor('default'))
                 .style("opacity", 1);

@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 // import { fetchData } from './utils/api.js';
-import { Tab, Tabs, Box } from '@mui/material';
 import './App.css';
-import AreaChart from './components/areachart.js';
-import Window from './components/window.js';
-import Dropdown from './components/dropdown.js';
-import Coordinates from './components/coordinates.js';
-import DR from './components/dr-view.js';
+import AreaChart from './components/AreaChart.js';
+import Window from './components/TimelineView.js';
+import Coordinates from './components/CoordinateView.js';
+import DR from './components/DRView.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
@@ -152,19 +150,6 @@ function App() {
         </header>
       ) : (
         <>
-          {/* <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: '#f5f5f5' }}>
-            <Tabs
-              value={activeTab}
-              onChange={onTabChange}
-              textColor="primary"
-              indicatorColor="primary"
-              centered
-            >
-              <Tab label="Static Analysis" />
-              <Tab label="Streaming Analysis" />
-            </Tabs>
-          </Box> */}
-
           {activeTab === 0 && (
             <div className="wrapper_app">
               <div className="wrapper_main">
@@ -172,7 +157,6 @@ function App() {
                   <div className="view_title" style={{ width: '120px' }}>
                     Timeline View
                   </div>
-                  {/* <Dropdown selectedFile={selectedFile} onFileChange={(e) => setSelectedFile(e.target.value)} /> */}
                   {mgrData ? (
                     <Window mgrData={mgrData} />
                   ) : (

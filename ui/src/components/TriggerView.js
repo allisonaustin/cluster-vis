@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createColorScale } from '../utils/colors.js';
-import Tooltip from './tooltip.js';
+import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
-const Bubble = ({ data }) => {
+const TriggerView = ({ data }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodes, setNodes] = useState([]);
@@ -418,4 +418,4 @@ const Bubble = ({ data }) => {
         );
 };
 
-export default Bubble;
+export default TriggerView;

@@ -15,8 +15,6 @@ const Window = ({ mgrData }) => {
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData ) return;
       
-      const timeFormat = d3.timeFormat('%H:%M');
-      const dateFormat = d3.timeFormat('%Y-%m-%d'); 
       const margin = { top: 10, right: 30, bottom: 70, left: 30 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
@@ -107,7 +105,7 @@ const Window = ({ mgrData }) => {
     // adding legend 
     const legend = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${size.width-margin.right}, 0)`)
+        .attr('transform', `translate(${size.width / 1.2}, ${size.height - 45})`)
 
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
@@ -130,14 +128,14 @@ const Window = ({ mgrData }) => {
     const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
     const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
 
-    const formattedDate = dateFormat(start);
-    setCurrentDate(formattedDate)
-    legend.append("text")
-        .attr("class", "date-text")
-        .attr("x", 0)
-        .attr("y", size.height/2 + 10) 
-        .text(`Date: ${formattedDate}`)
-        .style("font-size", "10px")
+    // const formattedDate = dateFormat(start);
+    // setCurrentDate(formattedDate)
+    // legend.append("text")
+    //     .attr("class", "date-text")
+    //     .attr("x", 20)
+    //     .attr("y", 0) 
+    //     .text(`Date: ${formattedDate}`)
+    //     .style("font-size", "10px")
 
      // adding brush
 

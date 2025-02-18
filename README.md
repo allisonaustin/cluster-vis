@@ -17,5 +17,5 @@ Open another terminal and run:
 
 ```cd server```
 
-```node server.js```
+```python server.py```
 

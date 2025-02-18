@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
 import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemButton, ListItemIcon, Checkbox, Box } from '@mui/material';
 import * as d3 from 'd3';
-import Tooltip from './tooltip.js';
+import Tooltip from '../utils/tooltip.js';
 
 const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();

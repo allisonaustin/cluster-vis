@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { COLORS, getColor, generateColor } from '../utils/colors.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { getColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
 const AreaChart = ({ data, field, index, chartType }) => {
@@ -12,7 +12,6 @@ const AreaChart = ({ data, field, index, chartType }) => {
     useEffect(() => {
       if (!svgContainerRef.current || !data || !data[field] || Object.keys(data[field]).length === 0) return; 
       
-      const timeFormat = d3.timeFormat('%H:%M');
       // const timeParse = d3.timeParse('%Y-%m-%d %H:%M:%S');
       const margin = { top: 40, right: 60, bottom: 60, left: 70 };
 
@@ -73,7 +72,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
-          .tickFormat(timeFormat)
+          .tickFormat(d3.utcFormat('%H:%M'))
           .tickSizeOuter(0);
 
       focus.append("g")
@@ -111,10 +110,6 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .x(function(d) { return xScale(d.timestamp) })
         .y0(yScale(0))
         .y1(function(d) { return yScale(d.value) })
-
-      const line = d3.line()
-        .x(function(d) { return xScale(d.timestamp) })
-        .y(function(d) { return yScale(+d.value) })
 
       focus.append('path')
         .datum(filtered)

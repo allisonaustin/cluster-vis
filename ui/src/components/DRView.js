@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import Tooltip from './tooltip.js';
+import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
 const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
