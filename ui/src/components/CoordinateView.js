@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
-import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemButton, ListItemIcon, Checkbox, Box } from '@mui/material';
+import { List, ListItem, ListItemText, ListItemButton, Checkbox } from '@mui/material';
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
 
@@ -319,7 +319,7 @@ return (
             <span>PC Contributions</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <List sx={{ width: '100%', maxWidth: 180, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
+            <List sx={{ width: '100%', maxWidth: 200, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
                     const labelId = `checkbox-list-label-${index}`;  
                     const featureData = features.find(item => item.feature === key); 
@@ -358,8 +358,8 @@ return (
                                         height: '8px', 
                                         backgroundColor: '#57467B', 
                                         borderRadius: '4px',
-                                        marginLeft: '10px',
-                                        maxWidth: '50px',
+                                        marginLeft: 'auto',
+                                        maxWidth: '30px',
                                     }}
                                 />
                                  <span style={{ marginLeft: '10px', fontSize: '12px', color: '#57467B' }}>

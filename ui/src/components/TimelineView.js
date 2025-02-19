@@ -10,7 +10,7 @@ const TimelineView = ({ mgrData, fcs }) => {
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
-    const [fields, setFields] = useState(['Activity_P1', 'Most Contributing to PCs']);
+    const [fields, setFields] = useState(['Activity_P1', 'Most_Contributing_to_PCs']);
       
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData ) return;
@@ -115,7 +115,7 @@ const TimelineView = ({ mgrData, fcs }) => {
 
     svg.append('path')
         .datum(chartdata['Activity_P1'])
-        .attr('id', `context-Activity_P1`)
+        .attr('class', `context-Activity_P1`)
         .attr('clip-path', 'url(#clip)')
         .style('fill', (d, i) => generateColor(i))
         .style('stroke', 'black')
@@ -128,6 +128,7 @@ const TimelineView = ({ mgrData, fcs }) => {
         svg.append('path')
             .datum(firstTs[f])
             .attr('id', `context-${f}`)
+            .attr('class', `context-Most_Contributing_to_PCs`)
             .attr('clip-path', 'url(#clip)')
             .style('fill', COLORS.select)
             .style('stroke', 'black')
@@ -142,9 +143,24 @@ const TimelineView = ({ mgrData, fcs }) => {
         .attr('class', 'legend')
         .attr('transform', `translate(${size.width / 1.8}, ${size.height - 45})`)
 
+    console.log(fields)
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
             .attr('transform', `translate(${i * 80}, 0)`)
+            .on('mouseover', function() {
+                svg.selectAll('path')
+                    .transition().duration(200)
+                    .attr('fill-opacity', 0);
+    
+                svg.selectAll(`.context-${field}`)
+                    .transition().duration(200)
+                    .attr('fill-opacity', 0.8)
+            })
+            .on('mouseout', function() {
+                svg.selectAll('path')
+                    .transition().duration(200)
+                    .attr('fill-opacity', 0.5);
+            });
         
         legendItem.append('rect')
             .attr('width', 15)
