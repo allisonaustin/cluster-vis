@@ -177,13 +177,14 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                 .attr("class", "axis")
                 .attr("transform", `translate(${xScale(dim)},${margin.top})`);
 
-            axes.call(d3.axisLeft(y.get(dim)).ticks(5));
+            axes.call(d3.axisLeft(y.get(dim)).ticks(5)).selectAll('text').style('font-size', '14px');
 
             axes.append("text")
                 .attr("y", -9)
                 .style("text-anchor", "middle")
                 .style("fill", "black")
-                .text(dim);
+                .text(dim)
+                .style('font-size', '15px');
 
             const brush = d3.brushY()
                 .extent([[-(brushWidth / 2), 0], [brushWidth / 2, height]])

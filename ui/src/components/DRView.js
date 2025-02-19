@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
-    const [size, setSize] = useState({ width: 470, height: 280 });
+    const [size, setSize] = useState({ width: 440, height: 300 });
     // const [selectedPoints, setSelectedPoints] = useState([]);
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
@@ -27,7 +27,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
-        const margin = { top: 10, right: 30, bottom: 30, left: 40 };
+        const margin = { top: 10, right: 30, bottom: 30, left: 50 };
         const width = size.width;
         const height = size.height;
 
@@ -55,16 +55,18 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         svg.append('g')
             .attr('class', 'x-axis')
             .attr('transform', `translate(0,${height - margin.bottom})`)
-            .call(xAxis);
+            .call(xAxis)
+            .selectAll("text")
+            .style("font-size", "14px");
 
         // x axis label
         svg.append('text')
             .attr('id', 'x-axis-label-dr')
             .attr("x", width/2)
-            .attr("y", height)
+            .attr("y", height + 10)
             .style('text-anchor', 'middle')
             .text(xKey)
-            .style('font-size', '12px');
+            .style('font-size', '16px');
 
 
         const yAxis = d3.axisLeft(yScale).ticks(height / 40);
@@ -79,8 +81,12 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
                 .attr("fill", "currentColor")
                 .attr("text-anchor", "start")
                 .attr("transform", "rotate(-90)")
-                .style('font-size', '12px')
+                .style('font-size', '16px')
                 .text(yKey)); // Y label
+
+        svg.select('.y-axis')
+            .selectAll("text")
+            .style("font-size", "14px")
 
         let circs = svg.selectAll(".dr-circle")
             .data(data)
@@ -195,7 +201,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .ease(d3.easeCubicInOut);
         
         chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale));
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale)).selectAll('text').style('font-size', '16px');
 
         chart.selectAll(".dr-circle")
             .data(data)
@@ -232,7 +238,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             ) : (
                 <h4 style={{ marginBottom: 0}}>{method1} Across Features</h4>
             )}
-            <div ref={svgContainerRef} style={{ width: '100%', height: '280px' }}>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '330px' }}>
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
             </div>
             <Tooltip

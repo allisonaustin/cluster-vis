@@ -7,3 +7,5 @@ farm/
 mgr/
 
 .DS_Store
+
+.ipynb

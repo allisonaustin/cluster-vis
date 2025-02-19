@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 
 const AreaChart = ({ data, field, index, chartType }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 600, height: 300 });
+    const [size, setSize] = useState({ width: 600, height: 400 });
     const [chartId, setChartId] = useState(index);
     const [type, setType] = useState(chartType);
     const [chartdata, setChartData] = useState([]);
@@ -50,9 +50,9 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
       Object.keys(data[field]).forEach(obj => {
         const date = new Date(parseInt(obj));
-        const utcDate = new Date(date.getTime());
+        // const utcDate = new Date(date.getTime());
         chartdata.push({
-          timestamp: utcDate,
+          timestamp: date,
           value: data[field][obj]
         })
       });
@@ -78,7 +78,9 @@ const AreaChart = ({ data, field, index, chartType }) => {
       focus.append("g")
         .attr("class", "x-axis")
         .attr("transform", `translate(0,${size.height - margin.bottom})`)
-        .call(xAxis);
+        .call(xAxis)
+        .selectAll("text")
+        .style("font-size", "16px");
       
       const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
 
@@ -88,7 +90,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr("y", size.height - 10)
         .style('text-anchor', 'middle')
         .text('Time (hh:mm)')
-        .style('font-size', '14px');
+        .style('font-size', '16px');
 
       focus.append("g")
         .attr("class", "y-axis")
@@ -103,8 +105,12 @@ const AreaChart = ({ data, field, index, chartType }) => {
               .attr("y", 40)
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
-              .style('font-size', '14px')
-              .text("Value")); // Y label     
+              .style('font-size', '16px')
+              .text("Value")); // Y label   
+
+      focus.select('.y-axis')
+          .selectAll("text")
+          .style("font-size", "16px")
 
       var areaGenerator = d3.area()
         .x(function(d) { return xScale(d.timestamp) })
@@ -131,7 +137,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .style("fill", "black")
-        .style('font-size', '12')
+        .style('font-size', '20')
         .text(field);
 
       focus.node().xScale = xScale;
@@ -162,7 +168,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale));
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale)).selectAll('text').style('font-size', '16px');
 
         // updating line
         chart.select('.line')

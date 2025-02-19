@@ -184,8 +184,8 @@ function App() {
               </div>
               <div className="wrapper_right">
                 <div className="wrapper_top2">
-                  <div className="view_title" style={{ width: '50px' }}>
-                    DR
+                  <div className="view_title" style={{ width: '70px' }}>
+                    DR View
                   </div>
                   {DRFData && DRTData ? (
                     <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
