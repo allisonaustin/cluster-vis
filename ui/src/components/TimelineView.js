@@ -65,8 +65,11 @@ const TimelineView = ({ mgrData, fcs }) => {
         return acc;
     }, {});
     
+    const minTimestamp = d3.min(chartdata[fields[0]], d => d.timestamp);
+    const maxTimestamp = d3.max(chartdata[fields[0]], d => d.timestamp);
+
       const xScale = d3.scaleTime()
-        .domain(d3.extent(chartdata[fields[0]], d => d.timestamp))
+        .domain([new Date(minTimestamp), new Date(maxTimestamp)])
         .range([margin.left, size.width - margin.right - 20])
         // .padding(0.1);
 

@@ -45,6 +45,8 @@ def get_csv_data(filename):
     try:
         df = pd.read_csv(file_path)
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
         return jsonify(df.to_dict(orient='records'))
     except Exception as e:
         return jsonify({"error": "Error reading CSV file", "details": str(e)}), 500

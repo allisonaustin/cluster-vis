@@ -10,8 +10,6 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 400 });
     const [margin, setMargin] = useState({ top: 20, right: 10, bottom: 20, left: 20 });
-    const [selectedDims, setSelectedDims] = useState([]);
-    const [allKeys, setAllKeys] = useState([]);
     const [tooltip, setTooltip] = useState({
         visible: false,
         content: '',
@@ -21,6 +19,18 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
     const [brushSelections, setBrushSelections] = useState(new Map());
     const [isLocalHover, setIsLocalHover] = useState(false);
 
+    const featureCount = fcs.reduce((acc, { feature }) => {
+        acc[feature] = (acc[feature] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const sortedFeatures = Object.entries(featureCount)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .map(([feature, count]) => ({ feature, count }));
+
+    const [features, setFeatures] = useState(sortedFeatures);
+    const [selectedDims, setSelectedDims] = useState(sortedFeatures.map(f => f.feature).slice(0,6));
+    const [allKeys, setAllKeys] = useState(sortedFeatures.map(f => f.feature));
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -29,18 +39,6 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
-        
-        const featureCount = fcs.reduce((acc, { feature }) => {
-            acc[feature] = (acc[feature] || 0) + 1;
-            return acc;
-        }, {});
-        
-        const sortedFeatures = Object.entries(featureCount)
-            .sort(([, countA], [, countB]) => countB - countA)
-            .map(([feature, count]) => ({ feature, count }));
-        
-        setSelectedDims(sortedFeatures.map(f => f.feature).slice(0,8));
-        setAllKeys(sortedFeatures.map(f => f.feature))
 
         const xScale = d3.scalePoint()
             .domain(selectedDims)
@@ -72,7 +70,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
                     .style("fill", "none" )
                     // .style("stroke", function(d){ return getColor('default')} )
                     .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
-                    .style("opacity", 0.5)
+                    .style("opacity", 0.7)
                     .each(function(d) {
                     if (firstRenderRef.current) {
                         const totalLength = this.getTotalLength();
@@ -128,7 +126,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
 
                         d3.select(this)
                             .style("stroke-width", 1) 
-                            .style("opacity", 0.5);
+                            .style("opacity", 0.7);
     
                         setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
     
@@ -227,14 +225,14 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         //       .text(function(d) { return d; })
         //       .style("fill", "black")
         
-    }, [data, fcs]);
+    }, [data, fcs, selectedDims]);
 
     useEffect(() => {
         const svg = d3.select(svgContainerRef.current).select("#coord-svg");
         if (!svg.empty()) {
           svg.selectAll(".line")
             .style("stroke-width", d => d.Measurement === hoveredPoint ? 3 : 1)
-            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.5);
+            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.7);
         }
       }, [hoveredPoint]);
 
@@ -305,17 +303,35 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         });
     };
 
-    return  (
-        <div style={{ display:'flex', alignItems: 'flex-start' }}>
-            <List sx={{ width: '100%', maxWidth: 120, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
+return (
+    <div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div 
+                style={{
+                    width: '20px', 
+                    height: '8px', 
+                    backgroundColor: '#57467B',
+                    borderRadius: '4px',
+                    marginRight: '8px',
+                    marginLeft: '10px'
+                }}
+            ></div>
+            <span>PC Contributions</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <List sx={{ width: '100%', maxWidth: 180, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
-                    const labelId = `checkbox-list-label-${index}`;
-
+                    const labelId = `checkbox-list-label-${index}`;  
+                    const featureData = features.find(item => item.feature === key); 
+                    const count = featureData ? featureData.count : 0;
+                    const maxCount = Math.max(...features.map(item => item.count)); 
+                    const barWidth = (count / maxCount) * 100; 
+                    
                     return (
                         <ListItem
                             key={key}
                             disablePadding
-                            sx={{ paddingTop: 0, paddingBottom: 0 }}
+                            sx={{ paddingTop: 0, paddingBottom: 0, maxWidth: '180px' }}
                         >
                             <ListItemButton
                                 role={undefined}
@@ -331,7 +347,24 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
                                     disableRipple
                                     inputProps={{ 'aria-labelledby': labelId }}
                                 />
-                                <ListItemText id={labelId} primary={key} />
+                                <div style={{maxWidth: '60px'}}>
+                                    <ListItemText id={labelId} primary={key} />
+                                </div>
+                                <div 
+                                    id={`bar-${key}`}
+                                    style={{
+                                        width: `${barWidth}%`, 
+                                        display: 'flex', 
+                                        height: '8px', 
+                                        backgroundColor: '#57467B', 
+                                        borderRadius: '4px',
+                                        marginLeft: '10px',
+                                        maxWidth: '50px',
+                                    }}
+                                />
+                                 <span style={{ marginLeft: '10px', fontSize: '12px', color: '#57467B' }}>
+                                    {count}
+                                </span>
                             </ListItemButton>
                         </ListItem>
                     );
@@ -339,6 +372,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
             </List>
 
             <div ref={svgContainerRef} style={{ width: '100%', height: '350px' }}></div>
+            
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}
@@ -346,6 +380,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
                 y={tooltip.y}
             />
         </div>
+    </div>
     );
 };
 
