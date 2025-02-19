@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { generateColor } from '../utils/colors.js';
+import { COLORS, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
-const Window = ({ mgrData }) => {
+const TimelineView = ({ mgrData, fcs }) => {
 
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 600, height: 140 });
@@ -10,7 +10,7 @@ const Window = ({ mgrData }) => {
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
-    const [fields, setFields] = useState(['Activity_P1']);
+    const [fields, setFields] = useState(['Activity_P1', 'Most Contributing']);
       
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData ) return;
@@ -44,6 +44,26 @@ const Window = ({ mgrData }) => {
             });
         }
     });    
+
+    fcs.forEach(d => d.timestamp = new Date(d.timestamp));
+
+    const firstTs = fcs.reduce((acc, { feature, timestamp }) => {
+        if (!acc[feature]) {
+            acc[feature] = [];
+        }
+    
+        const existingEntry = acc[feature].find(entry => entry.timestamp === timestamp);
+        if (existingEntry) {
+            existingEntry.count += 1; 
+        } else {
+            acc[feature].push({
+                timestamp: timestamp,
+                value: 1 
+            });
+        }
+    
+        return acc;
+    }, {});
     
       const xScale = d3.scaleTime()
         .domain(d3.extent(chartdata[fields[0]], d => d.timestamp))
@@ -89,27 +109,39 @@ const Window = ({ mgrData }) => {
         .y0(yScale(0))
         .y1(function(d) { return yScale(d.value) })
 
-    fields.forEach((field) => { 
+
+    svg.append('path')
+        .datum(chartdata['Activity_P1'])
+        .attr('id', `context-Activity_P1`)
+        .attr('clip-path', 'url(#clip)')
+        .style('fill', (d, i) => generateColor(i))
+        .style('stroke', 'black')
+        .style('stroke-width', 0.3)
+        .style('stroke-opacity', 0.5)
+        .attr("fill-opacity", .3)
+        .attr('d', areaGenerator)
+
+    Object.keys(firstTs).forEach(f => {
         svg.append('path')
-            .datum(chartdata[field])
-            .attr('id', `context-${field}`)
+            .datum(firstTs[f])
+            .attr('id', `context-${f}`)
             .attr('clip-path', 'url(#clip)')
-            .style('fill', (d, i) => generateColor(i))
+            .style('fill', COLORS.select)
             .style('stroke', 'black')
             .style('stroke-width', 0.3)
             .style('stroke-opacity', 0.5)
             .attr("fill-opacity", .3)
             .attr('d', areaGenerator)
-    });
+        })
 
     // adding legend 
     const legend = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${size.width / 1.2}, ${size.height - 45})`)
+        .attr('transform', `translate(${size.width / 1.65}, ${size.height - 45})`)
 
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
-            .attr('transform', `translate(0, ${i * 20})`)
+            .attr('transform', `translate(${i * 80}, 0)`)
         
         legendItem.append('rect')
             .attr('width', 15)
@@ -219,4 +251,4 @@ const Window = ({ mgrData }) => {
     };
     
     
-export default Window;
+export default TimelineView;

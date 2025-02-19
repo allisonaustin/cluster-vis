@@ -4,7 +4,7 @@ import { Button, ButtonGroup, List, FormGroup, ListItem, ListItemText, ListItemB
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
 
-const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
+const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
@@ -255,7 +255,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         //       .text(function(d) { return d; })
         //       .style("fill", "black")
         
-    }, [data, selectedDims]);
+    }, [data, fcs, selectedDims]);
 
     useEffect(() => {
         const svg = d3.select(svgContainerRef.current).select("#coord-svg");

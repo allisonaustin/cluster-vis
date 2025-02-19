@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 // import { fetchData } from './utils/api.js';
 import './App.css';
 import AreaChart from './components/AreaChart.js';
-import Window from './components/TimelineView.js';
+import TimelineView from './components/TimelineView.js';
 import Coordinates from './components/CoordinateView.js';
 import DR from './components/DRView.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [farmData, setFarmData] = useState(null);
+  const [FCTData, setFCTData] = useState(null);
+  const [FCFData, setFCFData] = useState(null);
   const [DRFData, setDRFData] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
@@ -22,7 +24,12 @@ function App() {
 
 
   useEffect(() => {
-    Promise.all([getDRFeatureData(), getDRTimeData(), getMgrData(selectedFile)])
+    Promise.all([getDRFeatureData(), 
+                getDRTimeData(), 
+                getFCTData(),
+                getFCFData(),
+                getMgrData(selectedFile)
+              ])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
@@ -82,6 +89,46 @@ function App() {
     } catch (error) {
       setDRTData(null);    
       setError("Failed to fetch DR data. Please check that the server is running.");
+      console.error(error);     
+    }
+  };
+
+  const getFCTData = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5010/FCTimeData`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setFCTData(data);
+        setError(null); 
+      } else {
+        setFCTData(null);  
+        setError("Failed to fetch feature contributions. Please check that the server is running.");
+      }
+
+    } catch (error) {
+      setFCTData(null);    
+      setError("Failed to fetch feature contributions. Please check that the server is running.");
+      console.error(error);     
+    }
+  };
+
+  const getFCFData = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5010/FCTimeData`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setFCFData(data);
+        setError(null); 
+      } else {
+        setFCFData(null);  
+        setError("Failed to fetch feature contributions. Please check that the server is running.");
+      }
+
+    } catch (error) {
+      setFCFData(null);    
+      setError("Failed to fetch feature contributions. Please check that the server is running.");
       console.error(error);     
     }
   };
@@ -158,7 +205,10 @@ function App() {
                     Timeline View
                   </div>
                   {mgrData ? (
-                    <Window mgrData={mgrData} />
+                    <TimelineView 
+                      mgrData={mgrData} 
+                      fcs={FCTData}
+                    />
                   ) : (
                     <p>Loading data...</p>
                   )}
@@ -169,7 +219,13 @@ function App() {
                       Performance Metrics
                     </div>
                     {Object.keys(perfData).map((field, index) => (
-                      <AreaChart key={field} data={perfData} field={field} index={index} chartType="perf" />
+                      <AreaChart 
+                        key={field} 
+                        data={perfData} 
+                        field={field} 
+                        index={index} 
+                        chartType="perf" 
+                      />
                     ))}
                   </div>
                   <div className="wrapper_left">
@@ -177,7 +233,13 @@ function App() {
                       Triggers
                     </div>
                     {Object.keys(triggerData).map((field, index) => (
-                      <AreaChart key={field} data={triggerData} field={field} index={index} chartType="trigger" />
+                      <AreaChart 
+                        key={field} 
+                        data={triggerData} 
+                        field={field} 
+                        index={index} 
+                        chartType="trigger"
+                      />
                     ))}
                   </div>
                 </div>
@@ -189,8 +251,22 @@ function App() {
                   </div>
                   {DRFData && DRTData ? (
                     <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
-                      <DR data={DRFData} type='feature' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
-                      <DR data={DRTData} type='time' setSelectedPoints={setSelectedPoints} selectedPoints={selectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
+                      <DR 
+                        data={DRFData} 
+                        type='feature' 
+                        setSelectedPoints={setSelectedPoints} 
+                        selectedPoints={selectedPoints} 
+                        hoveredPoint={hoveredPoint} 
+                        setHoveredPoint={setHoveredPoint} 
+                      />
+                      <DR 
+                        data={DRTData} 
+                        type='time' 
+                        setSelectedPoints={setSelectedPoints} 
+                        selectedPoints={selectedPoints} 
+                        hoveredPoint={hoveredPoint} 
+                        setHoveredPoint={setHoveredPoint} 
+                      />
 
                     </div>
                   ) : (
@@ -202,7 +278,14 @@ function App() {
                     Coordinate Plot
                   </div>
                   {DRFData ? (
-                    <Coordinates data={DRFData} selectedPoints={selectedPoints} setSelectedPoints={setSelectedPoints} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
+                    <Coordinates 
+                      data={DRFData} 
+                      fcs={FCFData}
+                      selectedPoints={selectedPoints} 
+                      setSelectedPoints={setSelectedPoints} 
+                      hoveredPoint={hoveredPoint} 
+                      setHoveredPoint={setHoveredPoint} 
+                    />
                   ) : (
                     <p>Loading DR results...</p>
                   )}

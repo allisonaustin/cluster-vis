@@ -11,7 +11,7 @@ export const getColor = (field) => {
 }
 
 export const generateColor = (index) => {
-    const palette = ["#69b3a2", "#4EA5D9", "#57467B", "#70F8BA", "#F6828C"];
+    const palette = ["#69b3a2", "#F6828C", "#4EA5D9", "#57467B", "#70F8BA"];
     return palette[index % palette.length];
 }
 
