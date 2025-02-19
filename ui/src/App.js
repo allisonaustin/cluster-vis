@@ -115,7 +115,7 @@ function App() {
 
   const getFCFData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/FCTimeData`);
+      const response = await fetch(`http://127.0.0.1:5010/FCFeatureData`);
       const data = await response.json();
       
       if (response.ok) {

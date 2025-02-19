@@ -10,7 +10,7 @@ const TimelineView = ({ mgrData, fcs }) => {
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
-    const [fields, setFields] = useState(['Activity_P1', 'Most Contributing']);
+    const [fields, setFields] = useState(['Activity_P1', 'Most Contributing to PCs']);
       
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData ) return;
@@ -137,7 +137,7 @@ const TimelineView = ({ mgrData, fcs }) => {
     // adding legend 
     const legend = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${size.width / 1.65}, ${size.height - 45})`)
+        .attr('transform', `translate(${size.width / 1.8}, ${size.height - 45})`)
 
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')

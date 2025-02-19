@@ -8,25 +8,9 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 800, height: 400 });
-    const [key, setKey] = useState('cpu');
-    const [keyOptions, setKeyOptions] = useState({
-        cpu: ['cpu'],
-        memory: ['mem', 'disk', 'swap', 'part_max_used'],
-        load: ['load', 'boottime', 'proc'],
-        network: ['bytes', 'pkts', 'Missed Buffers'],
-        PoolSize: ['Pool Size'],
-        Retrans: ['Retrans'],
-    })
-    const [selectedDims, setSelectedDims] = useState([
-        'cpu_idle',
-        'cpu_nice',
-        'cpu_num', 
-        'cpu_speed',
-        'cpu_aidle',
-        'cpu_system',
-        'cpu_user'
-    ]);
+    const [size, setSize] = useState({ width: 700, height: 400 });
+    const [margin, setMargin] = useState({ top: 20, right: 10, bottom: 20, left: 20 });
+    const [selectedDims, setSelectedDims] = useState([]);
     const [allKeys, setAllKeys] = useState([]);
     const [tooltip, setTooltip] = useState({
         visible: false,
@@ -43,36 +27,24 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setPlotData(data);
         
-        const margin = { top: 20, right: 10, bottom: 20, left: 20 };
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
-
-        // const selectedKeys = keyOptions[key];
-
-        // const selectedDims = Object.keys(data[0]).filter(d => 
-        //     selectedKeys.some(subKey => d.includes(subKey))
-        // );
-
-        const allFeatures = Object.keys(data[0])
-        setAllKeys(allFeatures.filter(d => 
-            !(d.includes('Retrans')) && 
-            !(d.includes('UMAP')) &&
-            !(d.includes('tSNE')) &&
-            !(d.includes('PC')) &&
-            !(d.includes('Measurement'))
-        ).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})}))
+        
+        const featureCount = fcs.reduce((acc, { feature }) => {
+            acc[feature] = (acc[feature] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const sortedFeatures = Object.entries(featureCount)
+            .sort(([, countA], [, countB]) => countB - countA)
+            .map(([feature, count]) => ({ feature, count }));
+        
+        setSelectedDims(sortedFeatures.map(f => f.feature).slice(0,8));
+        setAllKeys(sortedFeatures.map(f => f.feature))
 
         const xScale = d3.scalePoint()
             .domain(selectedDims)
             .range([margin.left, width]);
-
-        // const yScales = {}
-
-        // selectedDims.forEach(dim => {
-        //     yScales[dim] = d3.scaleLinear()
-        //         .domain(d3.extent(data, d => parseFloat(d[dim])))
-        //         .range([height, 0])
-        // });
 
         const y = new Map(Array.from(selectedDims, key => 
             [key, d3.scaleLinear(d3.extent(data, d => parseFloat(d[key])), [height, 0])]
@@ -255,7 +227,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         //       .text(function(d) { return d; })
         //       .style("fill", "black")
         
-    }, [data, fcs, selectedDims]);
+    }, [data, fcs]);
 
     useEffect(() => {
         const svg = d3.select(svgContainerRef.current).select("#coord-svg");
@@ -366,7 +338,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
                 })}
             </List>
 
-            <div ref={svgContainerRef} style={{ width: '100%', height: '300px' }}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '350px' }}></div>
             <Tooltip
                 visible={tooltip.visible}
                 content={tooltip.content}
