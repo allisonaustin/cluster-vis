@@ -55,7 +55,7 @@
 
 .wrapper_bottom {
   width: 100%;
-  height: 80%;
+  height: 75%;
   display: flex;
   flex-direction:row;
   border-style: solid;
@@ -65,7 +65,7 @@
 
 .wrapper_top {
   width: 100%;
-  height: 20%;
+  height: 25%;
   border-style: solid;
   border-width: thin;
   border-color: #DDDDDD;

@@ -9,7 +9,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 400 });
-    const [margin, setMargin] = useState({ top: 20, right: 10, bottom: 20, left: 20 });
+    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 20, left: 20 });
     const [tooltip, setTooltip] = useState({
         visible: false,
         content: '',
@@ -30,12 +30,20 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
 
     const [features, setFeatures] = useState(sortedFeatures);
     const [selectedDims, setSelectedDims] = useState(sortedFeatures.map(f => f.feature).slice(0,6));
-    const [allKeys, setAllKeys] = useState(sortedFeatures.map(f => f.feature));
+    const [allKeys, setAllKeys] = useState([]);
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setPlotData(data);
+
+        const allFeatures = Object.keys(data[0])
+        setAllKeys(allFeatures.filter(d => 
+            !(d.includes('Retrans')) && 
+            !(d.includes('UMAP')) &&
+            !(d.includes('tSNE')) &&
+            !(d.includes('PC')) &&
+            !(d.includes('Measurement'))));
         
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
@@ -151,10 +159,11 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
 
             axes.append("text")
                 .attr("y", -9)
-                .style("text-anchor", "middle")
+                .attr('transform', `rotate(-45)`)
+                .style("text-anchor", "start")
                 .style("fill", "black")
                 .text(dim)
-                .style('font-size', '15px');
+                .style('font-size', '14px');
 
             const brush = d3.brushY()
                 .extent([[-(brushWidth / 2), 0], [brushWidth / 2, height]])

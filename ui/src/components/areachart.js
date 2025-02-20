@@ -59,8 +59,8 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
       setChartData(chartdata);
       
-      const start = chartdata[Math.floor(chartdata.length * 0.3)].timestamp;
-      const end = chartdata[Math.floor(chartdata.length * 0.5)].timestamp;
+      const start = new Date('2024-02-21 16:07:30Z');
+      const end = new Date('2024-02-21 17:41:45Z');
       const filtered = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
 
       const xScale = d3.scaleTime()
@@ -90,7 +90,7 @@ const AreaChart = ({ data, field, index, chartType }) => {
         .attr("y", size.height - 10)
         .style('text-anchor', 'middle')
         .text('Time (hh:mm)')
-        .style('font-size', '16px');
+        .style('font-size', '18px');
 
       focus.append("g")
         .attr("class", "y-axis")
@@ -168,7 +168,11 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale)).selectAll('text').style('font-size', '16px');
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale))
+        
+        chart.select('.y-axis')
+          .selectAll("text")
+          .style("font-size", "16px")
 
         // updating line
         chart.select('.line')

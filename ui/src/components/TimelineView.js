@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 const TimelineView = ({ mgrData, fcs }) => {
 
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 600, height: 140 });
+    const [size, setSize] = useState({ width: 700, height: 170 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
@@ -30,16 +30,19 @@ const TimelineView = ({ mgrData, fcs }) => {
 
       let chartdata = {};
 
-      fields.forEach((field) => {
+      fields.forEach((field, idx) => {
         if (mgrData[field] && typeof mgrData[field] === "object") { 
             chartdata[field] = [];
             
             Object.keys(mgrData[field]).forEach((obj) => {
                 let date = new Date(parseInt(obj));
+                let value = mgrData[field][obj];
+
                 chartdata[field].push({
                     timestamp: date, 
-                    value: mgrData[field][obj], 
-                    nodeId: 'mgr-01'
+                    row: value == 0 ? 0 : idx + 1, 
+                    nodeId: 'mgr-01',
+                    value: value
                 });
             });
         }
@@ -58,13 +61,13 @@ const TimelineView = ({ mgrData, fcs }) => {
         } else {
             acc[feature].push({
                 timestamp: timestamp,
-                value: 1 
+                row: 2 
             });
         }
     
         return acc;
     }, {});
-    
+  
     const minTimestamp = d3.min(chartdata[fields[0]], d => d.timestamp);
     const maxTimestamp = d3.max(chartdata[fields[0]], d => d.timestamp);
 
@@ -76,14 +79,14 @@ const TimelineView = ({ mgrData, fcs }) => {
       xScaleRef.current = xScale; 
 
       const yScale = d3.scaleLinear()
-          .domain([0, d3.max(chartdata[fields[0]].map(v => v.value)) == 0 ? 1 : d3.max(chartdata[fields[0]].map(v => v.value))])
+          .domain([0, 4])
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
           .tickFormat(d3.utcFormat('%H:%M'))
           .tickSizeOuter(0);
       
-      const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
+      const yAxis = d3.axisLeft(yScale);
 
       svg.append("g")
           .attr("class", "x-axis2")
@@ -95,9 +98,10 @@ const TimelineView = ({ mgrData, fcs }) => {
           .attr("transform", `translate(${margin.left},0)`)
           .call(yAxis)
           .call(g => g.select(".domain").remove())
-          .call(g => g.selectAll(".tick line").clone()
-              .attr("x2", size.width - margin.left - margin.right - 20)
-              .attr("stroke-opacity", 0.1))
+          .call(g => g.selectAll(".tick").remove())
+        //   .call(g => g.selectAll(".tick line").clone()
+        //       .attr("x2", size.width - margin.left - margin.right - 20)
+        //       .attr("stroke-opacity", 0.1))
 
       svg.append("defs").append("svg:clipPath")
         .attr("id", "clip")
@@ -109,19 +113,16 @@ const TimelineView = ({ mgrData, fcs }) => {
 
       var areaGenerator = d3.area()
         .x(function(d) { return xScale(d.timestamp) })
-        .y0(yScale(0))
-        .y1(function(d) { return yScale(d.value) })
-
+        .y0(function(d) { return d.value !== 0 ? yScale(d.row + .2) : 0;  })
+        .y1(function(d) { return d.value !== 0 ? yScale(d.row + 1) : 0; })
+        .curve(d3.curveCardinal);
 
     svg.append('path')
         .datum(chartdata['Activity_P1'])
         .attr('class', `context-Activity_P1`)
         .attr('clip-path', 'url(#clip)')
         .style('fill', (d, i) => generateColor(i))
-        .style('stroke', 'black')
-        .style('stroke-width', 0.3)
-        .style('stroke-opacity', 0.5)
-        .attr("fill-opacity", .3)
+        .attr("fill-opacity", 0.6)
         .attr('d', areaGenerator)
 
     Object.keys(firstTs).forEach(f => {
@@ -131,19 +132,15 @@ const TimelineView = ({ mgrData, fcs }) => {
             .attr('class', `context-Most_Contributing_to_PCs`)
             .attr('clip-path', 'url(#clip)')
             .style('fill', COLORS.select)
-            .style('stroke', 'black')
-            .style('stroke-width', 0.3)
-            .style('stroke-opacity', 0.5)
-            .attr("fill-opacity", .3)
+            .attr("fill-opacity", 0.6)
             .attr('d', areaGenerator)
         })
 
     // adding legend 
     const legend = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${size.width / 1.8}, ${size.height - 45})`)
+        .attr('transform', `translate(${size.width / 1.65}, ${size.height - 45})`)
 
-    console.log(fields)
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
             .attr('transform', `translate(${i * 80}, 0)`)
@@ -154,19 +151,19 @@ const TimelineView = ({ mgrData, fcs }) => {
     
                 svg.selectAll(`.context-${field}`)
                     .transition().duration(200)
-                    .attr('fill-opacity', 0.8)
+                    .attr('fill-opacity', 0.6)
             })
             .on('mouseout', function() {
                 svg.selectAll('path')
                     .transition().duration(200)
-                    .attr('fill-opacity', 0.5);
+                    .attr('fill-opacity', 0.6);
             });
         
         legendItem.append('rect')
             .attr('width', 15)
             .attr('height', 15)
             .attr('fill', generateColor(i))
-            .attr('fill-opacity', 0.4)
+            .attr('fill-opacity', 0.6)
         
         legendItem.append('text')
             .attr('x', 20)
@@ -176,8 +173,8 @@ const TimelineView = ({ mgrData, fcs }) => {
             .attr('alignment-baseline', 'middle')
     })
 
-    const start = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.3)].timestamp;
-    const end = chartdata[fields[0]][Math.floor(chartdata[fields[0]].length * 0.45)].timestamp;
+    const start = new Date('2024-02-21 16:07:30Z');
+    const end = new Date('2024-02-21 17:41:45Z');
 
     // const formattedDate = dateFormat(start);
     // setCurrentDate(formattedDate)
@@ -269,7 +266,7 @@ const TimelineView = ({ mgrData, fcs }) => {
 
       };
 
-      return <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>;
+      return <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>;
 
     };
     

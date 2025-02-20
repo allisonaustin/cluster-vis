@@ -197,108 +197,100 @@ function App() {
         </header>
       ) : (
         <>
-          {activeTab === 0 && (
-            <div className="wrapper_app">
-              <div className="wrapper_main">
-                <div className="wrapper_top">
-                  <div className="view_title" style={{ width: '120px' }}>
-                    Timeline View
-                  </div>
-                  {mgrData ? (
-                    <TimelineView 
-                      mgrData={mgrData} 
-                      fcs={FCTData}
-                    />
-                  ) : (
-                    <p>Loading data...</p>
-                  )}
+          <div className="wrapper_app">
+            <div className="wrapper_main">
+              <div className="wrapper_top">
+                <div className="view_title" style={{ width: '120px' }}>
+                  Timeline View
                 </div>
-                <div className="wrapper_bottom">
-                  <div className="wrapper_left">
-                    <div className="view_title" style={{ width: '120px' }}>
-                      Performance Metrics
-                    </div>
-                    {Object.keys(perfData).map((field, index) => (
-                      <AreaChart 
-                        key={field} 
-                        data={perfData} 
-                        field={field} 
-                        index={index} 
-                        chartType="perf" 
-                      />
-                    ))}
+                {mgrData ? (
+                  <TimelineView 
+                    mgrData={mgrData} 
+                    fcs={FCTData}
+                  />
+                ) : (
+                  <p>Loading data...</p>
+                )}
+              </div>
+              <div className="wrapper_bottom">
+                <div className="wrapper_left">
+                  <div className="view_title" style={{ width: '120px' }}>
+                    Performance Metrics
                   </div>
-                  <div className="wrapper_left">
-                    <div className="view_title" style={{ width: '50px' }}>
-                      Triggers
-                    </div>
-                    {Object.keys(triggerData).map((field, index) => (
-                      <AreaChart 
-                        key={field} 
-                        data={triggerData} 
-                        field={field} 
-                        index={index} 
-                        chartType="trigger"
-                      />
-                    ))}
+                  {Object.keys(perfData).map((field, index) => (
+                    <AreaChart 
+                      key={field} 
+                      data={perfData} 
+                      field={field} 
+                      index={index} 
+                      chartType="perf" 
+                    />
+                  ))}
+                </div>
+                <div className="wrapper_left">
+                  <div className="view_title" style={{ width: '50px' }}>
+                    Triggers
                   </div>
+                  {Object.keys(triggerData).map((field, index) => (
+                    <AreaChart 
+                      key={field} 
+                      data={triggerData} 
+                      field={field} 
+                      index={index} 
+                      chartType="trigger"
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="wrapper_right">
-                <div className="wrapper_top2">
-                  <div className="view_title" style={{ width: '70px' }}>
-                    DR View
-                  </div>
-                  {DRFData && DRTData ? (
-                    <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
-                      <DR 
-                        data={DRFData} 
-                        type='feature' 
-                        setSelectedPoints={setSelectedPoints} 
-                        selectedPoints={selectedPoints} 
-                        hoveredPoint={hoveredPoint} 
-                        setHoveredPoint={setHoveredPoint} 
-                      />
-                      <DR 
-                        data={DRTData} 
-                        type='time' 
-                        setSelectedPoints={setSelectedPoints} 
-                        selectedPoints={selectedPoints} 
-                        hoveredPoint={hoveredPoint} 
-                        setHoveredPoint={setHoveredPoint} 
-                      />
-
-                    </div>
-                  ) : (
-                    <p>Loading DR results...</p>
-                  )}
+            </div>
+            <div className="wrapper_right">
+              <div className="wrapper_top2">
+                <div className="view_title" style={{ width: '70px' }}>
+                  DR View
                 </div>
-                <div className="wrapper_bottom2">
-                  <div className="view_title" style={{ width: '100px' }}>
-                    Coordinate Plot
-                  </div>
-                  {DRFData && FCFData ? (
-                    <Coordinates 
+                {DRFData && DRTData ? (
+                  <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
+                    <DR 
                       data={DRFData} 
-                      fcs={FCFData}
-                      selectedPoints={selectedPoints} 
+                      type='feature' 
                       setSelectedPoints={setSelectedPoints} 
+                      selectedPoints={selectedPoints} 
                       hoveredPoint={hoveredPoint} 
                       setHoveredPoint={setHoveredPoint} 
                     />
-                  ) : (
-                    <p>Loading DR results...</p>
-                  )}
+                    <DR 
+                      data={DRTData} 
+                      type='time' 
+                      setSelectedPoints={setSelectedPoints} 
+                      selectedPoints={selectedPoints} 
+                      hoveredPoint={hoveredPoint} 
+                      setHoveredPoint={setHoveredPoint} 
+                    />
+
+                  </div>
+                ) : (
+                  <p>Loading DR results...</p>
+                )}
+              </div>
+              <div className="wrapper_bottom2">
+                <div className="view_title" style={{ width: '100px' }}>
+                  Coordinate Plot
                 </div>
+                {DRFData && FCFData ? (
+                  <Coordinates 
+                    data={DRFData} 
+                    fcs={FCFData}
+                    selectedPoints={selectedPoints} 
+                    setSelectedPoints={setSelectedPoints} 
+                    hoveredPoint={hoveredPoint} 
+                    setHoveredPoint={setHoveredPoint} 
+                  />
+                ) : (
+                  <p>Loading DR results...</p>
+                )}
               </div>
             </div>
-          )}
-
-          {activeTab === 1 && (
-            <div className="streaming-analysis">
-              <p>This is the Streaming Analysis tab. Implement streaming logic here.</p>
-            </div>
-          )}
+          </div>
         </>
       )}
     </div>
