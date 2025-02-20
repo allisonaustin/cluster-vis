@@ -277,7 +277,7 @@ function App() {
                   <div className="view_title" style={{ width: '100px' }}>
                     Coordinate Plot
                   </div>
-                  {DRFData ? (
+                  {DRFData && FCFData ? (
                     <Coordinates 
                       data={DRFData} 
                       fcs={FCFData}

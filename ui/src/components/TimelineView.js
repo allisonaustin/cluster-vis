@@ -244,7 +244,11 @@ const TimelineView = ({ mgrData, fcs }) => {
             
         // updating x axes
         xScale.domain(newDomain)
-        d3.selectAll('.focus .x-axis').transition(t).call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0));
+        d3.selectAll('.focus .x-axis')
+            .transition(t)
+            .call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0))
+            .selectAll('text')
+            .style('font-size', '16px');
 
         // updating charts
         // Promise.all(
