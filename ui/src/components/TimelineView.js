@@ -219,7 +219,7 @@ const TimelineView = ({ mgrData, fcs }) => {
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-perf-1`);
         const xScale = chart.node()?.xScale;
-        const timeFormat = d3.timeFormat('%H:%M');
+        const timeFormat = d3.utcFormat('%H:%M');
         const dateFormat = d3.timeFormat('%Y-%m-%d');
 
         if (!xScale) {
@@ -241,9 +241,18 @@ const TimelineView = ({ mgrData, fcs }) => {
             
         // updating x axes
         xScale.domain(newDomain)
+
+        const steps = 6;
+        const [minDate, maxDate] = xScale.domain();
+        const stepMs = (maxDate - minDate) / (steps - 1);
+        const tickVals = [];
+        for (let i = 0; i < steps; i++) {
+          tickVals.push(new Date(minDate.getTime() + i * stepMs));
+        }
+
         d3.selectAll('.focus .x-axis')
             .transition(t)
-            .call(d3.axisBottom(xScale).tickFormat(timeFormat).tickSizeOuter(0))
+            .call(d3.axisBottom(xScale).tickValues(tickVals).tickFormat(timeFormat).tickSizeOuter(0))
             .selectAll('text')
             .style('font-size', '16px');
 

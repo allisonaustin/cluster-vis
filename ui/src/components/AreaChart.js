@@ -65,13 +65,23 @@ const AreaChart = ({ data, field, index, chartType }) => {
 
       const xScale = d3.scaleTime()
         .domain(d3.extent(filtered, d => d.timestamp))
-        .range([margin.left, size.width - margin.right])
+        .range([margin.left, size.width - margin.right]);
+
+        
+        const steps = 6;
+        const [minDate, maxDate] = xScale.domain();
+        const stepMs = (maxDate - minDate) / (steps - 1);
+        const tickVals = [];
+        for (let i = 0; i < steps; i++) {
+          tickVals.push(new Date(minDate.getTime() + i * stepMs));
+        }
         
       const yScale = d3.scaleLinear()
           .domain([0, d3.max(filtered.map(v => v.value))])
           .range([size.height - margin.bottom, margin.top]);
       
       const xAxis = d3.axisBottom(xScale)
+          .tickValues(tickVals) 
           .tickFormat(d3.utcFormat('%H:%M'))
           .tickSizeOuter(0);
 
