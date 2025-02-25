@@ -4,7 +4,8 @@ import os
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from scripts.dr_features import get_dr_features
+from scripts.dr_features import get_dr_features, get_fc_features
+from scripts.dr_time import get_dr_time, get_fc_time
 
 app = Flask(__name__)
 CORS(app)
@@ -34,14 +35,29 @@ def get_dr_feature_data_from_csv():
 
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
+    df = get_dr_time()
+    return jsonify(df.to_dict(orient='records'))
+
+@app.route('/drTimeDataCSV', methods=['GET'])
+def get_dr_time_data_from_csv():
     return get_csv_data('farm/multiDR_results2.csv')
 
 @app.route('/FCTimeData', methods=['GET'])
 def get_fc_t_data():
+    df = get_fc_time()
+    return jsonify(df.to_dict(orient='records'))
+
+@app.route('/FCTimeDataCSV', methods=['GET'])
+def get_fc_t_data_csv_from_csv():
     return get_csv_data('farm/FC_t_final.csv')
 
 @app.route('/FCFeatureData', methods=['GET'])
 def get_fc_f_data():
+    df = get_fc_features()
+    return jsonify(df.to_dict(orient='records'))
+
+@app.route('/FCFeatureDataCSV', methods=['GET'])
+def get_fc_f_data_from_csv():
     return get_csv_data('farm/FC_f_final.csv')
 
 def get_csv_data(filename):
