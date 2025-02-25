@@ -11,6 +11,14 @@ app = Flask(__name__)
 CORS(app)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
+ts_data = pd.DataFrame()
+filepath = './data/farm/'
+
+def get_timeseries_data(file='far_data_2024-02-21.csv'):
+    global ts_data
+    global filepath
+    ts_data = pd.read_csv(filepath+file).fillna(0.0)
+    return ts_data
 
 @app.route('/mgrData', methods=['GET'])
 @app.route('/farmData', methods=['GET'])
@@ -31,7 +39,7 @@ def get_dr_feature_data():
 
 @app.route('/drFeatureDataCSV', methods=['GET'])
 def get_dr_feature_data_from_csv():
-    return get_csv_data('farm/multiDR_results1.csv')
+    return get_csv_data('farm/PCA_feat_results.csv')
 
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
@@ -40,11 +48,11 @@ def get_dr_time_data():
 
 @app.route('/drTimeDataCSV', methods=['GET'])
 def get_dr_time_data_from_csv():
-    return get_csv_data('farm/multiDR_results2.csv')
+    return get_csv_data('farm/PCA_time_results.csv')
 
 @app.route('/FCTimeData', methods=['GET'])
 def get_fc_t_data():
-    df = get_fc_time()
+    df = get_fc_time(ts_data)
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/FCTimeDataCSV', methods=['GET'])
@@ -53,7 +61,7 @@ def get_fc_t_data_csv_from_csv():
 
 @app.route('/FCFeatureData', methods=['GET'])
 def get_fc_f_data():
-    df = get_fc_features()
+    df = get_fc_features(ts_data)
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/FCFeatureDataCSV', methods=['GET'])
@@ -89,4 +97,5 @@ def list_json_files():
         return jsonify({"error": "Error reading folder", "details": str(e)}), 500
 
 if __name__ == '__main__':
+    ts_data = get_timeseries_data()
     app.run(debug=True, port=5010)

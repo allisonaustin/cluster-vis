@@ -28,22 +28,19 @@ def preprocess(df, ts):
     """
     return df[df['timestamp']==ts].set_index('nodeId').drop(columns='timestamp')
 
-def apply_pca_to_time(df, ts):
-    """Applying PCA to each timestamp across features
+def apply_first_dr(ts, df, method='PCA', var_threshold=0.7):
+    """Applying first DR method to each timestamp across features
 
     Args:
         df (DataFrame): Input dataframe
         ts (str): Timestamp to filter on, in format 'YYYY-MM-DD HH:MM:SS'
 
     Returns:
-        DataFrame: dataframe with PCA 
+        DataFrame: dataframe with PCA1/UMAP1 of each feature
     """
     try:
         # pivot: rows -> features, columns -> nodeId
         X = preprocess(df, ts)
-
-        # convert to cupy array
-        # baseline = cp.array(X.values)
         baseline = X.values
 
         # normalizing the data (demean)
@@ -54,36 +51,62 @@ def apply_pca_to_time(df, ts):
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(demeaned)
 
-        # if (X_scaled.shape[0] < 2 or np.all(np.isnan(X_scaled)) or np.all(X_scaled == 0)):
         if X_scaled.shape[0] < 2 or np.all(np.isnan(X_scaled)):
-            print(f"Skipping {ts} due to insufficient data variance.")
             return None
+        
+        if (method == 'PCA'):
+            # apply PCA
+            pca = PCA(n_components=1)
+            scores = pca.fit_transform(X_scaled)
 
-        # apply PCA
-        pca = PCA(n_components=1)
-        scores = pca.fit_transform(X_scaled)
+            explained_variance = pca.explained_variance_ratio_[0]
 
-        explained_variance_ratio_cumsum = np.cumsum(pca.explained_variance_ratio_)
-        npc = np.sum(explained_variance_ratio_cumsum < 0.9999) + 1
-        # print(f"Number of principal components: {npc}")
-        # print(f"PC1:",pca.components_[1], len(pca.components_[1]))
-        abs_comp = np.abs(pca.components_[0])
-        top_10 = np.argsort(abs_comp)[-10:][::-1]
-        # top 10 most influential features for this column
-        fc_f = X.columns[top_10]
+            if explained_variance >= var_threshold:
+                P_fin = pd.DataFrame({"DR1": scores[:, 0]})
+                P_fin['Measurement'] = X.index
+                P_fin['Explained Variance'] = explained_variance
+            else:
+                return None
+            
+            abs_comp = np.abs(pca.components_[0])
+            top_10 = np.argsort(abs_comp)[-10:][::-1]
+            fc_f = X.columns[top_10]
 
-        P_fin = pd.DataFrame({f"PC{k+1}": scores[:, k] if k < npc else np.nan for k in range(1)})
-        P_fin['Measurement'] = X.index
+            fc_f_df = pd.DataFrame({'timestamp': ts, 'feature': fc_f})
 
-        fc_f_df = pd.DataFrame({'timestamp': ts, 'feature': fc_f})
+            return P_fin, fc_f_df
 
-        # print(f"{col_name} done...")
+        elif (method == 'UMAP'):
+            umap1, umap2 = apply_umap(X_scaled)
 
-        return P_fin, fc_f_df
+            U_fin = pd.DataFrame({"DR1": umap1})  
+            U_fin['Measurement'] = X.index
+
+            # TODO: Implement feature contribution for UMAP
+            fc_t_df = pd.DataFrame()
+        
+            return U_fin, fc_t_df
 
     except Exception as e:
-        print(f"Error processing PCA across features: {e}")
+        print(f"Error processing {method} across {ts}: {e}")
         return None
+    
+
+def apply_second_dr(df):
+    df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
+    df_pca = apply_pca(df_pivot)
+    print(df_pca.columns)
+    umap1, umap2 = apply_umap(df_pivot)
+    tsne1, tsne2 = apply_tsne(df_pivot)
+
+    # return df_pca['PC1']
+    # append DR results to df
+    return df_pivot.assign(PC1=df_pca['PC1'],
+                    PC2=df_pca['PC2'],
+                    UMAP1=umap1,
+                    UMAP2=umap2,
+                    tSNE1=tsne1,
+                    tSNE2=tsne2)
 
 
 def get_valid_timestamps(df):
@@ -111,7 +134,7 @@ def process_timestamps(df):
 
     def process_single_timestamp(ts):
         try:
-            P_df, fc_f_df = apply_pca_to_time(df, ts)
+            P_df, fc_f_df = apply_first_dr(ts, df, 'PCA')
 
             if P_df is not None:
                 P_df.insert(0, 'Col', ts)
@@ -137,25 +160,8 @@ def process_timestamps(df):
 
     return P_final, FC_final
 
-def process_features(df):
-    df_pivot = df.pivot(index="Measurement", columns="Col", values="PC1")
-    df_pca = apply_pca(df_pivot)
-    print(df_pca.columns)
-    umap1, umap2 = apply_umap(df_pivot)
-    tsne1, tsne2 = apply_tsne(df_pivot)
-
-    # return df_pca['PC1']
-    # append DR results to df
-    return df_pivot.assign(PC1=df_pca['PC1'],
-                    PC2=df_pca['PC2'],
-                    UMAP1=umap1,
-                    UMAP2=umap2,
-                    tSNE1=tsne1,
-                    tSNE2=tsne2)
-
-def apply_pca(df):
+def apply_pca(df, n_components=2):
     X = df.copy(deep=True)
-    n_components = 2
 
     try:
         baseline = X.values
@@ -171,14 +177,8 @@ def apply_pca(df):
         # apply PCA
         pca = PCA(n_components=n_components)
         scores = pca.fit_transform(X_scaled)
-
-        explained_variance_ratio_cumsum = np.cumsum(pca.explained_variance_ratio_)
-        npc = np.sum(explained_variance_ratio_cumsum < 0.9999) + 1
-        n_components = scores.shape[1]
-        print(f"Number of principal components: {n_components}")
         
-
-        P_fin = pd.DataFrame({f"PC{k+1}": scores[:, k] if k < n_components else np.nan for k in range(3)})
+        P_fin = pd.DataFrame({f"PC{k+1}": scores[:, k] if k < n_components else np.nan for k in range(n_components)})
         P_fin['Measurement'] = X.index
         P_fin.set_index('Measurement', inplace=True)
 
@@ -207,13 +207,13 @@ def get_dr_features(components_only=False):
 
     # First pass DR across Features
     dr1start = timer()
-    P_final, FC_final = process_timestamps(df)
+    D_final, FC_final = process_timestamps(df)
     dr1end = timer()
 
     # Second pass DR across Timestamps
     # PCA then tSNE and UMAP
     dr2start = timer()
-    results = process_features(P_final)
+    results = apply_second_dr(D_final)
     dr2end = timer()
 
     print(f'Read csv in {(dataEnd - dataStart)}s')
@@ -222,9 +222,6 @@ def get_dr_features(components_only=False):
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
 
 
-def get_fc_features():
-    df = getData()
-
+def get_fc_features(df):
     P_final, FC_final = process_timestamps(df)
-
     return FC_final

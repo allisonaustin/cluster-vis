@@ -55,7 +55,7 @@ function App() {
 
   const getDRFeatureData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/drFeatureData`);
+      const response = await fetch(`http://127.0.0.1:5010/drFeatureDataCSV`);
       const data = await response.json();
       
       if (response.ok) {
@@ -75,7 +75,7 @@ function App() {
 
   const getDRTimeData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
+      const response = await fetch(`http://127.0.0.1:5010/drTimeDataCSV`);
       const data = await response.json();
       
       if (response.ok) {
@@ -95,7 +95,7 @@ function App() {
 
   const getFCTData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/FCTimeData`);
+      const response = await fetch(`http://127.0.0.1:5010/FCTimeDataCSV`);
       const data = await response.json();
       
       if (response.ok) {
@@ -115,7 +115,7 @@ function App() {
 
   const getFCFData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/FCFeatureData`);
+      const response = await fetch(`http://127.0.0.1:5010/FCFeatureDataCSV`);
       const data = await response.json();
       
       if (response.ok) {
