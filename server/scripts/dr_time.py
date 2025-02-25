@@ -1,5 +1,7 @@
 """2-stage dimension reduction across time domain then feature domain"""
 
+from timeit import default_timer as timer
+
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -8,7 +10,6 @@ from sklearn.preprocessing import StandardScaler
 from umap import UMAP
 
 # TODO: finish docstrings
-# TODO: benchmark time taken per function
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
@@ -174,15 +175,24 @@ def apply_tsne(df):
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
 def get_dr_time(components_only=False):
+    dataStart = timer()
     df = getData()
+    dataEnd = timer()
 
     # First pass DR across Timestamps
+    dr1start = timer()
     P_final, FC_final = process_columns(df)
+    dr1end = timer()
 
-    print(P_final.columns)
     # Second pass DR across Features
     # PCA then tSNE and UMAP
+    dr2start = timer()
     results = process_timestamps(P_final)
+    dr2end = timer()
+
+    print(f'Read csv in {(dataEnd - dataStart)}s')
+    print(f'DR1 in {(dr1end - dr1start)}s')
+    print(f'DR2 in {(dr2end - dr2start)}s')
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
 
 def get_fc_time():

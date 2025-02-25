@@ -1,5 +1,8 @@
 """2-stage dimension reduction across feature domain then time domain."""
 
+from concurrent.futures import ThreadPoolExecutor
+from timeit import default_timer as timer
+
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -8,7 +11,6 @@ from sklearn.preprocessing import StandardScaler
 from umap import UMAP
 
 # TODO: finish docstrings
-# TODO: benchmark time taken per function
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
@@ -98,22 +100,6 @@ def get_valid_timestamps(df):
     print('valid timestamps:', len(valid_ts))
     return valid_ts
 
-def process_single_timestamp(df, ts, P_final, FC_final):
-    try:
-        P_df, fc_f_df = apply_pca_to_time(df, ts)
-
-        if P_df is not None:
-            P_df.insert(0, 'Col', ts)
-            P_final.append(P_df)
-
-        if fc_f_df is not None:
-            FC_final.append(fc_f_df)
-
-    except Exception as e:
-        print(f'Error processing {ts}: {e}')
-
-    return P_final, FC_final
-
 def process_timestamps(df):
     P_final = []
     FC_final = []
@@ -123,9 +109,27 @@ def process_timestamps(df):
     end_idx = int(len(valid_ts) * 0.45)
     timestamps = valid_ts[start_idx:end_idx]
 
+    def process_single_timestamp(ts):
+        try:
+            P_df, fc_f_df = apply_pca_to_time(df, ts)
+
+            if P_df is not None:
+                P_df.insert(0, 'Col', ts)
+                P_final.append(P_df)
+
+            if fc_f_df is not None:
+                FC_final.append(fc_f_df)
+
+        except Exception as e:
+            print(f'Error processing {ts}: {e}')
+
+        return P_final, FC_final
+
     # TODO: parallelize
-    for ts in timestamps:
-        process_single_timestamp(df, ts, P_final, FC_final)
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_single_timestamp, timestamps)
+    # for ts in timestamps:
+    #     process_single_timestamp(df, ts, P_final, FC_final)
 
     # combine all results
     P_final = pd.concat(P_final, ignore_index=True) if P_final else pd.DataFrame()
@@ -197,14 +201,24 @@ def apply_tsne(df):
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
 def get_dr_features(components_only=False):
+    dataStart = timer()
     df = getData()
+    dataEnd = timer()
 
     # First pass DR across Features
+    dr1start = timer()
     P_final, FC_final = process_timestamps(df)
+    dr1end = timer()
 
     # Second pass DR across Timestamps
     # PCA then tSNE and UMAP
+    dr2start = timer()
     results = process_features(P_final)
+    dr2end = timer()
+
+    print(f'Read csv in {(dataEnd - dataStart)}s')
+    print(f'DR1 in {(dr1end - dr1start)}s')
+    print(f'DR2 in {(dr2end - dr2start)}s')
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
 
 
