@@ -1,8 +1,10 @@
-import os
 import json
+import os
+
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from scripts.dr_features import get_dr_features
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +25,11 @@ def get_json_data():
 
 @app.route('/drFeatureData', methods=['GET'])
 def get_dr_feature_data():
+    df = get_dr_features()
+    return jsonify(df.to_dict(orient='records'))
+
+@app.route('/drFeatureDataCSV', methods=['GET'])
+def get_dr_feature_data_from_csv():
     return get_csv_data('farm/multiDR_results1.csv')
 
 @app.route('/drTimeData', methods=['GET'])
