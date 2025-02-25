@@ -66,6 +66,8 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
         });
         onSelect(Array.from(selectedIds));
 
+        console.log('selected: ', selectedIds)
+
         if (selectedIds.size === 0) { // resetting plot
             circles
                 .style('fill', getColor('default'))

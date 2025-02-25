@@ -215,7 +215,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     const handleSelection = (selected) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
         
-        console.log("Selected Items:", selected);
+        // console.log("Selected Items:", selected);
         setSelectedPoints(selected)
         
         chart.selectAll('.dr-circle')
