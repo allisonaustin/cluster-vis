@@ -86,19 +86,29 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_vari
         print(f"Error processing {method} across {col_name}: {e}")
         return None
 
+def get_valid_timestamps(df):
+    num_nodes = 195
+    valid_ts = valid_ts = df.groupby('timestamp').filter(lambda x: x['nodeId'].nunique() == num_nodes)['timestamp'].unique()
+    print('valid timestamps:', len(valid_ts))
+    return valid_ts
+
 def get_numeric_columns(df):
     return df.drop(columns=['timestamp', 'nodeId']).columns
 
 def process_columns(df, method='PCA'):
+    print('Applying DR1')
     P_final = []
     FC_final = []
     e_v_dict = {}
 
     numeric_cols = get_numeric_columns(df)
+    # timestamps = get_valid_timestamps(df)
+    # df_valid_ts = df[df['timestamp'].isin(timestamps)]
+    df_valid_ts = df
 
     def process_single_column(col_name):
         try:
-            result = apply_first_dr(df, col_name, method, explained_variance_dict=e_v_dict)
+            result = apply_first_dr(df_valid_ts, col_name, method, explained_variance_dict=e_v_dict)
 
             if result is None:
                 return 
@@ -122,7 +132,7 @@ def process_columns(df, method='PCA'):
     if method == 'UMAP':
         for col in numeric_cols:
             process_single_column(col)
-    elif method == 'PCA':
+    else:
         with ThreadPoolExecutor() as executor:
             executor.map(process_single_column, numeric_cols)
 
@@ -133,6 +143,7 @@ def process_columns(df, method='PCA'):
     return P_final, FC_final, e_v_dict
 
 def apply_pca(df, n_components=2):
+    print('Applying DR2 PCA')
     X = df.copy(deep=True)
 
     try:
@@ -161,21 +172,23 @@ def apply_pca(df, n_components=2):
         return None
     
 def apply_umap(df):
+    print('Applying DR2 UMAP')
     df_umap = df.copy(deep=True)
     umap = UMAP(n_components=2, random_state=42)
     embedding = umap.fit_transform(df_umap)
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
 def apply_tsne(df):
+    print('Applying DR2 tSNE')
     df_tsne = df.copy(deep=True)
     tsne = TSNE(n_components=2, random_state=42)
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
 def apply_second_dr(df):
+    print('Applying DR2')
     df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
     df_pca = apply_pca(df_pivot)
-    print(df_pca.columns)
     umap1, umap2 = apply_umap(df_pivot)
     tsne1, tsne2 = apply_tsne(df_pivot)
 
