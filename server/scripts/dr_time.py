@@ -5,6 +5,7 @@ from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
@@ -82,24 +83,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
     except Exception as e:
         print(f"Error processing {method} across {col_name}: {e}")
         return None
-    
 
-def apply_second_dr(df):
-    df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
-    df_pca = apply_pca(df_pivot)
-    print(df_pca.columns)
-    umap1, umap2 = apply_umap(df_pivot)
-    tsne1, tsne2 = apply_tsne(df_pivot)
-
-    # return df_pca['PC1']
-    # append DR results to df
-    return df_pivot.assign(PC1=df_pca['PC1'],
-                    PC2=df_pca['PC2'],
-                    UMAP1=umap1,
-                    UMAP2=umap2,
-                    tSNE1=tsne1,
-                    tSNE2=tsne2)
-    
 def get_numeric_columns(df):
     return df.drop(columns=['timestamp', 'nodeId']).columns
 
@@ -181,17 +165,47 @@ def apply_tsne(df):
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
-def get_dr_time(df, components_only=False):
+def apply_second_dr(df):
+    df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
+    df_pca = apply_pca(df_pivot)
+    print(df_pca.columns)
+    umap1, umap2 = apply_umap(df_pivot)
+    tsne1, tsne2 = apply_tsne(df_pivot)
+
+    # return df_pca['PC1']
+    # append DR results to df
+    return df_pivot.assign(PC1=df_pca['PC1'],
+                    PC2=df_pca['PC2'],
+                    UMAP1=umap1,
+                    UMAP2=umap2,
+                    tSNE1=tsne1,
+                    tSNE2=tsne2)
+
+def id_clusters_w_kmeans(df_pivot):
+    X = df_pivot[['UMAP1', 'UMAP2']]
+    kmeans = KMeans(n_clusters=5, random_state=42, n_init=10)
+    df_pivot['Cluster'] = kmeans.fit_predict(X)
+    df_pivot['nodeId'] = df_pivot.index
+
+def get_dr_time(df, components_only=True):
     # First pass DR across Timestamps
     dr1start = timer()
-    D_final, FC_final = process_columns(df)
+    DR1_d, DR1_fc = process_columns(df)
     dr1end = timer()
+
     # Second pass DR across Features
     # PCA then tSNE and UMAP
     dr2start = timer()
-    results = apply_second_dr(D_final)
+    DR2_d = apply_second_dr(DR1_d)
     dr2end = timer()
+    
+    # Use kMeans to get cluster IDs
+    kmeansStart = timer()
+    id_clusters_w_kmeans(DR2_d)
+    kmeansEnd = timer()
 
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')
-    return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
+    print(f'kMeans in {(kmeansEnd - kmeansStart)}s')
+    print(f'Returning {len(DR2_d)} rows')
+    return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
