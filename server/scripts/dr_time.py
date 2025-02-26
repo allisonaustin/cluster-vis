@@ -22,7 +22,7 @@ def preprocess(df, value_column):
              .pivot_table(index='timestamp', columns='nodeId', values=value_column) \
              .apply(lambda row: row.fillna(0.0), axis=0).T
 
-def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
+def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_variance_dict=None):
     try:
         # pivot: rows -> timestamps, columns -> nodeId
         X = preprocess(df, col_name)
@@ -59,6 +59,8 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
                 P_fin = pd.DataFrame({"DR1": scores[:, 0]})
                 P_fin['Measurement'] = X.index
                 P_fin['Explained Variance'] = explained_variance
+                if explained_variance_dict is not None:
+                    explained_variance_dict[col_name] = explained_variance
             else:
                 return None      
             
@@ -66,7 +68,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
 
             # print(f"{col_name} done...")
 
-            return P_fin, fc_t_df
+            return P_fin, fc_t_df, explained_variance_dict
         
         elif (method == 'UMAP'):
             umap1, umap2 = apply_umap(X_scaled)
@@ -77,7 +79,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
             # TODO: Implement timestamp contribution for UMAP
             fc_t_df = pd.DataFrame()
         
-            return U_fin, fc_t_df
+            return U_fin, fc_t_df, explained_variance_dict
     
     except Exception as e:
         print(f"Error processing {col_name}: {e}")
@@ -105,12 +107,12 @@ def get_numeric_columns(df):
 
 def process_single_column(df, col_name, P_final, FC_final):
     try:
-        result = apply_first_dr(df, col_name, 'PCA')
+        result = apply_first_dr(df, col_name, 'PCA', 0.7, explained_variance_dict)
 
         if result is None:
             return 
         
-        P_df, fc_t_df = result
+        P_df, fc_t_df, explained_variance_dict = result
 
         if P_df is not None:
             P_df.insert(0, 'Col', col_name)
@@ -121,20 +123,21 @@ def process_single_column(df, col_name, P_final, FC_final):
 
     except Exception as e:
         print(f"Error processing {col_name}: {e}")
-        return None
+        return None, explained_variance_dict
 
 def process_columns(df):
     P_final = []
     FC_final = []
+    explained_variance_dict = {}
 
     numeric_cols = get_numeric_columns(df)
 
     with ThreadPoolExecutor() as executor:
         # Submit tasks and collect futures
-        futures = {executor.submit(process_single_column, df, col): col for col in numeric_cols}
+        futures = {executor.submit(process_single_column, df, col, P_final, FC_final): col for col in numeric_cols}
 
         for future in futures:
-            P_df, fc_t_df = future.result()
+            P_df, fc_t_df, explained_variance = future.result()
 
             if P_df is not None:
                 P_final.append(P_df)
@@ -142,10 +145,13 @@ def process_columns(df):
             if fc_t_df is not None:
                 FC_final.append(fc_t_df)
 
+            if explained_variance is not None:
+                explained_variance_dict.update(explained_variance)
+
     P_final = pd.concat(P_final, ignore_index=True) if P_final else pd.DataFrame()
     FC_final = pd.concat(FC_final, ignore_index=True) if FC_final else pd.DataFrame()
 
-    return P_final, FC_final
+    return P_final, FC_final, explained_variance_dict
 
 
 def apply_pca(df, n_components=2):
@@ -191,7 +197,7 @@ def apply_tsne(df):
 def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
     dr1start = timer()
-    D_final, FC_final = process_columns(df)
+    D_final, FC_final, explained_variance_dict = process_columns(df)
     dr1end = timer()
 
     # Second pass DR across Features
@@ -202,4 +208,8 @@ def get_dr_time(df, components_only=False):
 
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')
+    
+    explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
+    explained_variance_df.to_csv('../data/farm/explained_variance.csv', index=False)
+    
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
