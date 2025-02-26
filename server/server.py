@@ -92,4 +92,4 @@ def list_json_files():
 
 if __name__ == '__main__':
     ts_data = get_timeseries_data()
-    app.run(debug=True, port=5010, use_reloader=False)
+    app.run(debug=True, port=5010)

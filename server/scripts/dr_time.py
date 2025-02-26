@@ -23,7 +23,7 @@ def preprocess(df, value_column):
              .pivot_table(index='timestamp', columns='nodeId', values=value_column) \
              .apply(lambda row: row.fillna(0.0), axis=0).T
 
-def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
+def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_variance_dict=None):
     try:
         # pivot: rows -> timestamps, columns -> nodeId
         X = preprocess(df, col_name)
@@ -49,12 +49,14 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
 
             explained_variance = pca.explained_variance_ratio_[0]
             
-            # if explained_variance >= var_threshold:  # Only add PC1 if variance > some threshold
-            #     P_fin = pd.DataFrame({"DR1": scores[:, 0]})
-            #     P_fin['Measurement'] = X.index
-            #     P_fin['Explained Variance'] = explained_variance
-            # else:
-            #     return None      
+            if explained_variance >= var_threshold:  # Only add PC1 if variance > some threshold
+                P_fin = pd.DataFrame({"DR1": scores[:, 0]})
+                P_fin['Measurement'] = X.index
+                P_fin['Explained Variance'] = explained_variance
+                if explained_variance_dict is not None:
+                    explained_variance_dict[col_name] = explained_variance
+            else:
+                return None      
             
             P_fin = pd.DataFrame({"DR1": scores[:, 0]})
             P_fin['Measurement'] = X.index
@@ -66,7 +68,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
 
             fc_t_df = pd.DataFrame({'feature': col_name, 'timestamp': fc_t})
 
-            return P_fin, fc_t_df
+            return P_fin, fc_t_df, explained_variance_dict
         
         elif (method == 'UMAP'):
             reducer = UMAP(n_components=1, random_state=42)
@@ -78,7 +80,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
             # TODO: Implement feature contribution for UMAP
             fc_t_df = pd.DataFrame()
         
-            return U_fin, fc_t_df
+            return U_fin, fc_t_df, explained_variance_dict
     
     except Exception as e:
         print(f"Error processing {method} across {col_name}: {e}")
@@ -90,17 +92,18 @@ def get_numeric_columns(df):
 def process_columns(df, method='PCA'):
     P_final = []
     FC_final = []
+    e_v_dict = {}
 
     numeric_cols = get_numeric_columns(df)
 
     def process_single_column(col_name):
         try:
-            result = apply_first_dr(df, col_name, method)
+            result = apply_first_dr(df, col_name, method, explained_variance_dict=e_v_dict)
 
             if result is None:
                 return 
             
-            r_df, r_t_df = result
+            r_df, r_t_df, explained_variance = result
 
             if r_df is not None:
                 r_df.insert(0, 'Col', col_name)
@@ -108,6 +111,9 @@ def process_columns(df, method='PCA'):
 
             if r_t_df is not None:
                 FC_final.append(r_t_df)
+            
+            if explained_variance is not None:
+                e_v_dict.update(explained_variance)
 
         except Exception as e:
             print(f"Error processing {col_name}: {e}")
@@ -120,10 +126,11 @@ def process_columns(df, method='PCA'):
         with ThreadPoolExecutor() as executor:
             executor.map(process_single_column, numeric_cols)
 
+
     P_final = pd.concat(P_final, ignore_index=True) if P_final else pd.DataFrame()
     FC_final = pd.concat(FC_final, ignore_index=True) if FC_final else pd.DataFrame()
 
-    return P_final, FC_final
+    return P_final, FC_final, e_v_dict
 
 def apply_pca(df, n_components=2):
     X = df.copy(deep=True)
@@ -187,10 +194,10 @@ def id_clusters_w_kmeans(df_pivot):
     df_pivot['Cluster'] = kmeans.fit_predict(X)
     df_pivot['nodeId'] = df_pivot.index
 
-def get_dr_time(df, components_only=True):
+def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
     dr1start = timer()
-    DR1_d, DR1_fc = process_columns(df)
+    DR1_d, FC_final, explained_variance_dict = process_columns(df)
     dr1end = timer()
 
     # Second pass DR across Features
@@ -203,6 +210,9 @@ def get_dr_time(df, components_only=True):
     kmeansStart = timer()
     id_clusters_w_kmeans(DR2_d)
     kmeansEnd = timer()
+
+    explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
+    explained_variance_df.to_csv('./data/farm/explained_variance.csv', index=False)
 
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')

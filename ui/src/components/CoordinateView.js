@@ -366,7 +366,12 @@ return (
                 })}
             </List>
 
-            <div ref={svgContainerRef} style={{ width: '100%', height: '350px' }}></div>
+            <div style={{ position: 'relative', width: '100%', height: '350px' }}>
+            <h4 style={{ marginBottom: 0, position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }}>
+                PC1 Values
+            </h4>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>
+            </div>
             
             <Tooltip
                 visible={tooltip.visible}
