@@ -23,13 +23,18 @@ def preprocess(df, value_column):
              .pivot_table(index='timestamp', columns='nodeId', values=value_column) \
              .apply(lambda row: row.fillna(0.0), axis=0).T
 
-def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_variance_dict=None):
+def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_variance_dict=None, clamp_time_window=False):
     try:
         # pivot: rows -> timestamps, columns -> nodeId
         X = preprocess(df, col_name)
 
         X.columns = pd.to_datetime(X.columns)
-        baseline = X.values
+
+        start_index = int(len(X.columns) * 0.3)
+        end_index = int(len(X.columns) * 0.45)
+        X_filtered = X.iloc[:, start_index:end_index]
+
+        baseline = X_filtered.values if clamp_time_window else X.values
 
         # normalizing the data (demean)
         mean_hat = baseline.mean(axis=0)
@@ -50,13 +55,11 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_vari
             explained_variance = pca.explained_variance_ratio_[0]
             
             if explained_variance >= var_threshold:  # Only add PC1 if variance > some threshold
-                P_fin = pd.DataFrame({"DR1": scores[:, 0]})
-                P_fin['Measurement'] = X.index
-                P_fin['Explained Variance'] = explained_variance
+                # P_fin = pd.DataFrame({"DR1": scores[:, 0]})
+                # P_fin['Measurement'] = X.index
+                # P_fin['Explained Variance'] = explained_variance
                 if explained_variance_dict is not None:
                     explained_variance_dict[col_name] = explained_variance
-            else:
-                return None      
             
             P_fin = pd.DataFrame({"DR1": scores[:, 0]})
             P_fin['Measurement'] = X.index
@@ -71,19 +74,18 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7, explained_vari
             return P_fin, fc_t_df, explained_variance_dict
         
         elif (method == 'UMAP'):
-            reducer = UMAP(n_components=1, random_state=42)
-            embedding = reducer.fit_transform(X_scaled)
+            umap1, umap2 = apply_umap(X_scaled)
 
-            U_fin = pd.DataFrame({"DR1": embedding[:,0]})  
+            U_fin = pd.DataFrame({"DR1": umap1})
             U_fin['Measurement'] = X.index
 
-            # TODO: Implement feature contribution for UMAP
+            # TODO: Implement timestamp contribution for UMAP
             fc_t_df = pd.DataFrame()
         
             return U_fin, fc_t_df, explained_variance_dict
     
     except Exception as e:
-        print(f"Error processing {method} across {col_name}: {e}")
+        print(f"Error processing {col_name}: {e}")
         return None
 
 def get_valid_timestamps(df):
