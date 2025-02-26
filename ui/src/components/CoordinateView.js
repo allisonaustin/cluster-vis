@@ -4,7 +4,7 @@ import { List, ListItem, ListItemText, ListItemButton, Checkbox } from '@mui/mat
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
 
-const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
+const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
@@ -19,14 +19,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
     const [brushSelections, setBrushSelections] = useState(new Map());
     const [isLocalHover, setIsLocalHover] = useState(false);
 
-    const featureCount = fcs.reduce((acc, { feature }) => {
-        acc[feature] = (acc[feature] || 0) + 1;
-        return acc;
-    }, {});
-    
-    const sortedFeatures = Object.entries(featureCount)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .map(([feature, count]) => ({ feature, count }));
+    const sortedFeatures = Object.keys(data[0]).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})})
 
     const [features, setFeatures] = useState(sortedFeatures);
     const [selectedDims, setSelectedDims] = useState(sortedFeatures.map(f => f.feature).slice(0,6));
@@ -43,8 +36,9 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
             !(d.includes('UMAP')) &&
             !(d.includes('tSNE')) &&
             !(d.includes('PC')) &&
-            !(d.includes('Measurement'))));
-        
+            !(d.includes('Measurement')) &&
+            !(d.includes('Cluster'))));
+
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
 
@@ -234,7 +228,7 @@ const Coordinates = ({ data, fcs, selectedPoints, setSelectedPoints, hoveredPoin
         //       .text(function(d) { return d; })
         //       .style("fill", "black")
         
-    }, [data, fcs, selectedDims]);
+    }, [data, selectedDims]);
 
     useEffect(() => {
         const svg = d3.select(svgContainerRef.current).select("#coord-svg");

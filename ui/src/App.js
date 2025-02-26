@@ -9,8 +9,6 @@ import DR from './components/DRView.js';
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   const [farmData, setFarmData] = useState(null);
-  const [FCTData, setFCTData] = useState(null);
-  const [FCFData, setFCFData] = useState(null);
   const [DRFData, setDRFData] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
@@ -24,34 +22,13 @@ function App() {
 
 
   useEffect(() => {
-    Promise.all([getDRFeatureData(), 
-                getDRTimeData(), 
-                getFCTData(),
-                getFCFData(),
+    Promise.all([getDRTimeData(), 
+                getDRFeatureData(),
                 getMgrData(selectedFile)
               ])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
-
-  const getFarmData = async(filePath) => {
-    try {
-      const response = await fetch(`http://localhost:5009/farmData?file=${filePath}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setFarmData(data);
-        setError(null); 
-      } else {
-        setFarmData(null);  
-        setError("Failed to fetch node data. Please check that the server is running.");
-      }
-    } catch (error) {
-      setFarmData(null);    
-      setError("Failed to fetch node data. Please check that the server is running.");
-      console.error(error);     
-    }
-  };
 
   const getDRFeatureData = async () => {
     try {
@@ -89,46 +66,6 @@ function App() {
     } catch (error) {
       setDRTData(null);    
       setError("Failed to fetch DR data. Please check that the server is running.");
-      console.error(error);     
-    }
-  };
-
-  const getFCTData = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/FCTimeDataCSV`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setFCTData(data);
-        setError(null); 
-      } else {
-        setFCTData(null);  
-        setError("Failed to fetch feature contributions. Please check that the server is running.");
-      }
-
-    } catch (error) {
-      setFCTData(null);    
-      setError("Failed to fetch feature contributions. Please check that the server is running.");
-      console.error(error);     
-    }
-  };
-
-  const getFCFData = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/FCFeatureDataCSV`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setFCFData(data);
-        setError(null); 
-      } else {
-        setFCFData(null);  
-        setError("Failed to fetch feature contributions. Please check that the server is running.");
-      }
-
-    } catch (error) {
-      setFCFData(null);    
-      setError("Failed to fetch feature contributions. Please check that the server is running.");
       console.error(error);     
     }
   };
@@ -206,7 +143,6 @@ function App() {
                 {mgrData ? (
                   <TimelineView 
                     mgrData={mgrData} 
-                    fcs={FCTData}
                   />
                 ) : (
                   <p>Loading data...</p>
@@ -248,38 +184,42 @@ function App() {
                 <div className="view_title" style={{ width: '70px' }}>
                   DR View
                 </div>
-                {DRFData && DRTData ? (
-                  <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
-                    <DR 
-                      data={DRFData} 
-                      type='feature' 
-                      setSelectedPoints={setSelectedPoints} 
-                      selectedPoints={selectedPoints} 
-                      hoveredPoint={hoveredPoint} 
-                      setHoveredPoint={setHoveredPoint} 
-                    />
-                    <DR 
-                      data={DRTData} 
-                      type='time' 
-                      setSelectedPoints={setSelectedPoints} 
-                      selectedPoints={selectedPoints} 
-                      hoveredPoint={hoveredPoint} 
-                      setHoveredPoint={setHoveredPoint} 
-                    />
-
-                  </div>
-                ) : (
-                  <p>Loading DR results...</p>
-                )}
+                <div id="dr-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150, marginLeft: 20  }}>
+                    {DRTData ? (
+                        <DR 
+                          data={DRTData} 
+                          type="time" 
+                          setSelectedPoints={setSelectedPoints} 
+                          selectedPoints={selectedPoints} 
+                          hoveredPoint={hoveredPoint} 
+                          setHoveredPoint={setHoveredPoint} 
+                        />
+                      ) : (
+                        <p>Loading DR time view...</p>
+                      )}
+                      {DRFData ? (
+                        <DR 
+                          data={DRFData}  
+                          type="feature" 
+                          setSelectedPoints={setSelectedPoints} 
+                          selectedPoints={selectedPoints} 
+                          hoveredPoint={hoveredPoint} 
+                          setHoveredPoint={setHoveredPoint} 
+                        />
+                      ) : (
+                        <div style={{marginBottom: '15px'}}>
+                          <p>Loading DR feature view...</p>
+                        </div>
+                      )}
+                </div>
               </div>
               <div className="wrapper_bottom2">
                 <div className="view_title" style={{ width: '100px' }}>
                   Coordinate Plot
                 </div>
-                {DRFData && FCFData ? (
+                {DRTData ? (
                   <Coordinates 
-                    data={DRFData} 
-                    fcs={FCFData}
+                    data={DRTData} 
                     selectedPoints={selectedPoints} 
                     setSelectedPoints={setSelectedPoints} 
                     hoveredPoint={hoveredPoint} 

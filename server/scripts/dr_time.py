@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+from concurrent.futures import ThreadPoolExecutor
 from umap import UMAP
 
 # TODO: finish docstrings
@@ -61,11 +62,7 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
             else:
                 return None      
             
-            abs_comp = np.abs(pca.components_[0])
-            top_10 = np.argsort(abs_comp)[-10:][::-1]
-            fc_t = X.columns[top_10] 
-            
-            fc_t_df = pd.DataFrame({'feature': col_name, 'timestamp': fc_t})
+            fc_t_df = pd.DataFrame()
 
             # print(f"{col_name} done...")
 
@@ -87,7 +84,6 @@ def apply_first_dr(df, col_name, method='PCA', var_threshold=0.7):
         return None
     
 
-# TODO: refactor pass 2 functions - shared by dr_features and dr_time
 def apply_second_dr(df):
     df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
     df_pca = apply_pca(df_pivot)
@@ -109,7 +105,13 @@ def get_numeric_columns(df):
 
 def process_single_column(df, col_name, P_final, FC_final):
     try:
-        P_df, fc_t_df = apply_first_dr(df, col_name, 'PCA')
+        result = apply_first_dr(df, col_name, 'PCA')
+
+        if result is None:
+            return 
+        
+        P_df, fc_t_df = result
+
         if P_df is not None:
             P_df.insert(0, 'Col', col_name)
             P_final.append(P_df)
@@ -127,8 +129,18 @@ def process_columns(df):
 
     numeric_cols = get_numeric_columns(df)
 
-    for col in numeric_cols:
-        process_single_column(df, col, P_final, FC_final)
+    with ThreadPoolExecutor() as executor:
+        # Submit tasks and collect futures
+        futures = {executor.submit(process_single_column, df, col): col for col in numeric_cols}
+
+        for future in futures:
+            P_df, fc_t_df = future.result()
+
+            if P_df is not None:
+                P_final.append(P_df)
+
+            if fc_t_df is not None:
+                FC_final.append(fc_t_df)
 
     P_final = pd.concat(P_final, ignore_index=True) if P_final else pd.DataFrame()
     FC_final = pd.concat(FC_final, ignore_index=True) if FC_final else pd.DataFrame()
@@ -176,11 +188,7 @@ def apply_tsne(df):
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
-def get_dr_time(components_only=False):
-    dataStart = timer()
-    df = getData()
-    dataEnd = timer()
-
+def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
     dr1start = timer()
     D_final, FC_final = process_columns(df)
@@ -192,12 +200,6 @@ def get_dr_time(components_only=False):
     results = apply_second_dr(D_final)
     dr2end = timer()
 
-    print(f'Read csv in {(dataEnd - dataStart)}s')
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
-
-def get_fc_time(df):    
-    # First pass DR across Timestamps
-    P_final, FC_final = process_columns(df)
-    return FC_final

@@ -8,7 +8,7 @@ import * as d3 from 'd3';
 const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
-    const [size, setSize] = useState({ width: 440, height: 300 });
+    const [size, setSize] = useState({ width: 400, height: 300 });
     // const [selectedPoints, setSelectedPoints] = useState([]);
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
@@ -22,12 +22,14 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     useEffect(() => {
         if (!svgContainerRef.current || !data ) return;
 
+        console.log(data)
+
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setChartData(data);
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
-        const margin = { top: 10, right: 30, bottom: 30, left: 50 };
+        const margin = { top: 10, right: 30, bottom: 40, left: 50 };
         const width = size.width;
         const height = size.height;
 
@@ -43,6 +45,8 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .range([height - margin.bottom, margin.top]);
         
         const xAxis = d3.axisBottom(xScale);
+
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
         
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
@@ -99,7 +103,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 3)
-            .style('fill', getColor('default'))
+            .style('fill', d => colorScale(d.Cluster))
             .on("mouseover", function (event, d) {
                 setHoveredPoint(d.Measurement); 
 
@@ -131,11 +135,17 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     }, [data, type]);
 
     useEffect(() => {
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
         d3.select(svgContainerRef.current)
             .selectAll(".dr-circle")
             .transition()
             .duration(300)
-            .style("fill", d => selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
+            .style("fill", d => 
+                selectedPoints.length === 0 
+                    ? colorScale(d.Cluster) 
+                    : (selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
+            )
             .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.7);
     }, [selectedPoints]); 
 
@@ -233,7 +243,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
 
     return (
         <div id="chart-container">
-            {type == 'feature' ? (
+            {type == 'time' ? (
                 <h4 style={{ marginBottom: 0}}>{method1} Across Time Points</h4>
             ) : (
                 <h4 style={{ marginBottom: 0}}>{method1} Across Features</h4>

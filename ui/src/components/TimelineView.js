@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { COLORS, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
-const TimelineView = ({ mgrData, fcs }) => {
+const TimelineView = ({ mgrData }) => {
 
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 170 });
@@ -10,7 +10,7 @@ const TimelineView = ({ mgrData, fcs }) => {
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
     const [currentDate, setCurrentDate] = useState(null);
-    const [fields, setFields] = useState(['Activity_P1', 'Most_Contributing_to_PCs']);
+    const [fields, setFields] = useState(['Activity_P1']);
       
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData ) return;
@@ -47,26 +47,6 @@ const TimelineView = ({ mgrData, fcs }) => {
             });
         }
     });    
-
-    fcs.forEach(d => d.timestamp = new Date(d.timestamp));
-
-    const firstTs = fcs.reduce((acc, { feature, timestamp }) => {
-        if (!acc[feature]) {
-            acc[feature] = [];
-        }
-    
-        const existingEntry = acc[feature].find(entry => entry.timestamp === timestamp);
-        if (existingEntry) {
-            existingEntry.count += 1; 
-        } else {
-            acc[feature].push({
-                timestamp: timestamp,
-                row: 2 
-            });
-        }
-    
-        return acc;
-    }, {});
   
     const minTimestamp = d3.min(chartdata[fields[0]], d => d.timestamp);
     const maxTimestamp = d3.max(chartdata[fields[0]], d => d.timestamp);
@@ -124,17 +104,6 @@ const TimelineView = ({ mgrData, fcs }) => {
         .style('fill', (d, i) => generateColor(i))
         .attr("fill-opacity", 0.6)
         .attr('d', areaGenerator)
-
-    Object.keys(firstTs).forEach(f => {
-        svg.append('path')
-            .datum(firstTs[f])
-            .attr('id', `context-${f}`)
-            .attr('class', `context-Most_Contributing_to_PCs`)
-            .attr('clip-path', 'url(#clip)')
-            .style('fill', COLORS.select)
-            .attr("fill-opacity", 0.6)
-            .attr('d', areaGenerator)
-        })
 
     // adding legend 
     const legend = svg.append('g')

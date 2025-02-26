@@ -200,10 +200,10 @@ def apply_tsne(df):
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
-def get_dr_features(components_only=False):
-    dataStart = timer()
-    df = getData()
-    dataEnd = timer()
+def get_dr_features(df, components_only=False):
+    # dataStart = timer()
+    # df = getData()
+    # dataEnd = timer()
 
     # First pass DR across Features
     dr1start = timer()
@@ -216,7 +216,7 @@ def get_dr_features(components_only=False):
     results = apply_second_dr(D_final)
     dr2end = timer()
 
-    print(f'Read csv in {(dataEnd - dataStart)}s')
+    # print(f'Read csv in {(dataEnd - dataStart)}s')
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results

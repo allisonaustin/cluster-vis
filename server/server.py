@@ -4,8 +4,8 @@ import os
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from scripts.dr_features import get_dr_features, get_fc_features
-from scripts.dr_time import get_dr_time, get_fc_time
+from scripts.dr_features import get_dr_features
+from scripts.dr_time import get_dr_time
 
 app = Flask(__name__)
 CORS(app)
@@ -32,37 +32,31 @@ def get_json_data():
     except Exception as e:
         return jsonify({"error": "Error reading file", "details": str(e)}), 500
 
+# PC across features
 @app.route('/drFeatureData', methods=['GET'])
 def get_dr_feature_data():
-    df = get_dr_features()
+    global ts_data
+    df = get_dr_features(ts_data)
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/drFeatureDataCSV', methods=['GET'])
 def get_dr_feature_data_from_csv():
     return get_csv_data('farm/PCA_feat_results.csv')
 
+# PC across time points
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
-    df = get_dr_time()
+    global ts_data
+    df = get_dr_time(ts_data)
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/drTimeDataCSV', methods=['GET'])
 def get_dr_time_data_from_csv():
     return get_csv_data('farm/PCA_time_results.csv')
 
-@app.route('/FCTimeData', methods=['GET'])
-def get_fc_t_data():
-    df = get_fc_time(ts_data)
-    return jsonify(df.to_dict(orient='records'))
-
 @app.route('/FCTimeDataCSV', methods=['GET'])
 def get_fc_t_data_csv_from_csv():
     return get_csv_data('farm/FC_t_final.csv')
-
-@app.route('/FCFeatureData', methods=['GET'])
-def get_fc_f_data():
-    df = get_fc_features(ts_data)
-    return jsonify(df.to_dict(orient='records'))
 
 @app.route('/FCFeatureDataCSV', methods=['GET'])
 def get_fc_f_data_from_csv():
@@ -98,4 +92,4 @@ def list_json_files():
 
 if __name__ == '__main__':
     ts_data = get_timeseries_data()
-    app.run(debug=True, port=5010)
+    app.run(debug=True, port=5010, use_reloader=False)
