@@ -18,26 +18,29 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     });
     const [brushSelections, setBrushSelections] = useState(new Map());
     const [isLocalHover, setIsLocalHover] = useState(false);
-
-    const sortedFeatures = Object.keys(data[0]).sort(function (a, b) { return a.localeCompare(b, 'en', {'sensitivity': 'base'})})
-
-    const [features, setFeatures] = useState(sortedFeatures);
-    const [selectedDims, setSelectedDims] = useState(sortedFeatures.map(f => f.feature).slice(0,6));
     const [allKeys, setAllKeys] = useState([]);
+
+    const sortedFeatures = Object.keys(data[0])
+                            .filter(d => 
+                                !(d.includes('Retrans')) && 
+                                !(d.includes('UMAP')) &&
+                                !(d.includes('tSNE')) &&
+                                !(d.includes('PC')) &&
+                                !(d.includes('Measurement')) &&
+                                !(d.includes('Cluster')))
+                                .sort(function (a, b) { 
+                                    return a.localeCompare(b, 'en', {'sensitivity': 'base'})
+                                })
+    
+    const [features, setFeatures] = useState(sortedFeatures);
+    const [selectedDims, setSelectedDims] = useState(sortedFeatures.slice(0,6));
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setPlotData(data);
 
-        const allFeatures = Object.keys(data[0])
-        setAllKeys(allFeatures.filter(d => 
-            !(d.includes('Retrans')) && 
-            !(d.includes('UMAP')) &&
-            !(d.includes('tSNE')) &&
-            !(d.includes('PC')) &&
-            !(d.includes('Measurement')) &&
-            !(d.includes('Cluster'))));
+        setAllKeys(sortedFeatures);
 
         const width = size.width - margin.left - margin.right;
         const height = size.height - margin.top - margin.bottom;
@@ -308,7 +311,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
 
 return (
     <div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center' }}>
             <div 
                 style={{
                     width: '20px', 
@@ -320,7 +323,7 @@ return (
                 }}
             ></div>
             <span>PC Contributions</span>
-        </div>
+        </div> */}
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
             <List sx={{ width: '100%', maxWidth: 200, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
@@ -350,24 +353,9 @@ return (
                                     disableRipple
                                     inputProps={{ 'aria-labelledby': labelId }}
                                 />
-                                <div style={{maxWidth: '60px'}}>
+                                <div style={{maxWidth: '120px'}}>
                                     <ListItemText id={labelId} primary={key} />
                                 </div>
-                                <div 
-                                    id={`bar-${key}`}
-                                    style={{
-                                        width: `${barWidth}%`, 
-                                        display: 'flex', 
-                                        height: '8px', 
-                                        backgroundColor: '#57467B', 
-                                        borderRadius: '4px',
-                                        marginLeft: 'auto',
-                                        maxWidth: '30px',
-                                    }}
-                                />
-                                 <span style={{ marginLeft: '10px', fontSize: '12px', color: '#57467B' }}>
-                                    {count}
-                                </span>
                             </ListItemButton>
                         </ListItem>
                     );

@@ -21,9 +21,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
 
     useEffect(() => {
         if (!svgContainerRef.current || !data ) return;
-
-        console.log(data)
-
+        
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setChartData(data);
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
