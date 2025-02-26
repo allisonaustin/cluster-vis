@@ -1,5 +1,6 @@
 """2-stage dimension reduction across time domain then feature domain"""
 
+import os
 from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer as timer
 
@@ -12,6 +13,8 @@ from sklearn.preprocessing import StandardScaler
 from umap import UMAP
 
 # TODO: finish docstrings
+CACHE_DIR = './cache'
+DR1_CACHE_NAME = './cache/drTimeDataDR1.parquet'
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
@@ -209,10 +212,29 @@ def id_clusters_w_kmeans(df_pivot):
     df_pivot['Cluster'] = kmeans.fit_predict(X)
     df_pivot['nodeId'] = df_pivot.index
 
+def get_cached_or_compute_dr1(df, force_recompute=False):
+    if os.path.exists(DR1_CACHE_NAME) and not force_recompute:
+        # Read cached DR1 results
+        print('Reading cached DR1 results from parquet')
+        return pd.read_parquet(DR1_CACHE_NAME)
+
+    if force_recompute:
+        print('Forcing fresh compute of DR1')
+    
+    DR1_d, FC_final, explained_variance_dict = process_columns(df)
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    DR1_d.to_parquet(DR1_CACHE_NAME)
+    print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')
+
+    explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
+    explained_variance_df.to_csv('./data/farm/explained_variance.csv', index=False)
+    return DR1_d
+
 def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
     dr1start = timer()
-    DR1_d, FC_final, explained_variance_dict = process_columns(df)
+    DR1_d = get_cached_or_compute_dr1(df)
+    # DR1_d, FC_final, explained_variance_dict = process_columns(df)
     dr1end = timer()
 
     # Second pass DR across Features
@@ -225,9 +247,6 @@ def get_dr_time(df, components_only=False):
     kmeansStart = timer()
     id_clusters_w_kmeans(DR2_d)
     kmeansEnd = timer()
-
-    explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
-    explained_variance_df.to_csv('./data/farm/explained_variance.csv', index=False)
 
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')

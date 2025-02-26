@@ -15,6 +15,7 @@ ts_data = pd.DataFrame()
 filepath = './data/farm/'
 
 def get_timeseries_data(file='far_data_2024-02-21.csv'):
+    # TODO: convert to parquet instead of global
     global ts_data
     global filepath
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
