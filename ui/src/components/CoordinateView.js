@@ -33,7 +33,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                                 })
     
     const [features, setFeatures] = useState(sortedFeatures);
-    const [selectedDims, setSelectedDims] = useState(sortedFeatures.slice(0,6));
+    const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -65,6 +65,8 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
             function path(d) {
                 return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
             }
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
             
             const paths = svg.selectAll("pcp-path")
                 .data(data)
@@ -74,7 +76,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                     .attr("d",  path)
                     .style("fill", "none" )
                     // .style("stroke", function(d){ return getColor('default')} )
-                    .style("stroke", d => (d.Measurement && selectedPoints.includes(d.Measurement)) ? getColor('select') : getColor('default'))
+                    .style("stroke", (d) => colorScale(d.Cluster))
                     .style("opacity", 0.7)
                     .each(function(d) {
                     if (firstRenderRef.current) {
@@ -175,6 +177,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         });
 
         function brushed({ selection }, key) {
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
             if (!selection) {
                 selections.delete(key);
                 brushSelections.delete(key);
@@ -187,6 +190,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
             let selected = [];
             if (selections.size === 0) {
                 setSelectedPoints([]);
+                paths.style("stroke", d => colorScale(d.Cluster));
             } else {
                 paths.each(function (d) {
                     const active = Array.from(selections).every(([key, [min, max]]) => {
