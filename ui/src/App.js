@@ -19,6 +19,7 @@ function App() {
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
   const [selectedPoints, setSelectedPoints] = useState([]);
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
 
 
   useEffect(() => {
@@ -100,7 +101,7 @@ function App() {
         }, {});
 
       setTriggerData(trigFilt);
-      setPerfData(perfFilt)
+      setPerfData(perfFilt);
 
       } else {
         setMgrData(null);  
@@ -150,20 +151,6 @@ function App() {
               </div>
               <div className="wrapper_bottom">
                 <div className="wrapper_left">
-                  <div className="view_title" style={{ width: '120px' }}>
-                    Performance Metrics
-                  </div>
-                  {Object.keys(perfData).map((field, index) => (
-                    <AreaChart 
-                      key={field} 
-                      data={perfData} 
-                      field={field} 
-                      index={index} 
-                      chartType="perf" 
-                    />
-                  ))}
-                </div>
-                <div className="wrapper_left">
                   <div className="view_title" style={{ width: '50px' }}>
                     Triggers
                   </div>
@@ -177,6 +164,21 @@ function App() {
                     />
                   ))}
                 </div>
+                <div className="wrapper_left">
+                  <div className="view_title" style={{ width: '120px' }}>
+                    Performance Metrics
+                  </div>
+                  {Object.keys(perfData).filter(field => selectedDims.includes(field)).map((field, index) => (
+                    <AreaChart 
+                      key={field} 
+                      data={perfData} 
+                      field={field} 
+                      index={index} 
+                      chartType="perf" 
+                    />
+                  ))}
+                </div>
+
               </div>
             </div>
             <div className="wrapper_right">
@@ -223,7 +225,9 @@ function App() {
                     selectedPoints={selectedPoints} 
                     setSelectedPoints={setSelectedPoints} 
                     hoveredPoint={hoveredPoint} 
-                    setHoveredPoint={setHoveredPoint} 
+                    setHoveredPoint={setHoveredPoint}
+                    selectedDims={selectedDims}
+                    setSelectedDims={setSelectedDims}
                   />
                 ) : (
                   <p>Loading DR results...</p>

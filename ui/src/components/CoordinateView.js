@@ -4,7 +4,7 @@ import { List, ListItem, ListItemText, ListItemButton, Checkbox } from '@mui/mat
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
 
-const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint }) => {
+const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, setHoveredPoint, selectedDims, setSelectedDims }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
@@ -20,6 +20,12 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     const [isLocalHover, setIsLocalHover] = useState(false);
     const [allKeys, setAllKeys] = useState([]);
 
+    const uniqueClusters = Array.from(new Set(data.map(d => d.Cluster)));
+    const colorScale = d3
+                        .scaleOrdinal()
+                        .domain(uniqueClusters)         
+                        .range(d3.schemeCategory10);  
+
     const sortedFeatures = Object.keys(data[0])
                             .filter(d => 
                                 !(d.includes('Retrans')) && 
@@ -33,7 +39,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                                 })
     
     const [features, setFeatures] = useState(sortedFeatures);
-    const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
+    // const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -66,7 +72,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                 return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
             }
 
-            const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
+            // const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
             
             const paths = svg.selectAll("pcp-path")
                 .data(data)
@@ -177,7 +183,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         });
 
         function brushed({ selection }, key) {
-            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
             if (!selection) {
                 selections.delete(key);
                 brushSelections.delete(key);
@@ -371,6 +377,28 @@ return (
                 PC1 Values
             </h4>
             <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>
+
+            <div style={{
+                position: 'absolute',
+                top: '-10px',
+                right: '25px',
+                display: 'flex',          
+                flexDirection: 'row',     
+                alignItems: 'center' 
+            }}>
+                {uniqueClusters.map((clusterVal, i) => (
+                <div key={clusterVal} style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
+                    <div style={{
+                    width: '10px',
+                    height: '10px',
+                    backgroundColor: colorScale(clusterVal),
+                    marginRight: '4px'
+                    }}></div>
+                    <span style={{ fontSize: '10px' }}>{`Cluster ${clusterVal}`}</span>
+                </div>
+                ))}
+            </div>
+            
             </div>
             
             <Tooltip
