@@ -61,13 +61,19 @@ def apply_first_dr(ts, df, method='PCA', var_threshold=0.7):
 
             explained_variance = pca.explained_variance_ratio_[0]
 
-            if explained_variance >= var_threshold:
-                P_fin = pd.DataFrame({"DR1": scores[:, 0]})
-                P_fin['Measurement'] = X.index
-                P_fin['Explained Variance'] = explained_variance
-            else:
-                return None
+            # if explained_variance >= var_threshold:
+            #     P_fin = pd.DataFrame({"DR1": scores[:, 0]})
+            #     P_fin['Measurement'] = X.index
+            #     P_fin['Explained Variance'] = explained_variance
+            # else:
+            #     print("Returning none for {ts} - did not reach variance threshold")
+            #     return None
             
+            P_fin = pd.DataFrame({"DR1": scores[:, 0]})
+            P_fin['Measurement'] = X.index
+            # Causes duplicate entries, removing for now
+            # P_fin['Explained Variance'] = explained_variance
+
             abs_comp = np.abs(pca.components_[0])
             top_10 = np.argsort(abs_comp)[-10:][::-1]
             fc_f = X.columns[top_10]
@@ -90,24 +96,6 @@ def apply_first_dr(ts, df, method='PCA', var_threshold=0.7):
     except Exception as e:
         print(f"Error processing {method} across {ts}: {e}")
         return None
-    
-
-def apply_second_dr(df):
-    df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
-    df_pca = apply_pca(df_pivot)
-    print(df_pca.columns)
-    umap1, umap2 = apply_umap(df_pivot)
-    tsne1, tsne2 = apply_tsne(df_pivot)
-
-    # return df_pca['PC1']
-    # append DR results to df
-    return df_pivot.assign(PC1=df_pca['PC1'],
-                    PC2=df_pca['PC2'],
-                    UMAP1=umap1,
-                    UMAP2=umap2,
-                    tSNE1=tsne1,
-                    tSNE2=tsne2)
-
 
 def get_valid_timestamps(df):
     """Get list of timestamps where readings exist for all 195 nodes
@@ -123,7 +111,8 @@ def get_valid_timestamps(df):
     print('valid timestamps:', len(valid_ts))
     return valid_ts
 
-def process_timestamps(df):
+def process_timestamps(df, parallel=False, method='PCA'):
+    print('Applying DR1')
     P_final = []
     FC_final = []
 
@@ -134,25 +123,28 @@ def process_timestamps(df):
 
     def process_single_timestamp(ts):
         try:
-            P_df, fc_f_df = apply_first_dr(ts, df, 'PCA')
+            dr1Results = apply_first_dr(ts, df, method)
+            if dr1Results is not None:
+                P_df, fc_f_df = dr1Results
 
-            if P_df is not None:
-                P_df.insert(0, 'Col', ts)
-                P_final.append(P_df)
+                if P_df is not None:
+                    P_df.insert(0, 'Col', ts)
+                    P_final.append(P_df)
 
-            if fc_f_df is not None:
-                FC_final.append(fc_f_df)
+                if fc_f_df is not None:
+                    FC_final.append(fc_f_df)
 
         except Exception as e:
-            print(f'Error processing {ts}: {e}')
+            print(f'Error processing single timestamp {ts}: {e}')
 
         return P_final, FC_final
 
-    # TODO: parallelize
-    with ThreadPoolExecutor() as executor:
-        executor.map(process_single_timestamp, timestamps)
-    # for ts in timestamps:
-    #     process_single_timestamp(df, ts, P_final, FC_final)
+    if parallel:
+        with ThreadPoolExecutor() as executor:
+            executor.map(process_single_timestamp, timestamps)
+    else:
+        for ts in timestamps:
+            process_single_timestamp(ts)
 
     # combine all results
     P_final = pd.concat(P_final, ignore_index=True) if P_final else pd.DataFrame()
@@ -160,7 +152,24 @@ def process_timestamps(df):
 
     return P_final, FC_final
 
+def apply_second_dr(df):
+    print('Applying DR2')
+    df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
+    df_pca = apply_pca(df_pivot)
+    umap1, umap2 = apply_umap(df_pivot)
+    tsne1, tsne2 = apply_tsne(df_pivot)
+
+    # return df_pca['PC1']
+    # append DR results to df
+    return df_pivot.assign(PC1=df_pca['PC1'],
+                    PC2=df_pca['PC2'],
+                    UMAP1=umap1,
+                    UMAP2=umap2,
+                    tSNE1=tsne1,
+                    tSNE2=tsne2)
+
 def apply_pca(df, n_components=2):
+    print('Applying DR2 PCA')
     X = df.copy(deep=True)
 
     try:
@@ -195,16 +204,13 @@ def apply_umap(df):
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
 def apply_tsne(df):
+    print('Applying DR2 tSNE')
     df_tsne = df.copy(deep=True)
     tsne = TSNE(n_components=2, random_state=42)
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
 def get_dr_features(df, components_only=False):
-    # dataStart = timer()
-    # df = getData()
-    # dataEnd = timer()
-
     # First pass DR across Features
     dr1start = timer()
     D_final, FC_final = process_timestamps(df)
@@ -220,8 +226,3 @@ def get_dr_features(df, components_only=False):
     print(f'DR1 in {(dr1end - dr1start)}s')
     print(f'DR2 in {(dr2end - dr2start)}s')
     return results[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2']] if components_only else results
-
-
-def get_fc_features(df):
-    P_final, FC_final = process_timestamps(df)
-    return FC_final

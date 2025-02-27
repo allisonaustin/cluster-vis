@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 // import { fetchData } from './utils/api.js';
 import './App.css';
 import AreaChart from './components/AreaChart.js';
-import TimelineView from './components/TimelineView.js';
 import Coordinates from './components/CoordinateView.js';
 import DR from './components/DRView.js';
+import TimelineView from './components/TimelineView.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
@@ -52,7 +52,7 @@ function App() {
 
   const getDRTimeData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/drTimeDataCSV`);
+      const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
       const data = await response.json();
       
       if (response.ok) {
