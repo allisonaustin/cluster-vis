@@ -19,6 +19,10 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         y: 0
     });
 
+    function getIdVal(d) {
+        return (type === 'feature') ? d.Measurement : d.nodeId;
+      }
+
     useEffect(() => {
         if (!svgContainerRef.current || !data ) return;
         
@@ -95,7 +99,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .enter()
             .append("circle")
             .attr("class", (d, i) => "dr-circle")
-            .attr('id', (d, i) => `${d.Measurement}`)
+            .attr('id', d => getIdVal(d))
             .attr("cx", d => xScale(d[xKey]))
             .attr("cy", d => yScale(d[yKey]))
             .attr('stroke','black')
@@ -103,7 +107,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .attr("r", 3)
             .style('fill', d => colorScale(d.Cluster))
             .on("mouseover", function (event, d) {
-                setHoveredPoint(d.Measurement); 
+                setHoveredPoint(getIdVal(d)); 
 
             })
             .on("mouseout", function (event, d) {
@@ -139,12 +143,20 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .selectAll(".dr-circle")
             .transition()
             .duration(300)
-            .style("fill", d => 
-                selectedPoints.length === 0 
-                    ? colorScale(d.Cluster) 
-                    : (selectedPoints.includes(d.Measurement) ? getColor('select') : getColor('default'))
-            )
-            .style("opacity", d => selectedPoints.includes(d.Measurement) ? 1 : 0.7);
+            .style("fill", d => {
+                const idVal = getIdVal(d);
+                if (selectedPoints.length === 0) {
+                    return colorScale(d.Cluster);
+                } else {
+                    return selectedPoints.includes(idVal) 
+                        ? getColor('select') 
+                        : getColor('default');
+                }
+            })
+            .style("opacity", d => {
+                const idVal = getIdVal(d);
+                return selectedPoints.includes(idVal) ? 1 : 0.7;
+            });
     }, [selectedPoints]); 
 
     useEffect(() => {
@@ -152,8 +164,14 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .selectAll(".dr-circle")
             .transition()
             .duration(150)
-            .attr("r", d => d.Measurement === hoveredPoint ? 6 : 3)  
-            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.7);
+            .attr("r", d => {
+                const idVal = getIdVal(d);
+                return idVal === hoveredPoint ? 6 : 3;
+            })
+            .style("opacity", d => {
+                const idVal = getIdVal(d);
+                return idVal === hoveredPoint ? 1 : 0.7;
+            });
     }, [hoveredPoint]);
 
     useEffect(() => {
@@ -227,16 +245,26 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         setSelectedPoints(selected)
         
         chart.selectAll('.dr-circle')
-            .style('fill', (d) => (
-                selected.includes(d.Measurement) ? getColor('select') : getColor('default')
-            ))
-            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.7);
+        .style('fill', d => {
+            const idVal = getIdVal(d);
+            return selected.includes(idVal) ? getColor('select') : getColor('default');
+        })
+        .style("opacity", d => {
+            const idVal = getIdVal(d);
+            return selected.includes(idVal) ? 1 : 0.7;
+        });
 
         // updating parallel coordinates plot
         const coordChart = d3.select("#coord-svg"); 
         coordChart.selectAll(".line")
-            .style("stroke", (d) => selected.includes(d.Measurement) ? getColor('select') : getColor('default'))
-            .style("opacity", (d) => selected.includes(d.Measurement) ? 1 : 0.5);
+        .style("stroke", d => {
+            const idVal = (type === 'feature') ? d.Measurement : d.nodeId;
+            return selected.includes(idVal) ? getColor('select') : getColor('default');
+        })
+        .style("opacity", d => {
+            const idVal = (type === 'feature') ? d.Measurement : d.nodeId;
+            return selected.includes(idVal) ? 1 : 0.5;
+        });
     };
 
     return (

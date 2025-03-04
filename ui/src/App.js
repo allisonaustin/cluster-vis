@@ -38,6 +38,7 @@ function App() {
       
       if (response.ok) {
         setDRFData(data);
+        console.log("DRFeature:",data);
         setError(null); 
       } else {
         setDRFData(null);  
@@ -58,6 +59,7 @@ function App() {
       
       if (response.ok) {
         setDRTData(data);
+        console.log("DRTime:",data);
         setError(null); 
       } else {
         setDRTData(null);  

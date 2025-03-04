@@ -32,7 +32,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                                 !(d.includes('UMAP')) &&
                                 !(d.includes('tSNE')) &&
                                 !(d.includes('PC')) &&
-                                !(d.includes('Measurement')) &&
+                                !(d.includes('nodeId')) &&
                                 !(d.includes('Cluster')))
                                 .sort(function (a, b) { 
                                     return a.localeCompare(b, 'en', {'sensitivity': 'base'})
@@ -78,7 +78,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                 .data(data)
                 .enter()
                 .append("path")
-                    .attr("class", function (d) { return "line " + d.Measurement } ) 
+                    .attr("class", function (d) { return "line " + d.nodeId } ) 
                     .attr("d",  path)
                     .style("fill", "none" )
                     // .style("stroke", function(d){ return getColor('default')} )
@@ -113,7 +113,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                         if (tooltipX + tooltipWidth > windowWidth) {
                             tooltipX = event.clientX - tooltipWidth - 5;  
                         }
-                        setHoveredPoint(d.Measurement); 
+                        setHoveredPoint(d.nodeId); 
     
                         d3.select(this)
                             .style("stroke-width", 3)
@@ -123,12 +123,12 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                         // node ID tooltip
                         setTooltip({
                             visible: true,
-                            content: `${d.Measurement}`,
+                            content: `${d.nodeId}`,
                             x: tooltipX,
                             y: event.clientY
                         });
     
-                        // d3.select(`#${d.Measurement}`)
+                        // d3.select(`#${d.nodeId}`)
                         //     .transition().duration(200)
                         //     .attr("r", 6)  
                             
@@ -143,7 +143,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     
                         setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
     
-                        // d3.select(`#${d.Measurement}`)
+                        // d3.select(`#${d.nodeId}`)
                         //     .transition().duration(200)
                         //     .attr("r", 3)
                     });
@@ -208,7 +208,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         
                     if (active) {
                         d3.select(this).raise();
-                        selected.push(d.Measurement);
+                        selected.push(d.nodeId);
                     }
                 });
         
@@ -247,8 +247,8 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         const svg = d3.select(svgContainerRef.current).select("#coord-svg");
         if (!svg.empty()) {
           svg.selectAll(".line")
-            .style("stroke-width", d => d.Measurement === hoveredPoint ? 3 : 1)
-            .style("opacity", d => d.Measurement === hoveredPoint ? 1 : 0.7);
+            .style("stroke-width", d => d.nodeId === hoveredPoint ? 3 : 1)
+            .style("opacity", d => d.nodeId === hoveredPoint ? 1 : 0.7);
         }
       }, [hoveredPoint]);
 
