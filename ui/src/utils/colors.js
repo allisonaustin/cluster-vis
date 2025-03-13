@@ -6,12 +6,15 @@ export const COLORS = {
     highlight: '#4EA5D9'
 }
 
+export const colorScheme = d3.schemeObservable10;
+export const colorScale = d3.scaleOrdinal(colorScheme);
+
 export const getColor = (field) => {
     return COLORS[field];
 }
 
 export const generateColor = (index) => {
-    const palette = ["#69b3a2", "#F6828C", "#4EA5D9", "#57467B", "#70F8BA"];
+    const palette = ["#6f80b1", "#F6828C", "#4EA5D9", "#57467B", "#70F8BA"];
     return palette[index % palette.length];
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getColor } from '../utils/colors.js';
+import { getColor, colorScale, colorScheme } from '../utils/colors.js';
 import { List, ListItem, ListItemText, ListItemButton, Checkbox } from '@mui/material';
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
@@ -21,10 +21,10 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     const [allKeys, setAllKeys] = useState([]);
 
     const uniqueClusters = Array.from(new Set(data.map(d => d.Cluster)));
-    const colorScale = d3
+    const colors = d3
                         .scaleOrdinal()
                         .domain(uniqueClusters)         
-                        .range(d3.schemeCategory10);  
+                        .range(colorScheme);  
 
     const sortedFeatures = Object.keys(data[0])
                             .filter(d => 
@@ -72,7 +72,6 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                 return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
             }
 
-            // const colorScale = d3.scaleOrdinal(d3.schemeCategory10)
             
             const paths = svg.selectAll("pcp-path")
                 .data(data)
@@ -82,7 +81,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                     .attr("d",  path)
                     .style("fill", "none" )
                     // .style("stroke", function(d){ return getColor('default')} )
-                    .style("stroke", (d) => colorScale(d.Cluster))
+                    .style("stroke", (d) => colors(d.Cluster))
                     .style("opacity", 0.7)
                     .each(function(d) {
                     if (firstRenderRef.current) {
@@ -183,7 +182,6 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
         });
 
         function brushed({ selection }, key) {
-            // const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
             if (!selection) {
                 selections.delete(key);
                 brushSelections.delete(key);
@@ -196,7 +194,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
             let selected = [];
             if (selections.size === 0) {
                 setSelectedPoints([]);
-                paths.style("stroke", d => colorScale(d.Cluster));
+                paths.style("stroke", d => colors(d.Cluster));
             } else {
                 paths.each(function (d) {
                     const active = Array.from(selections).every(([key, [min, max]]) => {
@@ -321,19 +319,6 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
 
 return (
     <div>
-        {/* <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div 
-                style={{
-                    width: '20px', 
-                    height: '8px', 
-                    backgroundColor: '#57467B',
-                    borderRadius: '4px',
-                    marginRight: '8px',
-                    marginLeft: '10px'
-                }}
-            ></div>
-            <span>PC Contributions</span>
-        </div> */}
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
             <List sx={{ width: '100%', maxWidth: 200, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
                 {allKeys.map((key, index) => {
@@ -373,31 +358,32 @@ return (
             </List>
 
             <div style={{ position: 'relative', width: '100%', height: '350px' }}>
-            <h4 style={{ marginBottom: 0, position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }}>
-                PC1 Values
-            </h4>
-            <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>
+                <h4 style={{ marginBottom: 0, position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }}>
+                    PC1 Values
+                </h4>
+                <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>
 
-            <div style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '25px',
-                display: 'flex',          
-                flexDirection: 'row',     
-                alignItems: 'center' 
-            }}>
-                {uniqueClusters.map((clusterVal, i) => (
-                <div key={clusterVal} style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
-                    <div style={{
-                    width: '10px',
-                    height: '10px',
-                    backgroundColor: colorScale(clusterVal),
-                    marginRight: '4px'
-                    }}></div>
-                    <span style={{ fontSize: '10px' }}>{`Cluster ${clusterVal}`}</span>
-                </div>
-                ))}
-            </div>
+                {/* Legend */}
+                {/* <div style={{
+                    position: 'absolute',
+                    top: '-10px',
+                    right: '25px',
+                    display: 'flex',          
+                    flexDirection: 'row',     
+                    alignItems: 'center' 
+                }}>
+                    {uniqueClusters.map((clusterVal, i) => (
+                    <div key={clusterVal} style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
+                        <div style={{
+                        width: '10px',
+                        height: '10px',
+                        backgroundColor: colors(clusterVal),
+                        marginRight: '4px'
+                        }}></div>
+                        <span style={{ fontSize: '10px' }}>{`Cluster ${clusterVal}`}</span>
+                    </div>
+                    ))}
+                </div> */}
             
             </div>
             

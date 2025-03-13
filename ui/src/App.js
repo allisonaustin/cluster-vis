@@ -5,17 +5,16 @@ import AreaChart from './components/AreaChart.js';
 import Coordinates from './components/CoordinateView.js';
 import DR from './components/DRView.js';
 import TimelineView from './components/TimelineView.js';
+import Matrix from './components/Matrix.js';
 
 function App() {
   const [activeTab, setActiveTab] = useState(0);
-  const [farmData, setFarmData] = useState(null);
-  const [DRFData, setDRFData] = useState(null);
+  const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
-  const [farmFile, setFarmFile] = useState('farm/novadaq-far-farm-01.json');
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
   const [selectedPoints, setSelectedPoints] = useState([]);
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -24,33 +23,12 @@ function App() {
 
   useEffect(() => {
     Promise.all([getDRTimeData(), 
-                getDRFeatureData(),
+                // getDRFeatureData(),
                 getMgrData(selectedFile)
               ])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
-
-  const getDRFeatureData = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/drFeatureDataCSV`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setDRFData(data);
-        console.log("DRFeature:",data);
-        setError(null); 
-      } else {
-        setDRFData(null);  
-        setError("Failed to fetch DR data. Please check that the server is running.");
-      }
-
-    } catch (error) {
-      setDRFData(null);    
-      setError("Failed to fetch DR data. Please check that the server is running.");
-      console.error(error);     
-    }
-  };
 
   const getDRTimeData = async () => {
     try {
@@ -58,8 +36,8 @@ function App() {
       const data = await response.json();
       
       if (response.ok) {
-        setDRTData(data);
-        console.log("DRTime:",data);
+        setDRTData(data.dr_features);
+        setFCs(data.feat_contributions);
         setError(null); 
       } else {
         setDRTData(null);  
@@ -201,19 +179,13 @@ function App() {
                       ) : (
                         <p>Loading DR time view...</p>
                       )}
-                      {DRFData ? (
-                        <DR 
-                          data={DRFData}  
-                          type="feature" 
-                          setSelectedPoints={setSelectedPoints} 
-                          selectedPoints={selectedPoints} 
-                          hoveredPoint={hoveredPoint} 
-                          setHoveredPoint={setHoveredPoint} 
+                      {FCs ? (
+                        <Matrix
+                          data={DRTData}
+                          FCs={FCs} 
                         />
                       ) : (
-                        <div style={{marginBottom: '15px'}}>
-                          <p>Loading DR feature view...</p>
-                        </div>
+                        <p>Loading feature contributions...</p>
                       )}
                 </div>
               </div>

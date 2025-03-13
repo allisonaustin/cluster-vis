@@ -61,7 +61,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
                 +circles.nodes()[i].getAttribute('cy')
             ];
             if (pointInPolygon(point, coords)) {
-                selectedIds.add(d.Measurement);
+                selectedIds.add(d.nodeId);
             }
         });
         onSelect(Array.from(selectedIds));

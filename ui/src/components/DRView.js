@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getColor } from '../utils/colors.js';
+import { getColor, colorScale } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import Tooltip from '../utils/tooltip.js';
@@ -31,7 +31,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
-        const margin = { top: 10, right: 30, bottom: 40, left: 50 };
+        const margin = { top: 10, right: 30, bottom: 50, left: 50 };
         const width = size.width;
         const height = size.height;
 
@@ -47,8 +47,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .range([height - margin.bottom, margin.top]);
         
         const xAxis = d3.axisBottom(xScale);
-
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
         
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
@@ -69,7 +67,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
         svg.append('text')
             .attr('id', 'x-axis-label-dr')
             .attr("x", width/2)
-            .attr("y", height + 10)
+            .attr("y", height)
             .style('text-anchor', 'middle')
             .text(xKey)
             .style('font-size', '16px');
@@ -268,13 +266,9 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     };
 
     return (
-        <div id="chart-container">
-            {type == 'time' ? (
-                <h4 style={{ marginBottom: 0}}>{method1} Across Time Points</h4>
-            ) : (
-                <h4 style={{ marginBottom: 0}}>{method1} Across Features</h4>
-            )}
-            <div ref={svgContainerRef} style={{ width: '100%', height: '330px' }}>
+        <div style={{ width: '100%', height: '300px' }}>
+            <h4 style={{ marginBottom: 0}}>{method1} Across Time Points</h4>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}>
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
             </div>
             <Tooltip

@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from scripts.dr_features import get_dr_features
 from scripts.dr_time import get_dr_time
+from scripts.dr_time import get_feat_contributions
 
 app = Flask(__name__)
 CORS(app)
@@ -40,28 +41,24 @@ def get_dr_feature_data():
     df = get_dr_features(ts_data)
     return jsonify(df.to_dict(orient='records'))
 
-@app.route('/drFeatureDataCSV', methods=['GET'])
-def get_dr_feature_data_from_csv():
-    return get_csv_data('farm/PCA_feat_results.csv')
-
 # PC across time points
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
     global ts_data
+
     df = get_dr_time(ts_data)
-    return jsonify(df.to_dict(orient='records'))
+    agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(df)
 
-@app.route('/drTimeDataCSV', methods=['GET'])
-def get_dr_time_data_from_csv():
-    return get_csv_data('farm/PCA_time_results.csv')
-
-@app.route('/FCTimeDataCSV', methods=['GET'])
-def get_fc_t_data_csv_from_csv():
-    return get_csv_data('farm/FC_t_final.csv')
-
-@app.route('/FCFeatureDataCSV', methods=['GET'])
-def get_fc_f_data_from_csv():
-    return get_csv_data('farm/FC_f_final.csv')
+    response = {
+        "dr_features": df.to_dict(orient='records'),  # main DR results + ClusterID
+        "feat_contributions": {
+            "agg_feat_contrib_mat": agg_feat_contrib_mat.tolist(),
+            "label_to_rows": [list(rows) for rows in label_to_rows],
+            "label_to_rep_row": label_to_rep_row,
+            "order_col": order_col
+        }
+    }
+    return jsonify(response)
 
 def get_csv_data(filename):
     file_path = os.path.join(data_dir, filename)

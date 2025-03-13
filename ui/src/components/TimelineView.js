@@ -5,7 +5,7 @@ import * as d3 from 'd3';
 const TimelineView = ({ mgrData }) => {
 
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 170 });
+    const [size, setSize] = useState({ width: 700, height: 140 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
@@ -40,7 +40,7 @@ const TimelineView = ({ mgrData }) => {
 
                 chartdata[field].push({
                     timestamp: date, 
-                    row: value == 0 ? 0 : idx + 1, 
+                    row: value == 0 ? 0 : idx, 
                     nodeId: 'mgr-01',
                     value: value
                 });

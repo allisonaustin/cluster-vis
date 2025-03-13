@@ -1,5 +1,4 @@
 """2-stage dimension reduction across time domain then feature domain"""
-
 import os
 from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer as timer
@@ -11,6 +10,9 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 from umap import UMAP
+from ccpca import CCPCA 
+from opt_sign_flip import OptSignFlip
+from mat_reorder import MatReorder
 
 # TODO: finish docstrings
 CACHE_DIR = './cache'
@@ -208,9 +210,48 @@ def apply_second_dr(df):
 
 def id_clusters_w_kmeans(df_pivot):
     X = df_pivot[['UMAP1', 'UMAP2']]
-    kmeans = KMeans(n_clusters=5, random_state=42, n_init=10)
+    kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
     df_pivot['Cluster'] = kmeans.fit_predict(X)
     df_pivot['nodeId'] = df_pivot.index
+
+def get_feat_contributions(df):
+    excluded_columns = ["UMAP1", "UMAP2", "nodeId", "tSNE1", "tSNE2", "PC1", "PC2", "Cluster"]
+    X = df.drop(columns=excluded_columns)
+    y = np.int_(df['Cluster'])
+
+    unique_labels = np.unique(y) # unique cluster ids
+    _, n_feats = X.shape
+    n_labels = len(unique_labels)
+    first_cpc_mat = np.zeros((n_feats, n_labels))
+    feat_contrib_mat = np.zeros((n_feats, n_labels))
+
+    # 1. get the scaled feature contributions and first cPC for each label
+    ccpca = CCPCA(n_components=1)
+    for i, target_label in enumerate(unique_labels):
+        ccpca.fit(
+            X[y == target_label],
+            X[y != target_label],
+            var_thres_ratio=0.5,
+            n_alphas=40,
+            max_log_alpha=0.5)
+
+        first_cpc_mat[:, i] = ccpca.get_first_component()
+        feat_contrib_mat[:, i] = ccpca.get_scaled_feat_contribs()
+
+    # 2. apply optimal sign flipping
+    OptSignFlip().opt_sign_flip(first_cpc_mat, feat_contrib_mat)
+
+    # 3. apply hierarchical clustering with optimal-leaf-ordering
+    mr = MatReorder()
+    mr.fit_transform(feat_contrib_mat)
+    order_col = mr.order_col_.tolist()
+
+    # 4. apply aggregation
+    n_feats_shown = n_feats
+    agg_feat_contrib_mat, label_to_rows, label_to_rep_row = mr.aggregate_rows(feat_contrib_mat,
+                                                                            n_feats_shown,
+                                                                            agg_method='abs_max')
+    return agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col
 
 def get_cached_or_compute_dr1(df, force_recompute=False):
     if os.path.exists(DR1_CACHE_NAME) and not force_recompute:
@@ -227,7 +268,7 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
     print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')
 
     explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
-    explained_variance_df.to_csv('./data/farm/explained_variance.csv', index=False)
+    explained_variance_df.to_csv('./data/farm/exp_var.csv', index=False)
     return DR1_d
 
 def get_dr_time(df, components_only=False):
@@ -252,4 +293,5 @@ def get_dr_time(df, components_only=False):
     print(f'DR2 in {(dr2end - dr2start)}s')
     print(f'kMeans in {(kmeansEnd - kmeansStart)}s')
     print(f'Returning {len(DR2_d)} rows')
+    
     return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
