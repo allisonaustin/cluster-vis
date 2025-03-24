@@ -187,7 +187,7 @@ const TimelineView = ({ mgrData }) => {
       }, [mgrData]);
 
     const updateCharts = (newDomain) => {
-        const chart = d3.select(`#focus-perf-1`);
+        const chart = d3.select(`#focus-line-1`);
         const xScale = chart.node()?.xScale;
         const timeFormat = d3.utcFormat('%H:%M');
         const dateFormat = d3.timeFormat('%Y-%m-%d');
@@ -227,17 +227,6 @@ const TimelineView = ({ mgrData }) => {
             .style('font-size', '16px');
 
         // updating charts
-        // Promise.all(
-        //     Object.keys(data).map((field, i) => 
-        //         Promise.resolve().then(() => {
-        //             window.dispatchEvent(new CustomEvent(`update-chart-perf-${i}`, { detail: newDomain }));
-        //             window.dispatchEvent(new CustomEvent(`update-chart-trigger-${i}`, { detail: newDomain }));
-        //         })
-        //     )
-        // ).then(() => {
-        //     window.dispatchEvent(new CustomEvent('update-bubble-chart', {detail: newDomain}));
-        //     console.log("All charts updated");
-        // });
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('batch-update-charts', { detail: newDomain }));
             console.log("Batch update triggered asynchronously");

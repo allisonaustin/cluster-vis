@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor } from '../utils/colors.js';
 import * as d3 from 'd3';
+import { interpolatePath } from 'd3-interpolate-path';
 
 const FeatureView = ({ data, field, index }) => {
     const svgContainerRef = useRef();
@@ -115,6 +116,7 @@ const FeatureView = ({ data, field, index }) => {
       const linesGroup = focus.append('g').attr('id', 'lines-group' + field);
       const path = linesGroup.append('path')
         .datum(filtered)
+        .attr('class', `line line-${chartId}`)
         .attr('fill', 'none')
         .attr('stroke', 'black')
         .attr('stroke-width', 1)
@@ -161,20 +163,26 @@ const FeatureView = ({ data, field, index }) => {
 
         // updating x axes
         // chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale))
+        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale).ticks(size.height / 40))
         
         chart.select('.y-axis')
           .selectAll("text")
           .style("font-size", "16px")
 
         // updating line
-        chart.select('.line')
-            .datum(newdata)
-            .attr('d', d3.area()
-              .x(function(d) { return xScale(d.timestamp) })
-              .y0(yScale(0))
-              .y1(function(d) { return yScale(d.value) })
-            );
+        chart.select(`.line-${chartId}`)
+          .datum(newdata)
+          .transition()
+          .duration(500)
+          .ease(d3.easeLinear)
+          .attrTween('d', function(d) {
+            const previous = d3.select(this).attr('d'); 
+            const current = d3.line()
+                .x(d => xScale(d.timestamp))
+                .y(d => yScale(d.value))(d);
+    
+            return interpolatePath(previous, current); 
+        });
       };
 
       const handleUpdateEvent = (event) => {
