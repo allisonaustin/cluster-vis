@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getColor } from './colors.js';
+import { getColor, colorScale, colorScheme } from './colors.js';
 import * as d3 from 'd3';
 
 const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
@@ -8,7 +8,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
 
     let coords = [];
     const lineGenerator = d3.line();
-    const selectedIds = new Set();
+    const selectedIds = new Set(); 
 
     const pointInPolygon = (point, vs) => {
         // console.log(point, vs);
@@ -55,6 +55,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
     const dragEnd = () => {
         // Check if each point is inside the lasso
         let circles = svg.selectAll(targetItems)
+        let paths = d3.select("#coord-svg").selectAll("path.line"); 
         circles.each((d, i) => {
             let point = [
                 +circles.nodes()[i].getAttribute('cx'),
@@ -70,8 +71,12 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
 
         if (selectedIds.size === 0) { // resetting plot
             circles
-                .style('fill', getColor('default'))
                 .style("opacity", 1);
+              
+            paths.style("stroke", function () {
+                const cluster = d3.select(this).attr("data-cluster");
+                return colorScale(+cluster);
+            });
         }
         svg.select('#lasso').remove();
     };

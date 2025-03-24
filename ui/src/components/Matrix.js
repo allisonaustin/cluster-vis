@@ -8,7 +8,7 @@ const Matrix = ({ data, FCs }) => {
     
     useEffect(() => {
       if (!svgContainerRef.current || !FCs || !data) return; 
-      
+
         const margin = { top: 30, right: 80, bottom: 50, left: 50 };
         const width = size.width;
         const height = size.height;
@@ -44,7 +44,7 @@ const Matrix = ({ data, FCs }) => {
             .attr('id', `matrix-svg`)
             .attr("width", "100%")
             .attr("height", "100%")
-            .attr("viewBox", `0 0 ${size.width} ${size.height}`)
+            .attr("viewBox", `0 0 ${size.width} ${size.height + margin.bottom}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
         
         svg.selectAll()
@@ -109,7 +109,7 @@ const Matrix = ({ data, FCs }) => {
         const title = "Feature Contributions";
         svg.append("text")
             .attr("x", width / 2) 
-            .attr("y", -10) 
+            .attr("y", height + margin.bottom) 
             .attr("text-anchor", "middle") 
             .style("font-size", "14px") 
             .style("font-weight", "bold") 
@@ -117,7 +117,7 @@ const Matrix = ({ data, FCs }) => {
       
       }, [FCs]);
     
-      return <div ref={svgContainerRef} style={{ width: '100%', height: '400px' }}></div>;
+      return <div ref={svgContainerRef}></div>;
 
 };
     

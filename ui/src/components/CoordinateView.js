@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale, colorScheme } from '../utils/colors.js';
-import { List, ListItem, ListItemText, ListItemButton, Checkbox } from '@mui/material';
+import { Card, List, Checkbox } from "antd";
 import * as d3 from 'd3';
 import Tooltip from '../utils/tooltip.js';
 
@@ -39,7 +39,6 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                                 })
     
     const [features, setFeatures] = useState(sortedFeatures);
-    // const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
 
     useEffect(() => {
         if (!svgContainerRef.current) return;
@@ -77,11 +76,12 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                 .data(data)
                 .enter()
                 .append("path")
-                    .attr("class", function (d) { return "line " + d.nodeId } ) 
+                    .attr("class", (d) => `line ${d.nodeId}` ) 
+                    .attr('data-cluster', (d) => d.Cluster)
                     .attr("d",  path)
-                    .style("fill", "none" )
+                    .style("fill", "none")
                     // .style("stroke", function(d){ return getColor('default')} )
-                    .style("stroke", (d) => colors(d.Cluster))
+                    .style("stroke", (d) => colorScale(d.Cluster))
                     .style("opacity", 0.7)
                     .each(function(d) {
                     if (firstRenderRef.current) {
@@ -151,7 +151,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
 
          // brush behavior
          const selections = new Map();
-         const brushWidth = 70;
+         const brushWidth = 50;
 
         // adding axes
         selectedDims.forEach(dim => {
@@ -194,7 +194,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
             let selected = [];
             if (selections.size === 0) {
                 setSelectedPoints([]);
-                paths.style("stroke", d => colors(d.Cluster));
+                paths.style("stroke", d => colorScale(d.Cluster));
             } else {
                 paths.each(function (d) {
                     const active = Array.from(selections).every(([key, [min, max]]) => {
@@ -318,83 +318,41 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     };
 
 return (
-    <div>
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <List sx={{ width: '100%', maxWidth: 200, maxHeight: 270, overflowY: 'auto', marginRight: '10px' }}>
-                {allKeys.map((key, index) => {
-                    const labelId = `checkbox-list-label-${index}`;  
-                    const featureData = features.find(item => item.feature === key); 
-                    const count = featureData ? featureData.count : 0;
-                    const maxCount = Math.max(...features.map(item => item.count)); 
-                    const barWidth = (count / maxCount) * 100; 
-                    
-                    return (
-                        <ListItem
-                            key={key}
-                            disablePadding
-                            sx={{ paddingTop: 0, paddingBottom: 0, maxWidth: '180px' }}
-                        >
-                            <ListItemButton
-                                role={undefined}
-                                onClick={() => handleCheckboxChange(key)}
-                                dense
-                            >
-                                <Checkbox
-                                    edge="start"
-                                    size="small"
-                                    style={{ width: "20px" }}
-                                    checked={selectedDims.includes(key)}
-                                    tabIndex={-1}
-                                    disableRipple
-                                    inputProps={{ 'aria-labelledby': labelId }}
-                                />
-                                <div style={{maxWidth: '120px'}}>
-                                    <ListItemText id={labelId} primary={key} />
-                                </div>
-                            </ListItemButton>
-                        </ListItem>
-                    );
-                })}
-            </List>
+    <Card title="COORDINATE PLOT" size="small" style={{ height: "auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-start" }}>
+        
+        <List
+          style={{ width: "100%", maxWidth: 200, maxHeight: 300, overflowY: "auto", marginRight: "10px" }}
+          bordered
+          dataSource={allKeys}
+          renderItem={(key, index) => {
+            return (
+              <List.Item key={key} style={{ display: "flex", alignItems: "center", padding: "5px 10px" }}>
+                <Checkbox
+                  checked={selectedDims.includes(key)}
+                  onChange={() => handleCheckboxChange(key)}
+                  style={{ marginRight: "10px" }}
+                />
+                <span style={{ flexGrow: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {key}
+                </span>
+              </List.Item>
+            );
+          }}
+        />
 
-            <div style={{ position: 'relative', width: '100%', height: '350px' }}>
-                <h4 style={{ marginBottom: 0, position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }}>
-                    PC1 Values
-                </h4>
-                <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}></div>
-
-                {/* Legend */}
-                {/* <div style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    right: '25px',
-                    display: 'flex',          
-                    flexDirection: 'row',     
-                    alignItems: 'center' 
-                }}>
-                    {uniqueClusters.map((clusterVal, i) => (
-                    <div key={clusterVal} style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
-                        <div style={{
-                        width: '10px',
-                        height: '10px',
-                        backgroundColor: colors(clusterVal),
-                        marginRight: '4px'
-                        }}></div>
-                        <span style={{ fontSize: '10px' }}>{`Cluster ${clusterVal}`}</span>
-                    </div>
-                    ))}
-                </div> */}
-            
-            </div>
-            
-            <Tooltip
-                visible={tooltip.visible}
-                content={tooltip.content}
-                x={tooltip.x}
-                y={tooltip.y}
-            />
+        <div style={{ position: "relative", width: "100%", height: "330px" }}>
+          <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
         </div>
-    </div>
+
+        <Tooltip
+            visible={tooltip.visible}
+            content={tooltip.content}
+            x={tooltip.x}
+            y={tooltip.y}
+        />
+      </div>
+    </Card>
     );
 };
 

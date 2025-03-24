@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Card } from "antd";
 import { COLORS, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
 const TimelineView = ({ mgrData }) => {
 
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 140 });
+    const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(null);
     const [brushEnd, setBrushEnd] = useState(null);
@@ -108,11 +109,11 @@ const TimelineView = ({ mgrData }) => {
     // adding legend 
     const legend = svg.append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${size.width / 1.65}, ${size.height - 45})`)
+        .attr('transform', `translate(0, 0)`)
 
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
-            .attr('transform', `translate(${i * 80}, 0)`)
+            .attr('transform', `translate(0, ${i * 80})`)
             .on('mouseover', function() {
                 svg.selectAll('path')
                     .transition().duration(200)
@@ -244,8 +245,11 @@ const TimelineView = ({ mgrData }) => {
 
       };
 
-      return <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>;
-
+      return  (
+        <Card title="TIMELINE VIEW" size="small" style={{ height: 'auto' }}>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>
+        </Card>
+      );
     };
     
     

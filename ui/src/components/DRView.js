@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
-import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Card, Form, Col, Row, Select } from "antd";
 import Tooltip from '../utils/tooltip.js';
+import Matrix from './Matrix.js';
 import * as d3 from 'd3';
 
-const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
+const { Option } = Select;
+
+const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 400, height: 300 });
@@ -103,7 +106,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 3)
-            .style('fill', d => colorScale(d.Cluster))
+            .style('fill', (d, i) => colorScale(d.Cluster))
             .on("mouseover", function (event, d) {
                 setHoveredPoint(getIdVal(d)); 
 
@@ -135,8 +138,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     }, [data, type]);
 
     useEffect(() => {
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
         d3.select(svgContainerRef.current)
             .selectAll(".dr-circle")
             .transition()
@@ -266,47 +267,62 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, hoveredPoint, setHo
     };
 
     return (
-        <div style={{ width: '100%', height: '300px' }}>
-            <h4 style={{ marginBottom: 0}}>{method1} Across Time Points</h4>
-            <div ref={svgContainerRef} style={{ width: '100%', height: '100%' }}>
+        <Card 
+            title="DR VIEW" 
+            size="small" 
+            style={{ height:'auto' }}
+        >
+            <Row>
+            <Col span={14}>
+                <div ref={svgContainerRef}></div>
+
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
-            </div>
-            <Tooltip
-                visible={tooltip.visible}
-                content={tooltip.content}
-                x={tooltip.x}
-                y={tooltip.y}
-            />
-            <div id="form-container" style={{display: 'flex', flexDirection: 'row', minWidth: 150 }}>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: 120, marginTop: 0 }}>
-                    <InputLabel>DR1 Method</InputLabel>
-                    <Select
-                        value={method1}
-                        onChange={(e) => {
-                            updateChart(e.target.value, method2);
-                        }}
-                    >
-                        <MenuItem value="UMAP">UMAP</MenuItem>
-                        <MenuItem value="tSNE">t-SNE</MenuItem>
-                        <MenuItem value="PC">PCA</MenuItem>
-                    </Select>
-                </FormControl>
-                <FormControl variant="standard" sx={{ m: 1, minWidth: 120, float: 'left', marginTop: 0 }}>
-                    <InputLabel>DR2 Method</InputLabel>
-                    <Select
-                        value={method2}
-                        onChange={(e) => {
-                            updateChart(method1, e.target.value);
-                        }}
-                    >
-                        <MenuItem value="UMAP">UMAP</MenuItem>
-                        <MenuItem value="tSNE">t-SNE</MenuItem>
-                        <MenuItem value="PC">PCA</MenuItem>
-                    </Select>
-                </FormControl>
-            </div>
-        </div>
-        );
+
+                {/* <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
+                    <Form layout="vertical">
+                        <Form.Item label="DR1 Method">
+                        <Select
+                            value={method1}
+                            onChange={(value) => updateChart(value, method2)}
+                        >
+                            <Option value="UMAP">UMAP</Option>
+                            <Option value="tSNE">t-SNE</Option>
+                            <Option value="PC">PCA</Option>
+                        </Select>
+                        </Form.Item>
+                    </Form>
+
+                    <Form layout="vertical">
+                        <Form.Item label="DR2 Method">
+                        <Select
+                            value={method2}
+                            onChange={(value) => updateChart(method1, value)}
+                        >
+                            <Option value="UMAP">UMAP</Option>
+                            <Option value="tSNE">t-SNE</Option>
+                            <Option value="PC">PCA</Option>
+                        </Select>
+                        </Form.Item>
+                    </Form>
+                </div>
+                 */}
+                <Tooltip
+                    visible={tooltip.visible}
+                    content={tooltip.content}
+                    x={tooltip.x}
+                    y={tooltip.y}
+                />
+            </Col>
+
+            <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
+                <Matrix
+                    data={data}
+                    FCs={fcs} 
+                />
+            </Col>
+        </Row>
+    </Card>
+    );
 
 }
 
