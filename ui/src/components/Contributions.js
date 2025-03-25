@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale, colorScheme } from '../utils/colors.js';
 import * as d3 from 'd3';
 
-const Matrix = ({ data, FCs }) => {
+const Contributions = ({ data, FCs }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 400, height: 400 });
     
@@ -106,4 +106,4 @@ const Matrix = ({ data, FCs }) => {
 
 };
     
-export default Matrix;
+export default Contributions;

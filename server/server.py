@@ -26,11 +26,11 @@ def get_timeseries_data(file='far_data_2024-02-21.csv'):
 
 @app.route('/nodeData', methods=['GET'])
 def get_node_data():
+    global ts_data
     global filepath
-    filename = 'far_data_2024-02-21.csv'
-    data = pd.read_csv(filepath+filename).fillna(0.0)
-    print(data.shape)
-    return data.to_dict(orient='records')
+    filtered = ts_data.loc[:, ~ts_data.columns.str.contains("Retrans", regex=True)]
+    print(filtered.shape)
+    return jsonify(filtered.to_dict(orient='records'))
 
 @app.route('/mgrData', methods=['GET'])
 def get_json_data():

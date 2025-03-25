@@ -172,17 +172,13 @@ const FeatureView = ({ data, field, index }) => {
         // updating line
         chart.select(`.line-${chartId}`)
           .datum(newdata)
-          .transition()
-          .duration(500)
-          .ease(d3.easeLinear)
-          .attrTween('d', function(d) {
-            const previous = d3.select(this).attr('d'); 
-            const current = d3.line()
-                .x(d => xScale(d.timestamp))
-                .y(d => yScale(d.value))(d);
-    
-            return interpolatePath(previous, current); 
-        });
+          // .transition()
+          // .duration(500)
+          // .ease(d3.easeLinear)
+          .attr("d", d3.line()
+              .x(d => xScale(d.timestamp))
+              .y(d => yScale(d.value))
+          )
       };
 
       const handleUpdateEvent = (event) => {

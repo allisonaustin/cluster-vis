@@ -3,7 +3,7 @@ import { getColor, colorScale } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import { Card, Form, Col, Row, Select } from "antd";
 import Tooltip from '../utils/tooltip.js';
-import Matrix from './Matrix.js';
+import Contributions from './Contributions.js';
 import * as d3 from 'd3';
 
 const { Option } = Select;
@@ -278,9 +278,9 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
 
                 <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
-                {/* <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                    <Form layout="vertical">
-                        <Form.Item label="DR1 Method">
+                <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
+                    <Form layout="inline">
+                        <Form.Item label="DR1">
                         <Select
                             value={method1}
                             onChange={(value) => updateChart(value, method2)}
@@ -292,8 +292,8 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                         </Form.Item>
                     </Form>
 
-                    <Form layout="vertical">
-                        <Form.Item label="DR2 Method">
+                    <Form layout="inline">
+                        <Form.Item label="DR2">
                         <Select
                             value={method2}
                             onChange={(value) => updateChart(method1, value)}
@@ -305,7 +305,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                         </Form.Item>
                     </Form>
                 </div>
-                 */}
+                
                 <Tooltip
                     visible={tooltip.visible}
                     content={tooltip.content}
@@ -315,10 +315,10 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             </Col>
 
             <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
-                <Matrix
+                {/* <Contributions
                     data={data}
                     FCs={fcs} 
-                />
+                /> */}
             </Col>
         </Row>
     </Card>
