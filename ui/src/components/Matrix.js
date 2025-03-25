@@ -25,20 +25,7 @@ const Matrix = ({ data, FCs }) => {
         const ylabel_names = Object.keys(data[0]).filter(
             key => !excludeFeatures.includes(key)
         );
-
-        const xScale = d3.scaleBand()
-            .domain(d3.range(numCols))
-            .range([margin.left, width/2])
-            .padding(0.05);
-
-        const yScale = d3.scaleBand()
-            .domain(d3.range(numRows))
-            .range([0, height-margin.bottom])
-            .padding(0.05);
-
-        const contributionScale = d3.scaleSequential(d3.interpolateRdBu) 
-            .domain([d3.max(agg_feat_contrib_mat.flat()), d3.min(agg_feat_contrib_mat.flat())]);
-
+        
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
             .attr('id', `matrix-svg`)
@@ -46,75 +33,73 @@ const Matrix = ({ data, FCs }) => {
             .attr("height", "100%")
             .attr("viewBox", `0 0 ${size.width} ${size.height + margin.bottom}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
+
+        var groups = []
+        xlabel_names.forEach((cluster, clusterIndex) => {
+            const clusterValues = agg_feat_contrib_mat.map(row => row[clusterIndex]);
         
-        svg.selectAll()
-            .data(agg_feat_contrib_mat.flatMap((row, i) => row.map((val, j) => ({ row: i, col: j, value: val }))))
-            .enter().append("rect")
-            .attr("x", d => xScale(d.col))
-            .attr("y", d => yScale(d.row))
-            .attr("width", xScale.bandwidth())
-            .attr("height", yScale.bandwidth())
-            .style("fill", d => contributionScale(d.value))
-            .style("stroke", "white")
-            .on("mouseover", function (event, d) {
-                d3.select(this)
-                    .style("opacity", 0.6)
-                    .style('cursor', 'pointer')
-            })
-            .on("mouseout", function (event, d) {
-                d3.select(this)
-                    .style("opacity", 1)
-                    .style('cursor', 'default')
-                    
-            });
-
-
-        // Cluster colors
-        const clusterColors = xlabel_names.map((_, i) => colorScale(_));
-        const clusterGroup = svg.append("g")
-            .attr("transform", `translate(0, ${height + 10})`) 
-            .selectAll("g")
-            .data(clusterColors)
-            .enter()
-            .append("g")
-            .attr("transform", (d, i) => `translate(${xScale(i) - 40}, 0)`);
-
-        clusterGroup.each(function(d, i) {
-            d3.select(this)
-                .append("rect")
-                .attr("width", 10)
-                .attr("height", 10)
-                .style("fill", d)
-                .attr("transform", "rotate(-45)"); // Rotate square to match label rotation
+            const filteredData = clusterValues
+                .map((value, rowIndex) => ({ value, featureName: ylabel_names[rowIndex], cluster: cluster }))
+                .filter(d => d.value < -0.5 || d.value > 0.5);
+        
+            const group = {
+                cluster: cluster,  
+                values: filteredData.map(d => d.value),
+                features: filteredData.map(d => d.featureName)
+            };
+        
+            groups.push(group);
         });
 
-        // X labels (Cluster IDs)
-        svg.append("g")
-            .attr("transform", `translate(0, ${height - margin.bottom})`) // Position labels at the bottom of the matrix
-            .call(d3.axisBottom(xScale).tickFormat((d, i) => 'Cluster ' + xlabel_names[i]))
-            .selectAll("text")
-            .style("text-anchor", "end")
-            .attr("dx", "-0.5em")
-            .attr("dy", "0.15em")
-            .attr("transform", "rotate(-45)") // Rotate the labels
-            .style("font-size", "14px");
-        
-        // Feature names (y labels)
-        svg.append("g")
-            .attr("transform", `translate(${width/2}, 0)`)
-            .call(d3.axisRight(yScale).tickFormat((d, i) => ylabel_names[i]))
-            .selectAll("text")
-            .style("font-size", "14px");
+        const maxContrib = d3.max(agg_feat_contrib_mat.flatMap(row => row));
+        const minContrib = d3.min(agg_feat_contrib_mat.flatMap(row => row));
 
-        const title = "Feature Contributions";
-        svg.append("text")
-            .attr("x", width / 2) 
-            .attr("y", height + margin.bottom) 
-            .attr("text-anchor", "middle") 
-            .style("font-size", "14px") 
-            .style("font-weight", "bold") 
-            .text(title);
-      
+        let groupPadding = 1.5;
+        let dataWidth = d3.sum(groups, d=>d.values.length) + (groups.length-1) * groupPadding; 
+        let currentWidth = 0;
+        console.log(groups)
+        groups = groups.map(group=>{
+          group.width = group.values.length;
+          group.startPosition = currentWidth;
+          currentWidth += group.width+groupPadding;
+          return group;
+        });
+
+        const xScale = d3.scaleLinear()
+            .domain([d3.min(groups, group => d3.min(group.values)), d3.max(groups, group => d3.max(group.values))]) 
+            .range([margin.left, width - margin.right]); 
+
+        const yScale = d3.scaleLinear()
+            .domain([0, groups.length])  
+            .range([0, height]);      
+
+        const barGroups = svg.selectAll('.bar-group')
+            .data(groups)
+            .enter()
+            .append('g')
+            .classed('bar-group', true)
+            .attr('transform', (group, index) => `translate(${margin.left}, ${yScale(index)})`); 
+
+        barGroups.each(function(group) {
+            const barGroup = d3.select(this);
+
+            barGroup.selectAll('rect')
+                .data(group.values)
+                .enter()
+                .append('rect')
+                .attr('width', value => xScale(value)) 
+                .attr('height', yScale(1))  
+                .attr('x', 0)                   
+                .attr('y', (value, i) => i * (yScale(1))); 
+        });
+
+        // Add a y-axis (for group names)
+        svg.append('g')
+            .attr('transform', `translate(${margin.left}, 0)`)
+            .call(d3.axisLeft(yScale).tickFormat((d, i) => d.cluster))
+            .attr('class', 'y-axis');
+    
+        
       }, [FCs]);
     
       return <div ref={svgContainerRef}></div>;

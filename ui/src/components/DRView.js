@@ -43,13 +43,13 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
 
         const xScale = d3.scaleLinear()
             .domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
-            .range([margin.left, width - margin.right]);
+            .range([0, width - margin.right]);
 
         const yScale = d3.scaleLinear()
             .domain([d3.min(data, d => +d[yKey]) - 1, d3.max(data, d => +d[yKey]) + 1])
             .range([height - margin.bottom, margin.top]);
         
-        const xAxis = d3.axisBottom(xScale);
+        // const xAxis = d3.axisBottom(xScale);
         
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
@@ -59,41 +59,41 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
         
-        svg.append('g')
-            .attr('class', 'x-axis')
-            .attr('transform', `translate(0,${height - margin.bottom})`)
-            .call(xAxis)
-            .selectAll("text")
-            .style("font-size", "14px");
+        // svg.append('g')
+        //     .attr('class', 'x-axis')
+        //     .attr('transform', `translate(0,${height - margin.bottom})`)
+        //     .call(xAxis)
+        //     .selectAll("text")
+        //     .style("font-size", "14px");
 
         // x axis label
-        svg.append('text')
-            .attr('id', 'x-axis-label-dr')
-            .attr("x", width/2)
-            .attr("y", height)
-            .style('text-anchor', 'middle')
-            .text(xKey)
-            .style('font-size', '16px');
+        // svg.append('text')
+        //     .attr('id', 'x-axis-label-dr')
+        //     .attr("x", width/2)
+        //     .attr("y", height)
+        //     .style('text-anchor', 'middle')
+        //     .text(xKey)
+        //     .style('font-size', '16px');
 
 
-        const yAxis = d3.axisLeft(yScale).ticks(height / 40);
-        svg.append("g")
-            .attr("class", "y-axis")
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(yAxis)
-            .call(g => g.append("text")
-                .attr('id', 'y-axis-label-dr')
-                .attr("x", -height/2)
-                .attr("y", -margin.right)
-                .attr("fill", "currentColor")
-                .attr("text-anchor", "start")
-                .attr("transform", "rotate(-90)")
-                .style('font-size', '16px')
-                .text(yKey)); // Y label
+        // const yAxis = d3.axisLeft(yScale).ticks(height / 40);
+        // svg.append("g")
+        //     .attr("class", "y-axis")
+        //     .attr("transform", `translate(${margin.left},0)`)
+        //     .call(yAxis)
+        //     .call(g => g.append("text")
+        //         .attr('id', 'y-axis-label-dr')
+        //         .attr("x", -height/2)
+        //         .attr("y", -margin.right)
+        //         .attr("fill", "currentColor")
+        //         .attr("text-anchor", "start")
+        //         .attr("transform", "rotate(-90)")
+        //         .style('font-size', '16px')
+        //         .text(yKey)); // Y label
 
-        svg.select('.y-axis')
-            .selectAll("text")
-            .style("font-size", "14px")
+        // svg.select('.y-axis')
+        //     .selectAll("text")
+        //     .style("font-size", "14px")
 
         let circs = svg.selectAll(".dr-circle")
             .data(data)
@@ -105,7 +105,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             .attr("cy", d => yScale(d[yKey]))
             .attr('stroke','black')
             .attr('stroke-width', '1px')
-            .attr("r", 3)
+            .attr("r", 4)
             .style('fill', (d, i) => colorScale(d.Cluster))
             .on("mouseover", function (event, d) {
                 setHoveredPoint(getIdVal(d)); 
@@ -165,7 +165,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             .duration(150)
             .attr("r", d => {
                 const idVal = getIdVal(d);
-                return idVal === hoveredPoint ? 6 : 3;
+                return idVal === hoveredPoint ? 8 : 4;
             })
             .style("opacity", d => {
                 const idVal = getIdVal(d);

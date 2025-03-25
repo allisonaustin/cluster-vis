@@ -9,11 +9,11 @@ import TimelineView from './components/TimelineView.js';
 const { Header, Content } = Layout;
 
 function App() {
-  const [activeTab, setActiveTab] = useState(0);
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
+  const [nodeData, setNodeData] = useState(null);
   const [triggerData, setTriggerData] = useState([]);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
@@ -24,35 +24,30 @@ function App() {
 
   useEffect(() => {
     Promise.all([getDRTimeData(), 
-                // getDRFeatureData(),
                 getMgrData(selectedFile)
               ])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  const getDRTimeData = async () => {
+  const getNodeData = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
+      const response = await fetch(`http://127.0.0.1:5010/nodeData`);
       const data = await response.json();
-      
-      if (response.ok) {
-        setDRTData(data.dr_features);
-        setFCs(data.feat_contributions);
-        setError(null); 
+      if (response.ok) { 
+        console.log(data)
       } else {
-        setDRTData(null);  
-        setError("Failed to fetch DR data. Please check that the server is running.");
+        setNodeData(null);   
+        setError("Failed to fetch data. Please check that the server is running.");
       }
-
     } catch (error) {
-      setDRTData(null);    
-      setError("Failed to fetch DR data. Please check that the server is running.");
+      setNodeData(null)
+      setError("Failed to fetch data. Please check that the server is running.");
       console.error(error);     
     }
   };
 
-  const getBufferData = async () => {
+  const getDRTimeData = async () => {
     try {
       const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
       const data = await response.json();
@@ -92,7 +87,6 @@ function App() {
             obj[key] = data[key];
             return obj;
           }, {});
-
       // Filter data for performance (keys not containing 'P1')
       const perfFilt = Object.keys(data)
         .filter((key) => !key.includes('P1'))
@@ -122,7 +116,6 @@ function App() {
     setSelectedFile(newFile); 
     getMgrData(newFile);
   };
-
 
   return (
     <Layout style={{ height: "100vh", padding: "10px" }}>

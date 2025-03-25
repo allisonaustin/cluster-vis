@@ -4,6 +4,8 @@ from timeit import default_timer as timer
 import time
 import numpy as np
 import pandas as pd
+import sys
+sys.path.append("./scripts/src/")
 from mrdmd_zscore import MrDMDZscore
 
 ml = 9
@@ -229,10 +231,12 @@ def get_cached_or_compute_baselines(df, force_recompute=False):
     return ZSC_d
 
 def get_mrdmd(df):
+    # Step 1: Compute z-scores for baselines or get them from cache
     bs_start = timer()
     Z_b = get_cached_or_compute_baselines(df)
     bs_end = timer()
 
+    # Step 2: Compute z-scores for the node selection compared to baseline z-scores
     mr_dmdstart = timer()
     zsc_d = compute_zscores(df, Z_b)
     mr_dmdend = timer()
