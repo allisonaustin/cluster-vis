@@ -41,7 +41,7 @@ const Contributions = ({ data, FCs }) => {
 
         const LEGEND_SQ_SIZE = 10
         const INTER_LEGEND_PADDING = 1.25
-        const margin = { top: 30, right: 10, bottom: (LEGEND_SQ_SIZE + INTER_LEGEND_PADDING) * (transformedData.length + 2), left: 20 };
+        const margin = { top: 30, right: 10, bottom: LEGEND_SQ_SIZE * 2, left: 20 };
         const xDomain = [-1, 1];
         const xScale = d3.scaleLinear()
             .domain(xDomain)
@@ -94,7 +94,11 @@ const Contributions = ({ data, FCs }) => {
                 .attr('transform', `translate(${(size.width - margin.left - margin.right) / 2 + margin.left}, ${yOffset})`)
                 // Swap to commented version for left aligned axis
                 // .attr('transform', `translate(${margin.left / 4}, ${yOffset})`)
-                .call(d3.axisRight(y).tickSizeOuter(0).tickSizeInner(0));
+                .call(d3.axisRight(y).tickSizeOuter(0).tickSizeInner(0).tickPadding(4))
+                .selectAll('text')
+                .style("font-size", "13px")
+                .style("vertical-align", "middle");
+                
             svg.append('text')
                 .attr('class', 'cluster-title')
                 .attr('text-anchor', 'center')
@@ -104,7 +108,7 @@ const Contributions = ({ data, FCs }) => {
                 // .attr('y', margin.left / 6)
                 .attr('x', -(yOffset + (barHeight * cluster.data.length + barHeight * PADDING_MULTIPLIER) / 2))
                 .attr('font-weight', 'bold')
-                .text(`c${cluster.clusterId}`)                
+                .text(`c${cluster.clusterId}`)
 
             yOffset += barHeight * cluster.data.length + barHeight * PADDING_MULTIPLIER;
         });
@@ -156,7 +160,7 @@ const Contributions = ({ data, FCs }) => {
             .data(colorScale.domain().sort((a,b) => a - b))
             .join("g")
             .attr("class", "legend-item")
-            .attr("transform", (d, i) => `translate(0, ${i * LEGEND_SQ_SIZE * INTER_LEGEND_PADDING})`); // Adjust spacing
+            .attr("transform", (d, i) => `translate(${i * (LEGEND_SQ_SIZE + 50) * INTER_LEGEND_PADDING}, 0)`); // Adjust spacing
 
         // Add colored squares
         legendItems.append("rect")
