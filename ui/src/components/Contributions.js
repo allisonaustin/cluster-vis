@@ -39,7 +39,7 @@ const Contributions = ({ data, FCs }) => {
             ];
         }, []).sort((a, b) => b.data.length - a.data.length);
 
-        const LEGEND_SQ_SIZE = 10
+        const LEGEND_SQ_SIZE = 13
         const INTER_LEGEND_PADDING = 1.25
         const margin = { top: 30, right: 10, bottom: LEGEND_SQ_SIZE * 2, left: 20 };
         const xDomain = [-1, 1];
@@ -160,7 +160,7 @@ const Contributions = ({ data, FCs }) => {
             .data(colorScale.domain().sort((a,b) => a - b))
             .join("g")
             .attr("class", "legend-item")
-            .attr("transform", (d, i) => `translate(${i * (LEGEND_SQ_SIZE + 50) * INTER_LEGEND_PADDING}, 0)`); // Adjust spacing
+            .attr("transform", (d, i) => `translate(${i * (LEGEND_SQ_SIZE + 65) * INTER_LEGEND_PADDING}, 0)`); // Adjust spacing
 
         // Add colored squares
         legendItems.append("rect")
@@ -175,7 +175,7 @@ const Contributions = ({ data, FCs }) => {
             .text(d => `Cluster ${d}`)
             .attr("alignment-baseline", "center")
             .attr("text-anchor", "start")
-            .style("font-size", "10px");
+            .style("font-size", "16px");
 
       }, [FCs]);
     

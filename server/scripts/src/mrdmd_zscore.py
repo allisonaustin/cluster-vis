@@ -205,8 +205,9 @@ class MrDMDZscore():
         
         meas_count = data.shape[0]
         
-        ax = plt.subplot()
-        std_currs = []
+        if plot:
+            ax = plt.subplot()
+        std_currs = [] 
         tsIDs = []
         
         brkPoints_levels = [[(0,data.shape[1])]]

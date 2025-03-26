@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale } from '../utils/colors.js';
 import * as d3 from 'd3';
+import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index, selectedPoints }) => {
+const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHoveredPoint }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 800, height: 200 });
+    const [size, setSize] = useState({ width: 800, height: 300 });
     const [chartId, setChartId] = useState(index);
     const [chartdata, setChartData] = useState([]);
+    const [isLocalHover, setIsLocalHover] = useState(false);
+    const [tooltip, setTooltip] = useState({
+            visible: false,
+            content: '',
+            x: 0,
+            y: 0
+        });
     
     useEffect(() => {
       if (!svgContainerRef.current || !data) return; 
@@ -124,6 +132,39 @@ const LineChart = ({ data, field, index, selectedPoints }) => {
         .attr('stroke', (d) => selectedPoints.includes(d[0]) ? getColor('select') : getColor('default'))
         .attr('stroke-width', 1)
         .attr('d', d => line(d[1]))
+        .on('mouseover', function(event, d) {
+          setIsLocalHover(true);
+          const tooltipWidth = 150; 
+          const windowWidth = window.innerWidth; 
+          
+          let tooltipX = event.clientX + 5;  
+          if (tooltipX + tooltipWidth > windowWidth) {
+              tooltipX = event.clientX - tooltipWidth - 5;  
+          }
+          setHoveredPoint(d[0]); 
+          d3.select(this)
+              .style("stroke-width", 3)
+              .style("opacity", 1) 
+
+          // node ID tooltip
+          setTooltip({
+            visible: true,
+            content: `${d[0]}`,
+            x: tooltipX,
+            y: event.clientY
+          });
+          
+        })
+        .on('mouseout', function(event, d) {
+            setIsLocalHover(false);
+            setHoveredPoint(null);
+
+            d3.select(this)
+                .style("stroke-width", 1) 
+                .style("opacity", 0.7);
+
+            setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+        });
         
       focus.append("text")
         .attr("class", "grid-title")

@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import sys
 sys.path.append("./scripts/src/")
-from mrdmd_zscore import MrDMDZscore
+import importlib 
+import mrdmd_zscore
 
 ml = 9
 step = 10000
@@ -72,7 +73,8 @@ def find_time_range(df, lower, upper):
 
 def process_columns_baseline(df):
     Z_final = []
-    std_baselines_dict = {}
+    ml = 9
+    step = 10000
 
     def process_single_column(col):
         # computing upper and lower baseline value range
@@ -98,13 +100,11 @@ def process_columns_baseline(df):
         else: 
             return 
 
-        # TODO: save df_col (baselines) 
-
         # extracting input, output matrices
         D = df_col.iloc[:,:].to_numpy()
 
         # run mrDMD
-        mrDMDZSC = MrDMDZscore()
+        mrDMDZSC = mrdmd_zscore.MrDMDZscore()
         nodes1 = mrDMDZSC.mrdmd(D, max_levels=ml, max_cycles=1, do_parallel=False)
         
         data = D.copy()
@@ -134,34 +134,44 @@ def process_columns_baseline(df):
                                                 for_baseline=True, \
                                                 plot=False)
 
-        std_baselines_dict[col] = {
+        std_baselines_df = pd.DataFrame({
+            "feature": col,
+            "b_start": sob,
+            "b_end": eob,
+            "v_min": bmin,
+            "v_max": bmax,
             "z_score": std_baselines
-        }
+        })
+        
+        Z_final.append(std_baselines_df)
 
-        return std_baselines_dict
-
-    cols_df = df.drop(columns=['nodeId', 'timestamp', 'Missed Buffers_P1', 'cpu_num'])
+    cols_df = df.drop(columns=['nodeId', 'timestamp'])
     with ThreadPoolExecutor(max_workers=15) as executor:
         executor.map(process_single_column, cols_df.columns)
     
-    # zscores
     Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame()
-    # save baselines to parquet
     return Z_final
 
 
-def extract_baselines(nbase_df, baselines, node_dict, col):
+def extract_baselines(df, nbase_df, baselines, col):
     # extracting baseline, duplicating across time series
-    b_start = pd.to_datetime(baselines.columns[0])
-    b_end = pd.to_datetime(baselines.columns[-1])
+    b_start = pd.to_datetime(baselines.loc[baselines['feature'] == col, 'b_start'].values[0])
+    b_end = pd.to_datetime(baselines.loc[baselines['feature'] == col, 'b_end'].values[0])
     b_diff = b_end - b_start
 
-    t_start = nbase_df.columns[0]
-    t_end = nbase_df.columns[-1]
+    t_start = pd.to_datetime(nbase_df.columns[0])
+    t_end = pd.to_datetime(nbase_df.columns[-1])
     t_diff = t_end - t_start
     num_repeats = int(t_diff / b_diff) + 1
 
-    base_ext = pd.concat([baselines] * num_repeats, axis=1)
+    base_df = df[(pd.to_datetime(df['timestamp']) >= b_start) \
+               & (pd.to_datetime(df['timestamp']) <= b_end)] \
+                .pivot(index="nodeId", columns="timestamp", values=col) \
+                .apply(pd.to_numeric, errors='coerce') \
+                .ffill(axis='rows') \
+                .bfill(axis='rows')
+
+    base_ext = pd.concat([base_df] * num_repeats, axis=1)
     base_ext = base_ext.iloc[:, :len(nbase_df.columns)]
     base_ext.columns = nbase_df.columns
 
@@ -171,20 +181,21 @@ def extract_baselines(nbase_df, baselines, node_dict, col):
 
 def compute_zscores(df, baselines):
     Z_final = []
-
-    # TODO: read std_baselines
+    ml = 9
+    step = 10000
     
     def process_single_feature(col):
         # non-baselines
         nbase_df = preprocess(df, col)
         nodelist = nbase_df.index.tolist()
 
-        base_ext = extract_baselines(nbase_df, baselines, col)
+        base_ext = extract_baselines(df, nbase_df, baselines[baselines['feature']==col], col)
+        
         D = nbase_df.to_numpy()
         D = np.vstack([D,base_ext])
 
-        mrDMDZSC = MrDMDZscore()
-        nodes1 = mrDMDZSC.mrdmd(D, max_levels=ml, max_cycles=1, do_parallel=True)
+        mrDMDZSC = mrdmd_zscore.MrDMDZscore()
+        nodes1 = mrDMDZSC.mrdmd(D, max_levels=ml, max_cycles=1, do_parallel=False)
 
         # z-score analysis
         data = D.copy()
@@ -206,34 +217,40 @@ def compute_zscores(df, baselines):
                                     plot=False)
         
         values = zsc[0][:len(nodelist)]
-        Z_final.append(pd.DataFrame({"nodeId": nodelist, col: values}))
+        Z_df = pd.DataFrame({"nodeId": nodelist, col: values})
+        return Z_df
 
-    cols_df = df.drop(columns=['nodeId', 'timestamp', 'Missed Buffers_P1', 'cpu_num'])
+    cols_df = df.drop(columns=['nodeId', 'timestamp'])
+    results = []
     with ThreadPoolExecutor(max_workers=15) as executor:
-        executor.map(process_single_feature, cols_df.columns)
+        futures = [executor.submit(process_single_feature, col) for col in cols_df.columns]
+        for future in futures:
+            results.append(future.result())
 
-    Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame()
+    Z_final = pd.concat(results, axis=1)
+    cols = Z_final.columns
+    if 'nodeId' in cols:
+        Z_final = Z_final.loc[:, ~Z_final.columns.duplicated()]
     return Z_final
 
-def get_cached_or_compute_baselines(df, force_recompute=False):
-    if os.path.exists(ZSC_B_CACHE_NAME) and not force_recompute:
+def get_cached_or_compute_baselines(df, force_recompute):
+    if (os.path.exists(ZSC_B_CACHE_NAME)) and (force_recompute == 0):
         print('Reading cached baseline zscores from parquet')
         return pd.read_parquet(ZSC_B_CACHE_NAME)
 
-    if force_recompute:
+    if force_recompute == 1:
         print('Forcing fresh compute of baseline')
     
     ZSC_d = process_columns_baseline(df)
     os.makedirs(CACHE_DIR, exist_ok=True)
     ZSC_d.to_parquet(ZSC_B_CACHE_NAME)
     print(f'Cached baseline results to parquet {ZSC_B_CACHE_NAME}.')
-
     return ZSC_d
 
-def get_mrdmd(df):
+def get_mrdmd(df, force_recompute):
     # Step 1: Compute z-scores for baselines or get them from cache
     bs_start = timer()
-    Z_b = get_cached_or_compute_baselines(df)
+    Z_b = get_cached_or_compute_baselines(df, force_recompute)
     bs_end = timer()
 
     # Step 2: Compute z-scores for the node selection compared to baseline z-scores
@@ -241,6 +258,8 @@ def get_mrdmd(df):
     zsc_d = compute_zscores(df, Z_b)
     mr_dmdend = timer()
 
+    print(zsc_d)
+
     print(f'baseline in {(bs_end - bs_start)}s')
     print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
-    return zsc_d
+    return zsc_d, Z_b

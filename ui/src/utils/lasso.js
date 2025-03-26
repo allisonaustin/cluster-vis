@@ -55,8 +55,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
     const dragEnd = () => {
         // Check if each point is inside the lasso
         let circles = svg.selectAll(targetItems)
-        let paths = d3.select("#coord-svg").selectAll("path.line"); 
-        let lines = d3.selectAll(".line");
+        let lines = d3.selectAll(".line-svg").selectAll("path.line");
 
         circles.each((d, i) => {
             let point = [
@@ -75,10 +74,6 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
             circles
                 .style("opacity", 1);
             lines.style("stroke", (d) => getColor('default')).style("opacity", 1);
-            paths.style("stroke", function () {
-                const cluster = d3.select(this).attr("data-cluster");
-                return colorScale(+cluster);
-            });
         }
         svg.select('#lasso').remove();
     };

@@ -3,13 +3,13 @@ import { Card } from "antd";
 import { COLORS, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
 
-const TimelineView = ({ mgrData }) => {
+const TimelineView = ({ mgrData, bStart, bEnd }) => {
 
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
-    const [brushStart, setBrushStart] = useState(null);
-    const [brushEnd, setBrushEnd] = useState(null);
+    const [brushStart, setBrushStart] = useState(new Date(bStart));
+    const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
     const [currentDate, setCurrentDate] = useState(null);
     const [fields, setFields] = useState(['Activity_P1']);
       
@@ -141,10 +141,8 @@ const TimelineView = ({ mgrData }) => {
             .text(field)
             .style('font-size', '10px')
             .attr('alignment-baseline', 'middle')
+            .style("font-size", "14px")
     })
-
-    const start = new Date('2024-02-21 16:07:30Z');
-    const end = new Date('2024-02-21 17:41:45Z');
 
     // const formattedDate = dateFormat(start);
     // setCurrentDate(formattedDate)
@@ -158,12 +156,9 @@ const TimelineView = ({ mgrData }) => {
      // adding brush
 
       const defaultWindow = [
-        xScale(start),
-        xScale(end)
+        xScale(brushStart),
+        xScale(brushEnd)
       ]
-
-      setBrushStart(start);
-      setBrushEnd(end);
 
       const brush = d3.brushX(xScale)
         .extent([[0, 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])

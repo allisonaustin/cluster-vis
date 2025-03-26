@@ -53,23 +53,29 @@ def get_dr_time_data():
     }
     return jsonify(response)
 
-@app.route('/mrdmd/<nodes>/<b_start>/<b_end>/<selectedCols>', methods=['GET'])
-def get_mrdmd_results(nodes, b_start, b_end, selectedCols):
+@app.route('/mrdmd/<nodes>/<b_start>/<b_end>/<selectedCols>/<recompute_base>', methods=['GET'])
+def get_mrdmd_results(nodes, b_start, b_end, selectedCols, recompute_base=0):
     global ts_data
 
     baseline_start = pd.to_datetime(b_start.replace('%', ' '))
     baseline_end = pd.to_datetime(b_end.replace('%', ' '))
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
-    nodeList = list([nodes for node in nodes.split(',') if node.strip()] )
+    nodeList = list(set(nodes.split(',')))
     cols = ['timestamp', 'nodeId'] + colsList
 
-    # df = get_mrdmd(ts_data[cols])
+    filtered_data = ts_data[ts_data['nodeId'].isin(nodeList)]
 
-    df = pd.DataFrame()
+    print('mrdmd:', filtered_data[cols].shape)
 
+    if (filtered_data.shape[0] > 0):
+        zscores, baselines = get_mrdmd(filtered_data[cols], int(recompute_base))
+    else: 
+        zscores = pd.DataFrame()
+        baselines = pd.DataFrame()
+        
     response = {
-        "zscores": df.to_dict(orient='records'),
-        "baselines": {}
+        "zscores": zscores.to_dict(orient='records'),
+        "baselines": baselines.to_dict(orient='records')
     }
     return jsonify(response)
 
@@ -83,7 +89,14 @@ def get_node_data(selectedCols):
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
     cols = ['timestamp', 'nodeId'] + colsList
     df = ts_data[cols].copy()
-    return jsonify(df.to_dict(orient='records'))
+    
+    excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE']
+    all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
+    
+    return jsonify({
+        "data": df.to_dict(orient='records'),
+        "features": all_features
+    })
 
 def get_csv_data():
     file_path = os.path.join(data_dir, 'farm/far_data_2024-02-21.csv')
