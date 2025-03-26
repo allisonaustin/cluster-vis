@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor, colorScale } from '../utils/colors.js';
+import { Card, Col, Form, Row, Select } from "antd";
+import * as d3 from 'd3';
+import React, { useEffect, useRef, useState } from 'react';
+import { colorScale, getColor } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
-import { Card, Form, Col, Row, Select } from "antd";
 import Tooltip from '../utils/tooltip.js';
 import Contributions from './Contributions.js';
-import * as d3 from 'd3';
 
 const { Option } = Select;
 
@@ -315,10 +315,10 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             </Col>
 
             <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
-                {/* <Contributions
+                <Contributions
                     data={data}
                     FCs={fcs} 
-                /> */}
+                /> 
             </Col>
         </Row>
     </Card>
