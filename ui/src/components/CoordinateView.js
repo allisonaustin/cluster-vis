@@ -8,7 +8,7 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 400 });
+    const [size, setSize] = useState({ width: 700, height: 380 });
     const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 20, left: 20 });
     const [tooltip, setTooltip] = useState({
         visible: false,
@@ -70,7 +70,6 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
             function path(d) {
                 return d3.line()(selectedDims.map(function(p) { return [xScale(p), y.get(p)(d[p]) + margin.top]; }));
             }
-
             
             const paths = svg.selectAll("pcp-path")
                 .data(data)
@@ -81,7 +80,13 @@ const Coordinates = ({ data, selectedPoints, setSelectedPoints, hoveredPoint, se
                     .attr("d",  path)
                     .style("fill", "none")
                     // .style("stroke", function(d){ return getColor('default')} )
-                    .style("stroke", (d) => colorScale(d.Cluster))
+                    .style("stroke", (d) => {
+                      if (selectedPoints.length === 0) {
+                        return colorScale(d.Cluster)
+                      } else {
+                        return selectedPoints.includes(d.nodeId) ? getColor('select') : getColor('default')
+                      }
+                    })
                     .style("opacity", 0.7)
                     .each(function(d) {
                     if (firstRenderRef.current) {

@@ -106,7 +106,16 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
-            .style('fill', (d, i) => colorScale(d.Cluster))
+            .style('fill', (d) => {
+                const idVal = getIdVal(d);
+                if (selectedPoints.length === 0) {
+                    return colorScale(d.Cluster);
+                } else {
+                    return selectedPoints.includes(idVal) 
+                        ? getColor('select') 
+                        : getColor('default');
+                    }
+            })
             .on("mouseover", function (event, d) {
                 setHoveredPoint(getIdVal(d)); 
 
@@ -253,16 +262,13 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             return selected.includes(idVal) ? 1 : 0.7;
         });
 
-        // updating parallel coordinates plot
-        const coordChart = d3.select("#coord-svg"); 
-        coordChart.selectAll(".line")
+        const lineCharts = d3.selectAll(".line-svg"); 
+        lineCharts.selectAll(".line")
         .style("stroke", d => {
-            const idVal = (type === 'feature') ? d.Measurement : d.nodeId;
-            return selected.includes(idVal) ? getColor('select') : getColor('default');
+            return selected.includes(d[0]) ? getColor('select') : getColor('default');
         })
         .style("opacity", d => {
-            const idVal = (type === 'feature') ? d.Measurement : d.nodeId;
-            return selected.includes(idVal) ? 1 : 0.5;
+            return selected.includes(d[0]) ? 1 : 0.5;
         });
     };
 

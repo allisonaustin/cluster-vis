@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
+import { getColor, colorScale } from '../utils/colors.js';
 import React, { useEffect, useRef, useState } from 'react';
 
 const Contributions = ({ data, FCs }) => {
     const svgContainerRef = useRef();
-    const [size,] = useState({ width: 400, height: 450 });
+    const [size,] = useState({ width: 400, height: 400 });
     
     useEffect(() => {
       if (!svgContainerRef.current || !FCs || !data) return; 
@@ -38,11 +39,6 @@ const Contributions = ({ data, FCs }) => {
                 }
             ];
         }, []);
-        const uniqueFeatures = Array.from(new Set(transformedData.flatMap(cluster => cluster.data.map(d => d.feature))));
-        const featureColorScale = d3.scaleOrdinal()
-            .domain(uniqueFeatures)
-            .range(uniqueFeatures.map((_, i) => d3.interpolateSinebow(i / uniqueFeatures.length)));
-
         const xDomain = [-1, 1];
         const xScale = d3.scaleLinear()
             .domain(xDomain)
@@ -53,7 +49,7 @@ const Contributions = ({ data, FCs }) => {
             .attr('id', `matrix-svg`)
             .attr("width", "100%")
             .attr("height", "100%")
-            .attr("viewBox", `0 0 ${size.width} ${size.height + margin.bottom}`)
+            .attr("viewBox", `0 0 ${size.width} ${size.height}`)
             .attr("preserveAspectRatio", "xMidYMid meet");
 
         svg.append('g')
@@ -71,7 +67,6 @@ const Contributions = ({ data, FCs }) => {
 
         let yOffset = margin.top;
         transformedData.forEach((cluster, i) => {
-            console.log(cluster)
             // Construct a new y axis per cluster
             const y = d3.scaleBand()
                 .domain(cluster.data.map(d => d.feature))
@@ -79,7 +74,6 @@ const Contributions = ({ data, FCs }) => {
                 .paddingOuter(0.1)
                 .paddingInner(0.1);
             
-
             // Plot bars for cluster.
             svg.append('g')
             .selectAll()
@@ -89,7 +83,7 @@ const Contributions = ({ data, FCs }) => {
                 .attr('y', (d,i) => yOffset + y(d.feature))
                 .attr('width', d => Math.abs(xScale(d.value) - xScale(0)))
                 .attr('height', (d,i) => y.bandwidth())
-                .attr('fill', d => featureColorScale(d.feature)) // TODO: color by
+                .attr('fill', colorScale(cluster.clusterId))
                 .attr('opacity', 0.85)
                 .append('title').text((d,i) => `${d.feature}: ${d.value}`)
             
@@ -154,7 +148,12 @@ const Contributions = ({ data, FCs }) => {
 
       }, [FCs]);
     
-      return <div ref={svgContainerRef}></div>;
+      return (
+        <div style={{ textAlign: "center", marginBottom: "10px" }}>
+            <h5 style={{ fontSize: "14px", fontWeight: "bold", margin: 0 }}>Feature Contributions</h5>
+            <div ref={svgContainerRef}></div>
+        </div>
+    );
 
 };
     

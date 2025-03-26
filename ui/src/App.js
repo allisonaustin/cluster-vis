@@ -13,30 +13,58 @@ function App() {
   const [DRTData, setDRTData] = useState(null);
   const [mgrData, setMgrData] = useState(null);
   const [perfData, setPerfData] = useState([]);
-  const [nodeData, setNodeData] = useState(null);
   const [triggerData, setTriggerData] = useState([]);
+  const [nodeData, setNodeData] = useState(null);
+  const [zScores, setzScores] = useState([]);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
-  const [selectedPoints, setSelectedPoints] = useState([]);
+  const [selectedPoints, setSelectedPoints] = useState([
+    "novadaq-far-farm-06", 
+    "novadaq-far-farm-07",
+    "novadaq-far-farm-08", 
+    "novadaq-far-farm-09",
+    "novadaq-far-farm-10",
+    "novadaq-far-farm-12",
+    "novadaq-far-farm-130",
+    "novadaq-far-farm-131",
+    "novadaq-far-farm-133",
+    "novadaq-far-farm-142",
+    "novadaq-far-farm-150", 
+    "novadaq-far-farm-16",
+    "novadaq-far-farm-164",
+    "novadaq-far-farm-170",
+    "novadaq-far-farm-180",
+    "novadaq-far-farm-181",
+    "novadaq-far-farm-184", 
+    "novadaq-far-farm-189",
+    "novadaq-far-farm-20",
+    "novadaq-far-farm-28",
+    "novadaq-far-farm-35",
+    "novadaq-far-farm-59",
+    "novadaq-far-farm-61",
+    "novadaq-far-farm-78",
+    "novadaq-far-farm-92"]);
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'Missed Buffers_P1', 'proc_run', 'proc_total']);
-
+  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'proc_run', 'proc_total']);
+  const [bStart, setBStart] = useState('2024-02-21 05:36:00')
+  const [bEnd, setBEnd] = useState('2024-02-21 23:59:45')
 
   useEffect(() => {
     Promise.all([getDRTimeData(), 
-                getMgrData(selectedFile)
+                getMgrData(selectedFile),
+                getNodeData(selectedDims),
+                getMrDMD()
               ])
       .then(() => console.log("Data fetched successfully"))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  // fixme
-  const getNodeData = async () => {
+  const getNodeData = async (selectedCols) => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/nodeData`);
+      const response = await fetch(`http://127.0.0.1:5010/nodeData/${selectedCols}`);
       const data = await response.json();
       if (response.ok) { 
-        console.log(data)
+        setNodeData(data)
       } else {
         setNodeData(null);   
         setError("Failed to fetch data. Please check that the server is running.");
@@ -65,6 +93,23 @@ function App() {
     } catch (error) {
       setDRTData(null);    
       setError("Failed to fetch DR data. Please check that the server is running.");
+      console.error(error);     
+    }
+  };
+
+  const getMrDMD = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${bStart}/${bEnd}/${selectedDims}`);
+      const data = await response.json();
+      if (response.ok) { 
+        setzScores(data.zscores)
+      } else {
+        setNodeData(null);   
+        setError("Failed to fetch data. Please check that the server is running.");
+      }
+    } catch (error) {
+      setNodeData(null)
+      setError("Failed to fetch data. Please check that the server is running.");
       console.error(error);     
     }
   };
@@ -121,49 +166,54 @@ function App() {
   return (
     <Layout style={{ height: "100vh", padding: "10px" }}>
       <Content style={{ marginTop: "10px" }}>
-        {(!DRTData || !perfData) ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-            <Spin size="large" />
-          </div>
-        ) : (
           <Row gutter={[8, 8]}>
             <Col span={12}>
               <TimelineView 
                   mgrData={mgrData} 
                 />
-              <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '500px', overflow:'auto' }}>
-              {Object.keys(perfData).filter(field => selectedDims.includes(field)).map((field, index) => (                  
-                <FeatureView 
-                  key={field} 
-                  data={perfData} 
-                  field={field} 
-                  index={index} 
-                />
-              ))}
-            </Card>
+                {(!nodeData) ? (
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+                    <Spin size="large" />
+                  </div>
+                ) : (
+                <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}>  
+                   <FeatureView 
+                      data={nodeData} 
+                      selectedDims={selectedDims}
+                      selectedPoints={selectedPoints}
+                    />
+                </Card>
+              )}
             </Col>
-            <Col span={12}>
-                <DR 
-                  data={DRTData} 
-                  fcs={FCs}
-                  type="time" 
-                  setSelectedPoints={setSelectedPoints} 
-                  selectedPoints={selectedPoints} 
-                  hoveredPoint={hoveredPoint} 
-                  setHoveredPoint={setHoveredPoint} 
-                />
-                <Coordinates 
-                  data={DRTData} 
-                  selectedPoints={selectedPoints} 
-                  setSelectedPoints={setSelectedPoints} 
-                  hoveredPoint={hoveredPoint} 
-                  setHoveredPoint={setHoveredPoint}
-                  selectedDims={selectedDims}
-                  setSelectedDims={setSelectedDims}
-                />
+              <Col span={12}>
+                {(!DRTData) ? (
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+                    <Spin size="large" />
+                  </div>
+                ) : (
+                  <div>
+                      <DR 
+                        data={DRTData} 
+                        fcs={FCs}
+                        type="time" 
+                        setSelectedPoints={setSelectedPoints} 
+                        selectedPoints={selectedPoints} 
+                        hoveredPoint={hoveredPoint} 
+                        setHoveredPoint={setHoveredPoint} 
+                      />
+                      {/* <Coordinates 
+                        data={DRTData} 
+                        selectedPoints={selectedPoints} 
+                        setSelectedPoints={setSelectedPoints} 
+                        hoveredPoint={hoveredPoint} 
+                        setHoveredPoint={setHoveredPoint}
+                        selectedDims={selectedDims}
+                        setSelectedDims={setSelectedDims}
+                      /> */}
+                  </div>
+                )}
               </Col>
           </Row>
-        )}
       </Content>
     </Layout>
   );

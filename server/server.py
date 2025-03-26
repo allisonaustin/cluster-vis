@@ -24,14 +24,6 @@ def get_timeseries_data(file='far_data_2024-02-21.csv'):
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
     return ts_data
 
-@app.route('/nodeData', methods=['GET'])
-def get_node_data():
-    global ts_data
-    global filepath
-    filtered = ts_data.loc[:, ~ts_data.columns.str.contains("Retrans", regex=True)]
-    print(filtered.shape)
-    return jsonify(filtered.to_dict(orient='records'))
-
 @app.route('/mgrData', methods=['GET'])
 def get_json_data():
     filename = 'mgr/novadaq-far-mgr-01-full.json'
@@ -61,19 +53,40 @@ def get_dr_time_data():
     }
     return jsonify(response)
 
-@app.route('/mrdmd', methods=['GET'])
-def get_mrdmd_results():
+@app.route('/mrdmd/<nodes>/<b_start>/<b_end>/<selectedCols>', methods=['GET'])
+def get_mrdmd_results(nodes, b_start, b_end, selectedCols):
     global ts_data
-    df = get_mrdmd(ts_data)
+
+    baseline_start = pd.to_datetime(b_start.replace('%', ' '))
+    baseline_end = pd.to_datetime(b_end.replace('%', ' '))
+    colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
+    nodeList = list([nodes for node in nodes.split(',') if node.strip()] )
+    cols = ['timestamp', 'nodeId'] + colsList
+
+    # df = get_mrdmd(ts_data[cols])
+
+    df = pd.DataFrame()
 
     response = {
-        "results": df.to_dict(orient='records'),
+        "zscores": df.to_dict(orient='records'),
         "baselines": {}
     }
     return jsonify(response)
 
-def get_csv_data(filename):
-    file_path = os.path.join(data_dir, filename)
+@app.route('/nodeData/<selectedCols>', methods=['GET'])
+def get_node_data(selectedCols):
+    global ts_data
+
+    if ts_data is None or ts_data.empty:
+        return jsonify({"error": "No data available"}), 400
+    
+    colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
+    cols = ['timestamp', 'nodeId'] + colsList
+    df = ts_data[cols].copy()
+    return jsonify(df.to_dict(orient='records'))
+
+def get_csv_data():
+    file_path = os.path.join(data_dir, 'farm/far_data_2024-02-21.csv')
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
     
