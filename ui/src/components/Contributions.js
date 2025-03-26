@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { getColor, colorScale } from '../utils/colors.js';
 import React, { useEffect, useRef, useState } from 'react';
+import { colorScale } from '../utils/colors.js';
 
 const Contributions = ({ data, FCs }) => {
     const svgContainerRef = useRef();
@@ -8,37 +8,40 @@ const Contributions = ({ data, FCs }) => {
     
     useEffect(() => {
       if (!svgContainerRef.current || !FCs || !data) return; 
-        const margin = { top: 30, right: 10, bottom: 0, left: 20 };
-        const width = size.width;
-        const height = size.height;
-
-        const agg_feat_contrib_mat = FCs.agg_feat_contrib_mat
-        const label_to_rep_row = FCs.label_to_rep_row
-        const label_to_rows = FCs.label_to_rows
-        const numRows = agg_feat_contrib_mat.length; // features
-        const numCols = agg_feat_contrib_mat[0].length; // clusters
-        const maxContrib = d3.max(agg_feat_contrib_mat.flatMap(row => row));
-        const minContrib = d3.min(agg_feat_contrib_mat.flatMap(row => row));
-
-        const excludeFeatures = ["Cluster", "nodeId", "PC1", "PC2", "UMAP1", "UMAP2", "tSNE1", "tSNE2"]
-        const xlabel_names = FCs.order_col;
-        const ylabel_names = Object.keys(data[0]).filter(
-            key => !excludeFeatures.includes(key)
+      const width = size.width;
+      const height = size.height;
+      
+      const agg_feat_contrib_mat = FCs.agg_feat_contrib_mat
+      const label_to_rep_row = FCs.label_to_rep_row
+      const label_to_rows = FCs.label_to_rows
+      const numRows = agg_feat_contrib_mat.length; // features
+      const numCols = agg_feat_contrib_mat[0].length; // clusters
+      const maxContrib = d3.max(agg_feat_contrib_mat.flatMap(row => row));
+      const minContrib = d3.min(agg_feat_contrib_mat.flatMap(row => row));
+      
+      const excludeFeatures = ["Cluster", "nodeId", "PC1", "PC2", "UMAP1", "UMAP2", "tSNE1", "tSNE2"]
+      const xlabel_names = FCs.order_col;
+      const ylabel_names = Object.keys(data[0]).filter(
+          key => !excludeFeatures.includes(key)
         );
         
         const transformedData = xlabel_names.reduce((results, cluster, clusterIndex) => {
             const clusterValues = agg_feat_contrib_mat.map(row => row[clusterIndex]);
             const filteredData = clusterValues
-                .map((value, rowIndex) => ({ value, featureName: ylabel_names[rowIndex], cluster: cluster }))
-                .filter(d => d.value < -0.5 || d.value > 0.5);
-        
+            .map((value, rowIndex) => ({ value, featureName: ylabel_names[rowIndex], cluster: cluster }))
+            .filter(d => d.value < -0.5 || d.value > 0.5);
+            
             return [...results, 
                 {
                     clusterId: cluster,  
-                    data: filteredData.map(d => ({feature: d.featureName, value: d.value})),
+                    data: filteredData.map(d => ({feature: d.featureName, value: d.value})).sort((a, b) => b.value - a.value),
                 }
             ];
-        }, []);
+        }, []).sort((a, b) => b.data.length - a.data.length);
+
+        const LEGEND_SQ_SIZE = 10
+        const INTER_LEGEND_PADDING = 1.25
+        const margin = { top: 30, right: 10, bottom: (LEGEND_SQ_SIZE + INTER_LEGEND_PADDING) * (transformedData.length + 2), left: 20 };
         const xDomain = [-1, 1];
         const xScale = d3.scaleLinear()
             .domain(xDomain)
@@ -85,7 +88,7 @@ const Contributions = ({ data, FCs }) => {
                 .attr('height', (d,i) => y.bandwidth())
                 .attr('fill', colorScale(cluster.clusterId))
                 .attr('opacity', 0.85)
-                .append('title').text((d,i) => `${d.feature}: ${d.value}`)
+                .append('title').text((d,i) => `Cluster ${cluster.clusterId} - ${d.feature}: ${d.value.toFixed(4)}`)
             
             svg.append('g')
                 .attr('transform', `translate(${(size.width - margin.left - margin.right) / 2 + margin.left}, ${yOffset})`)
@@ -115,7 +118,7 @@ const Contributions = ({ data, FCs }) => {
         //     .attr('stroke', 'black')
         //     .attr('stroke-width', 1)
 
-        // Define the drop shadow filter
+        // White drop shadow for labels for visibility
         const defs = svg.append("defs");
 
         const filter = defs.append("filter")
@@ -128,23 +131,47 @@ const Contributions = ({ data, FCs }) => {
         filter.append("feDropShadow")
             .attr("dx", 0)
             .attr("dy", 0)
-            .attr("stdDeviation", 4) // Blurriness of the shadow
-            .attr("flood-color", "white") // Shadow color
-            .attr("flood-opacity", 0.75); // Fully visible white shadow
-
-        // Apply the filter to tick labels
-        svg.selectAll(".tick text")
-            .attr("filter", "url(#white-shadow)")
-            .style("fill", "black"); // Ensure text color remains black (or your original color);
+            .attr("stdDeviation", 4)
+            .attr("flood-color", "white")
+            .attr("flood-opacity", 0.75);
 
         svg.selectAll(".tick text")
             .attr("filter", "url(#white-shadow)")
-            .style("fill", "black"); // Ensure text color remains black (or your original color);
+            .style("fill", "black");
+
+        svg.selectAll(".tick text")
+            .attr("filter", "url(#white-shadow)")
+            .style("fill", "black");
         
         svg.selectAll(".cluster-title")
             .attr("filter", "url(#white-shadow)")
-            .style("fill", "black"); // Ensure text color remains black (or your original color);
+            .style("fill", "black");
 
+        // Legend
+        const legend = svg.append("g")
+            .attr("class", "legend")
+            .attr("transform", `translate(${margin.left}, ${height - margin.bottom + LEGEND_SQ_SIZE})`); // Adjust position
+
+        const legendItems = legend.selectAll(".legend-item")
+            .data(colorScale.domain().sort((a,b) => a - b))
+            .join("g")
+            .attr("class", "legend-item")
+            .attr("transform", (d, i) => `translate(0, ${i * LEGEND_SQ_SIZE * INTER_LEGEND_PADDING})`); // Adjust spacing
+
+        // Add colored squares
+        legendItems.append("rect")
+            .attr("width", LEGEND_SQ_SIZE)
+            .attr("height", LEGEND_SQ_SIZE)
+            .attr("fill", d => colorScale(d));
+
+        // Add text labels, left-aligned
+        legendItems.append("text")
+            .attr("x", LEGEND_SQ_SIZE * 1.5) // Adjust to place text beside squares
+            .attr("y", LEGEND_SQ_SIZE * 0.85) // Align vertically with squares
+            .text(d => `Cluster ${d}`)
+            .attr("alignment-baseline", "center")
+            .attr("text-anchor", "start")
+            .style("font-size", "10px");
 
       }, [FCs]);
     
