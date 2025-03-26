@@ -31,6 +31,9 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
         
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setChartData(data);
+        // NOTE: this currently does nothing as 1) setSize() runs after this useEffect() runs,
+        //       and 2) this useEffect() does not depend on Size. All logic will be run with the default
+        //       size of 400 x 300.
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
@@ -117,18 +120,32 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                     }
             })
             .on("mouseover", function (event, d) {
-                setHoveredPoint(getIdVal(d)); 
+                setHoveredPoint(getIdVal(d));
+                d3.select(this)
+                    .transition()
+                    .duration(150)
+                    .attr("r", 8)
+                    .style("opacity", 1)
 
+                setTooltip({
+                    visible: true,
+                    content: d.nodeId,
+                    x: event.clientX,
+                    y: event.clientY,
+                });
             })
             .on("mouseout", function (event, d) {
                 setHoveredPoint(null);
+                d3.select(this)
+                    .transition()
+                    .duration(150)
+                    .attr("r", 4)
+                    .style("opacity", 0.7)
 
-                setTooltip({
+                setTooltip(prev => ({
+                    ...prev,
                     visible: false,
-                    content: '',
-                    x: 0,
-                    y: 0,
-                  });
+                }));
             })
             .style('opacity', 0);
 
@@ -165,50 +182,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                 const idVal = getIdVal(d);
                 return selectedPoints.includes(idVal) ? 1 : 0.7;
             });
-    }, [selectedPoints]); 
-
-    useEffect(() => {
-        d3.select(svgContainerRef.current)
-            .selectAll(".dr-circle")
-            .transition()
-            .duration(150)
-            .attr("r", d => {
-                const idVal = getIdVal(d);
-                return idVal === hoveredPoint ? 8 : 4;
-            })
-            .style("opacity", d => {
-                const idVal = getIdVal(d);
-                return idVal === hoveredPoint ? 1 : 0.7;
-            });
-    }, [hoveredPoint]);
-
-    useEffect(() => {
-        if (hoveredPoint) {
-          const circleNode = d3.select(svgContainerRef.current).select(`#${hoveredPoint}`).node();
-          if (circleNode) {
-            const bbox = circleNode.getBoundingClientRect();
-            let tooltipX = bbox.x + bbox.width + 5;
-            let tooltipY = bbox.y + bbox.height / 2;
-            const tooltipWidth = 150; 
-            
-            const containerRect = svgContainerRef.current.getBoundingClientRect();
-            if (tooltipX + tooltipWidth > containerRect.right) {
-              tooltipX = bbox.x - tooltipWidth - 5;
-            }
-            
-            setTooltip({
-              visible: true,
-              content: hoveredPoint,
-              x: tooltipX,
-              y: tooltipY,
-            });
-          }
-        } else {
-          setTooltip({ visible: false, content: '', x: 0, y: 0 });
-        }
-      }, [hoveredPoint]);
-      
-      
+    }, [selectedPoints]);
 
     const updateChart = (method1, method2) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
@@ -273,61 +247,62 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
     };
 
     return (
+    <>
         <Card 
             title="DR VIEW" 
             size="small" 
             style={{ height:'auto' }}
         >
             <Row>
-            <Col span={14}>
-                <div ref={svgContainerRef}></div>
+                <Col span={14}>
+                    <div ref={svgContainerRef}></div>
 
-                <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
+                    <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
-                <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                    <Form layout="inline">
-                        <Form.Item label="DR1">
-                        <Select
-                            value={method1}
-                            onChange={(value) => updateChart(value, method2)}
-                        >
-                            <Option value="UMAP">UMAP</Option>
-                            <Option value="tSNE">t-SNE</Option>
-                            <Option value="PC">PCA</Option>
-                        </Select>
-                        </Form.Item>
-                    </Form>
+                    <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
+                        <Form layout="inline">
+                            <Form.Item label="DR1">
+                            <Select
+                                value={method1}
+                                onChange={(value) => updateChart(value, method2)}
+                            >
+                                <Option value="UMAP">UMAP</Option>
+                                <Option value="tSNE">t-SNE</Option>
+                                <Option value="PC">PCA</Option>
+                            </Select>
+                            </Form.Item>
+                        </Form>
 
-                    <Form layout="inline">
-                        <Form.Item label="DR2">
-                        <Select
-                            value={method2}
-                            onChange={(value) => updateChart(method1, value)}
-                        >
-                            <Option value="UMAP">UMAP</Option>
-                            <Option value="tSNE">t-SNE</Option>
-                            <Option value="PC">PCA</Option>
-                        </Select>
-                        </Form.Item>
-                    </Form>
-                </div>
-                
-                <Tooltip
-                    visible={tooltip.visible}
-                    content={tooltip.content}
-                    x={tooltip.x}
-                    y={tooltip.y}
-                />
-            </Col>
+                        <Form layout="inline">
+                            <Form.Item label="DR2">
+                            <Select
+                                value={method2}
+                                onChange={(value) => updateChart(method1, value)}
+                            >
+                                <Option value="UMAP">UMAP</Option>
+                                <Option value="tSNE">t-SNE</Option>
+                                <Option value="PC">PCA</Option>
+                            </Select>
+                            </Form.Item>
+                        </Form>
+                    </div>
+                </Col>
 
-            <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
-                <Contributions
-                    data={data}
-                    FCs={fcs} 
-                /> 
-            </Col>
-        </Row>
-    </Card>
+                <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
+                    <Contributions
+                        data={data}
+                        FCs={fcs} 
+                    /> 
+                </Col>
+            </Row>
+        </Card>
+        <Tooltip
+            visible={tooltip.visible}
+            content={tooltip.content}
+            x={tooltip.x}
+            y={tooltip.y}
+        />
+    </>
     );
 
 }
