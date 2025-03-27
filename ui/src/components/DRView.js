@@ -220,6 +220,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
             .attr("cy", d => yScale(+d[yKey]))
     }
 
+    // Lasso selection
     const handleSelection = (selected) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
         

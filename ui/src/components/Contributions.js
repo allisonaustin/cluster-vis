@@ -99,16 +99,16 @@ const Contributions = ({ data, FCs }) => {
                 .style("font-size", "13px")
                 .style("vertical-align", "middle");
                 
-            svg.append('text')
-                .attr('class', 'cluster-title')
-                .attr('text-anchor', 'center')
-                .attr('transform', 'rotate(-90)')
-                .attr('y', (size.width - margin.left - margin.right) / 2 + margin.left - 6)
-                // Swap to commented version for left aligned axis
-                // .attr('y', margin.left / 6)
-                .attr('x', -(yOffset + (barHeight * cluster.data.length + barHeight * PADDING_MULTIPLIER) / 2))
-                .attr('font-weight', 'bold')
-                .text(`c${cluster.clusterId}`)
+            // svg.append('text')
+            //     .attr('class', 'cluster-title')
+            //     .attr('text-anchor', 'center')
+            //     .attr('transform', 'rotate(-90)')
+            //     .attr('y', (size.width - margin.left - margin.right) / 2 + margin.left - 6)
+            //     // Swap to commented version for left aligned axis
+            //     // .attr('y', margin.left / 6)
+            //     .attr('x', -(yOffset + (barHeight * cluster.data.length + barHeight * PADDING_MULTIPLIER) / 2))
+            //     .attr('font-weight', 'bold')
+            //     .text(`c${cluster.clusterId}`)
 
             yOffset += barHeight * cluster.data.length + barHeight * PADDING_MULTIPLIER;
         });

@@ -126,7 +126,7 @@ const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHovere
         .enter()
         // .filter(d => selectedPoints.includes(d[0]))
         .append('path')
-        .attr('class', (d) => `line ${d[0]} ${chartId}`)
+        .attr('class', (d) => `line line-${chartId}`)
         .attr('nodeId', d => d[0])
         .attr('fill', 'none')
         .attr('stroke', (d) => selectedPoints.includes(d[0]) ? getColor('select') : getColor('default'))

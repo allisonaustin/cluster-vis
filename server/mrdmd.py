@@ -258,8 +258,6 @@ def get_mrdmd(df, force_recompute):
     zsc_d = compute_zscores(df, Z_b)
     mr_dmdend = timer()
 
-    print(zsc_d)
-
     print(f'baseline in {(bs_end - bs_start)}s')
     print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
     return zsc_d, Z_b
