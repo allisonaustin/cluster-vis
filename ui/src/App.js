@@ -1,9 +1,9 @@
+import { Col, Layout, Row, Spin } from "antd";
 import React, { useEffect, useState } from 'react';
-import { Layout, Row, Col, Typography, Card, Spin } from "antd";
 import './App.css';
+import DR from './components/DRView.js';
 import FeatureView from './components/FeatureView.js';
 import MRDMD from './components/MrDMDView.js';
-import DR from './components/DRView.js';
 import TimelineView from './components/TimelineView.js';
 
 const { Header, Content } = Layout;
@@ -151,7 +151,8 @@ function App() {
               <TimelineView 
                   mgrData={mgrData}
                   bStart={bStart}
-                  bEnd={bEnd} 
+                  bEnd={bEnd}
+                  nodeDataStart={nodeData?.data[0]?.timestamp}
                 />
                 {(!nodeData) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
