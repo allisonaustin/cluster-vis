@@ -120,7 +120,8 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                     }
             })
             .on("mouseover", function (event, d) {
-                setHoveredPoint(getIdVal(d));
+                // This causes every single component that takes hoveredPoint as a prop to rerender.
+                // setHoveredPoint(getIdVal(d));
                 d3.select(this)
                     .transition()
                     .duration(150)
@@ -135,7 +136,8 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                 });
             })
             .on("mouseout", function (event, d) {
-                setHoveredPoint(null);
+                // This causes every single component that takes hoveredPoint as a prop to rerender.
+                // setHoveredPoint(null);
                 d3.select(this)
                     .transition()
                     .duration(150)

@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { getColor, colorScale, colorScheme } from './colors.js';
 import * as d3 from 'd3';
+import { useEffect } from 'react';
+import { getColor } from './colors.js';
 
 const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
   useEffect(() => {
@@ -36,12 +36,13 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
 
     const dragStart = () => {
       coords = [];
-      selectedIds.clear();
       svg.append('path')
         .attr('id', 'lasso');
       svg.selectAll(targetItems)
         .style('fill', getColor('default'))
         .style("opacity", 0.5);
+      // Prevent mouseover events during lasso, which cause unnecessary rerenders
+      svg.selectAll(".dr-circle").attr('pointer-events', 'none');
     };
 
     function dragMove(event) {
@@ -53,29 +54,32 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
     }
 
     const dragEnd = () => {
-        // Check if each point is inside the lasso
-        let circles = svg.selectAll(targetItems)
-        let lines = d3.selectAll(".line-svg").selectAll("path.line");
-
-        circles.each((d, i) => {
-            let point = [
-                +circles.nodes()[i].getAttribute('cx'),
-                +circles.nodes()[i].getAttribute('cy')
-            ];
-            if (pointInPolygon(point, coords)) {
-                selectedIds.add(d.nodeId);
-            }
-        });
-        onSelect(Array.from(selectedIds));
-
-        console.log('selected: ', selectedIds)
-
-        if (selectedIds.size === 0) { // resetting plot
-            circles
-                .style("opacity", 1);
-            lines.style("stroke", (d) => getColor('default')).style("opacity", 1);
+      selectedIds.clear();
+      // Check if each point is inside the lasso
+      let circles = svg.selectAll(targetItems)
+      let lines = d3.selectAll(".line-svg").selectAll("path.line");
+      
+      circles.each((d, i) => {
+        let point = [
+          +circles.nodes()[i].getAttribute('cx'),
+          +circles.nodes()[i].getAttribute('cy')
+        ];
+        if (pointInPolygon(point, coords)) {
+          selectedIds.add(d.nodeId);
         }
-        svg.select('#lasso').remove();
+      });
+      onSelect(Array.from(selectedIds));
+      
+      console.log('selected: ', selectedIds)
+      
+      if (selectedIds.size === 0) { // resetting plot
+        circles
+        .style("opacity", 1);
+        lines.style("stroke", (d) => getColor('default')).style("opacity", 1);
+      }
+      svg.select('#lasso').remove();
+      // Reenable mouseover events
+      svg.selectAll(".dr-circle").attr('pointer-events', 'auto');
     };
 
     const drag = d3

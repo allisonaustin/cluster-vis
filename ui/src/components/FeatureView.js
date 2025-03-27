@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor } from '../utils/colors.js';
-import { Card, List, Checkbox, Row, Col } from "antd";
-import * as d3 from 'd3';
+import { Card, Checkbox, Col, List, Row } from "antd";
+import React, { useState } from 'react';
 import LineChart from './LineChart.js';
 
 const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hoveredPoint, setHoveredPoint }) => {
     const dims = selectedDims.filter(field => data.data && data.data.length > 0 && field in data.data[0]);
     const features = data.features;
+    const [selectedTimeRange, setSelectedTimeRange] = useState(['2024-02-21 16:07:30Z', '2024-02-21 17:41:45Z'])
 
   const handleCheckboxChange = (key) => {
     setSelectedDims(prevSelectedDims => {
@@ -16,7 +15,16 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hove
             return [...prevSelectedDims, key];
         }
     });
-}
+  }
+
+    const handleUpdateEvent = (event) => {
+        setSelectedTimeRange(event.detail);
+        // setSelectedTimeRange(event.detail);
+        // const { detail: newDomain } = event;
+        // updateChart(newDomain);
+    };
+
+    window.addEventListener(`batch-update-charts`, handleUpdateEvent);
 
   return (
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
@@ -44,17 +52,28 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hove
                 />
             </Col>
             <Col span={18}>
-                {dims.map((field, index) => (
-                    <LineChart 
-                        key={`chart-${index}`}
-                        data={data.data} 
-                        field={field} 
-                        index={index} 
-                        selectedPoints={selectedPoints}
-                        hoveredPoint={hoveredPoint}
-                        setHoveredPoint={setHoveredPoint}
-                    />
-                ))}
+                {dims.map((field, index) => {
+                    const selectedNodes = new Set(selectedPoints);
+                    const start = new Date(selectedTimeRange[0]);
+                    const end = new Date(selectedTimeRange[1]);
+                    const filteredData = data.data.map(d => ({
+                        timestamp: new Date(d.timestamp),
+                        nodeId: d.nodeId,
+                        value: d[field]
+                    })).filter(d => selectedNodes.has(d.nodeId) && d.timestamp >= start && d.timestamp <= end);
+                    
+                    return (
+                        <LineChart 
+                            key={`chart-${index}`}
+                            data={filteredData} 
+                            field={field} 
+                            index={index} 
+                            selectedPoints={selectedPoints}
+                            hoveredPoint={hoveredPoint}
+                            setHoveredPoint={setHoveredPoint}
+                        />
+                    )
+                })}
             </Col>
         </Row>
       </Card>
