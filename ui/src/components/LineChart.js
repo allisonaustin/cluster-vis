@@ -1,23 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor, colorScale } from '../utils/colors.js';
 import * as d3 from 'd3';
-import Tooltip from '../utils/tooltip.js';
+import React, { useEffect, useRef, useState } from 'react';
+import { getColor } from '../utils/colors.js';
 
-const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHoveredPoint }) => {
+const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [chartId, setChartId] = useState(index);
-    const [chartdata, setChartData] = useState([]);
-    const [isLocalHover, setIsLocalHover] = useState(false);
+    const chartdata = data.map(d => ({
+        timestamp: new Date(d.timestamp),
+        nodeId: d.nodeId,
+        value: d[field]
+    }));
+    const [selectedTimeRange, setSelectedTimeRange] = useState(['2024-02-21 16:07:30Z', '2024-02-21 17:41:45Z'])
+    // const [isLocalHover, setIsLocalHover] = useState(false);
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
             x: 0,
             y: 0
         });
-    
+
+    const selectedNodes = new Set(selectedPoints);
     useEffect(() => {
-      if (!svgContainerRef.current || !data) return; 
+      console.log('rerendering');
+      if (!svgContainerRef.current || !data) return;
       const margin = { top: 40, right: 60, bottom: 60, left: 70 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
@@ -45,17 +51,11 @@ const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHovere
         .attr('class', 'focus')
         .attr('id', `focus-line-${index}`)
 
-      let chartdata = data.map(d => ({
-            timestamp: new Date(d.timestamp),
-            nodeId: d.nodeId,
-            value: d[field]
-        }));
-      
-      setChartData(chartdata);
-      
-      const start = new Date('2024-02-21 16:07:30Z');
-      const end = new Date('2024-02-21 17:41:45Z');
-      const filtered = chartdata.filter(d => d.timestamp >= start && d.timestamp <= end);
+      const start = new Date(selectedTimeRange[0]);
+      const end = new Date(selectedTimeRange[1]);
+      const filtered = chartdata.filter(d => {
+        return selectedNodes.has(d.nodeId) && d.timestamp >= start && d.timestamp <= end
+      });
 
       const groupedData = d3.group(filtered, d => d.nodeId);
 
@@ -124,16 +124,15 @@ const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHovere
       focus.selectAll('.line')
         .data(groupedData)
         .enter()
-        // .filter(d => selectedPoints.includes(d[0]))
         .append('path')
         .attr('class', (d) => `line line-${chartId}`)
         .attr('nodeId', d => d[0])
         .attr('fill', 'none')
-        .attr('stroke', (d) => selectedPoints.includes(d[0]) ? getColor('select') : getColor('default'))
+        .attr('stroke', (d) => getColor('default'))
         .attr('stroke-width', 1)
         .attr('d', d => line(d[1]))
         .on('mouseover', function(event, d) {
-          setIsLocalHover(true);
+          // setIsLocalHover(true);
           const tooltipWidth = 150; 
           const windowWidth = window.innerWidth; 
           
@@ -141,29 +140,39 @@ const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHovere
           if (tooltipX + tooltipWidth > windowWidth) {
               tooltipX = event.clientX - tooltipWidth - 5;  
           }
-          setHoveredPoint(d[0]); 
+          // This causes every single component that takes hoveredPoint as a prop to rerender.
+          // setHoveredPoint(d[0]);
           d3.select(this)
               .style("stroke-width", 3)
-              .style("opacity", 1) 
+              .style("opacity", 1)
+              .attr('stroke', (d) => getColor('select'));
 
-          // node ID tooltip
-          setTooltip({
-            visible: true,
-            content: `${d[0]}`,
-            x: tooltipX,
-            y: event.clientY
-          });
+          // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
+          // super close together it can trigger tons of component rerenders just by moving the mouse
+          // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
+          // setTooltip({
+          //   visible: true,
+          //   content: `${d[0]}`,
+          //   x: tooltipX,
+          //   y: event.clientY
+          // });
           
         })
         .on('mouseout', function(event, d) {
-            setIsLocalHover(false);
-            setHoveredPoint(null);
+            // setIsLocalHover(false);
+
+            // This causes every single component that takes hoveredPoint as a prop to rerender.
+            // setHoveredPoint(null);
 
             d3.select(this)
-                .style("stroke-width", 1) 
-                .style("opacity", 0.7);
+                .style("stroke-width", 1)
+                .style("opacity", 0.7)
+                .attr('stroke', (d) => getColor('default'));
 
-            setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+            // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
+            // super close together it can trigger tons of component rerenders just by moving the mouse
+            // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
+            // setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
         });
         
       focus.append("text")
@@ -179,52 +188,58 @@ const LineChart = ({ data, field, index, selectedPoints, hoveredPoint, setHovere
       focus.node().xScale = xScale;
       focus.node().yScale = yScale;
       
-      }, [data, field, index]);
+      }, [data, field, index, selectedPoints, selectedTimeRange]);
 
-      const updateChart = (newDomain) => {
-        const chart = d3.select(`#focus-line-${chartId}`);
-        const xScale = chart.node()?.xScale;
-        const yScale = chart.node()?.yScale;
+      // const updateChart = (newDomain) => {
+      //   const chart = d3.select(`#focus-line-${chartId}`);
+      //   const xScale = chart.node()?.xScale;
+      //   const yScale = chart.node()?.yScale;
 
-        const newdata = chartdata.filter(d => d.timestamp >= newDomain[0] && d.timestamp <= newDomain[1]);
+      //   // Causes OOM crash.
+      //   const newdata = chartdata.filter(d => selectedNodes.has(d.nodeId) && d.timestamp >= newDomain[0] && d.timestamp <= newDomain[1]);
 
-        if (!xScale || !yScale) return;
+      //   if (!xScale || !yScale) return;
 
-        if (newdata.length == 0) return;
+      //   if (newdata.length == 0) return;
 
-        // updating scales
-        xScale.domain(newDomain);
+      //   // updating scales
+      //   xScale.domain(newDomain);
         
-        let newY = d3.extent(newdata.map(v => v.value));
-        yScale.domain([0, newY[1]])
+      //   let newY = d3.extent(newdata.map(v => v.value));
+      //   yScale.domain([0, newY[1]])
 
-        const t = d3.transition()
-            .duration(400) 
-            .ease(d3.easeCubicInOut);
+      //   const t = d3.transition()
+      //       .duration(400) 
+      //       .ease(d3.easeCubicInOut);
 
-        // updating x axes
-        // chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale).ticks(size.height / 40))
+      //   // updating x axes
+      //   // chart.select('.x-axis').call(d3.axisBottom(xScale));
+      //   chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale).ticks(size.height / 40))
         
-        chart.select('.y-axis')
-          .selectAll("text")
-          .style("font-size", "16px")
+      //   chart.select('.y-axis')
+      //     .selectAll("text")
+      //     .style("font-size", "16px")
 
-        // updating line
-        chart.select(`.line-${chartId}`)
-          .datum(newdata)
-          .transition()
-          .duration(500)
-          // .ease(d3.easeLinear)
-          .attr("d", d3.line()
-              .x(d => xScale(d.timestamp))
-              .y(d => yScale(d.value))
-          )
-      };
+      //   // updating line
+      //   chart.select(`.line-${chartId}`)
+      //     .datum(newdata)
+      //     .transition()
+      //     .duration(500)
+      //     // .ease(d3.easeLinear)
+      //     .attr("d", d3.line()
+      //         .x(d => xScale(d.timestamp))
+      //         .y(d => yScale(d.value))
+      //     )
+      // };
 
+
+      // This handler needs to be in a higher context so that there's no duplicated state between
+      // instances of lineChart.
       const handleUpdateEvent = (event) => {
-        const { detail: newDomain } = event;
-        updateChart(newDomain);
+        setSelectedTimeRange(event.detail);
+        // setSelectedTimeRange(event.detail);
+        // const { detail: newDomain } = event;
+        // updateChart(newDomain);
       };
 
       window.addEventListener(`batch-update-charts`, handleUpdateEvent);
