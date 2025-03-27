@@ -7,7 +7,6 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [chartId, setChartId] = useState(index);
     const chartdata = data;
-    const [selectedTimeRange, setSelectedTimeRange] = useState(['2024-02-21 16:07:30Z', '2024-02-21 17:41:45Z'])
     // const [isLocalHover, setIsLocalHover] = useState(false);
     const [tooltip, setTooltip] = useState({
             visible: false,
@@ -16,7 +15,6 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
             y: 0
         });
 
-    const selectedNodes = new Set(selectedPoints);
     useEffect(() => {
       console.log('rerendering');
       if (!svgContainerRef.current || !data) return;
@@ -47,11 +45,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
         .attr('class', 'focus')
         .attr('id', `focus-line-${index}`)
 
-      const start = new Date(selectedTimeRange[0]);
-      const end = new Date(selectedTimeRange[1]);
-      const filtered = chartdata.filter(d => {
-        return selectedNodes.has(d.nodeId) && d.timestamp >= start && d.timestamp <= end
-      });
+      const filtered = chartdata;
 
       const groupedData = d3.group(filtered, d => d.nodeId);
 
@@ -184,7 +178,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
       focus.node().xScale = xScale;
       focus.node().yScale = yScale;
       
-      }, [data, field, index, selectedPoints, selectedTimeRange]);
+      }, [data, field, index, selectedPoints]);
 
       // const updateChart = (newDomain) => {
       //   const chart = d3.select(`#focus-line-${chartId}`);
@@ -226,20 +220,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
       //         .x(d => xScale(d.timestamp))
       //         .y(d => yScale(d.value))
       //     )
-      // };
-
-
-      // This handler needs to be in a higher context so that there's no duplicated state between
-      // instances of lineChart.
-      const handleUpdateEvent = (event) => {
-        setSelectedTimeRange(event.detail);
-        // setSelectedTimeRange(event.detail);
-        // const { detail: newDomain } = event;
-        // updateChart(newDomain);
-      };
-
-      window.addEventListener(`batch-update-charts`, handleUpdateEvent);
-    
+      // };    
       return <div ref={svgContainerRef} style={{ width: 'auto', height: '190px' }}></div>;
 
 };
