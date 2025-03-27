@@ -36,7 +36,7 @@ function App() {
         getMrDMD();
       })
       .catch((err) => console.error("Error fetching data:", err));
-  }, []);
+  }, []); // TODO: dependency on [selectedDims]
 
   const getNodeData = async (selectedCols) => {
     try {

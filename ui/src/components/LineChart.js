@@ -6,11 +6,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [chartId, setChartId] = useState(index);
-    const chartdata = data.map(d => ({
-        timestamp: new Date(d.timestamp),
-        nodeId: d.nodeId,
-        value: d[field]
-    }));
+    const chartdata = data;
     const [selectedTimeRange, setSelectedTimeRange] = useState(['2024-02-21 16:07:30Z', '2024-02-21 17:41:45Z'])
     // const [isLocalHover, setIsLocalHover] = useState(false);
     const [tooltip, setTooltip] = useState({

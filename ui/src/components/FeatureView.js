@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor } from '../utils/colors.js';
-import { Card, List, Checkbox, Row, Col } from "antd";
-import * as d3 from 'd3';
+import { Card, Checkbox, Col, List, Row } from "antd";
+import React from 'react';
 import LineChart from './LineChart.js';
 
 const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hoveredPoint, setHoveredPoint }) => {
@@ -44,17 +42,24 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hove
                 />
             </Col>
             <Col span={18}>
-                {dims.map((field, index) => (
-                    <LineChart 
-                        key={`chart-${index}`}
-                        data={data.data} 
-                        field={field} 
-                        index={index} 
-                        selectedPoints={selectedPoints}
-                        hoveredPoint={hoveredPoint}
-                        setHoveredPoint={setHoveredPoint}
-                    />
-                ))}
+                {dims.map((field, index) => {
+                    const filteredData = data.data.map(d => ({
+                        timestamp: new Date(d.timestamp),
+                        nodeId: d.nodeId,
+                        value: d[field]
+                    }));
+                    return (
+                        <LineChart 
+                            key={`chart-${index}`}
+                            data={filteredData} 
+                            field={field} 
+                            index={index} 
+                            selectedPoints={selectedPoints}
+                            hoveredPoint={hoveredPoint}
+                            setHoveredPoint={setHoveredPoint}
+                        />
+                    )
+                })}
             </Col>
         </Row>
       </Card>
