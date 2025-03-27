@@ -19,9 +19,6 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hove
 
     const handleUpdateEvent = (event) => {
         setSelectedTimeRange(event.detail);
-        // setSelectedTimeRange(event.detail);
-        // const { detail: newDomain } = event;
-        // updateChart(newDomain);
     };
 
     window.addEventListener(`batch-update-charts`, handleUpdateEvent);
@@ -56,6 +53,7 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, hove
                     const selectedNodes = new Set(selectedPoints);
                     const start = new Date(selectedTimeRange[0]);
                     const end = new Date(selectedTimeRange[1]);
+                    console.log('Selecting time range', start, end);
                     const filteredData = data.data.map(d => ({
                         timestamp: new Date(d.timestamp),
                         nodeId: d.nodeId,

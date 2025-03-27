@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "antd";
-import { COLORS, generateColor } from '../utils/colors.js';
 import * as d3 from 'd3';
+import React, { useEffect, useRef, useState } from 'react';
+import { generateColor } from '../utils/colors.js';
 
-const TimelineView = ({ mgrData, bStart, bEnd }) => {
-
+const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
@@ -160,8 +159,9 @@ const TimelineView = ({ mgrData, bStart, bEnd }) => {
         xScale(brushEnd)
       ]
 
+      const earliestNodeDataTime = xScale(new Date(nodeDataStart)) || 0;
       const brush = d3.brushX(xScale)
-        .extent([[0, 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
+        .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
         // .on('brush', (event) => brushed(event, chartdata))
         .on('end', (event) => {
             const selection = event.selection;
@@ -179,7 +179,7 @@ const TimelineView = ({ mgrData, bStart, bEnd }) => {
             .call(brush)
             .call(brush.move, defaultWindow)
       
-      }, [mgrData]);
+      }, [mgrData, nodeDataStart]);
 
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-line-1`);
@@ -224,7 +224,7 @@ const TimelineView = ({ mgrData, bStart, bEnd }) => {
         // updating charts
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('batch-update-charts', { detail: newDomain }));
-            console.log("Batch update triggered asynchronously");
+            console.log("Batch update triggered asynchronously. Selecting new time range: ", newDomain);
         }, 0);
 
       };
