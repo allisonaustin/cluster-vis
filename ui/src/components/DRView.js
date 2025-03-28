@@ -12,15 +12,14 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 400, height: 300 });
-    // const [selectedPoints, setSelectedPoints] = useState([]);
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
     const [tooltip, setTooltip] = useState({
-        visible: false,
-        content: '',
-        x: 0,
-        y: 0
-    });
+              visible: false,
+              content: '',
+              x: 0,
+              y: 0
+          });
 
     function getIdVal(d) {
         return (type === 'feature') ? d.Measurement : d.nodeId;
@@ -109,6 +108,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
+            // .style('fill', d => colorScale(d.Cluster))
             .style('fill', (d) => {
                 const idVal = getIdVal(d);
                 if (selectedPoints.length === 0) {
@@ -272,7 +272,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
         })
         .style("opacity", d => {
             return selected.includes(d[0]) ? 1 : 0.5;
-        });
+        })
     };
 
     return (
@@ -330,6 +330,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             content={tooltip.content}
             x={tooltip.x}
             y={tooltip.y}
+            tooltipId={'dr-tooltip'}
         />
     </>
     );

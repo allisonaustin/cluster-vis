@@ -100,7 +100,7 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims }) =>
                             key={`chart-${index}`}
                             data={filteredData} 
                             field={field} 
-                            index={index} 
+                            index={index}
                         />
                     )
                 })}

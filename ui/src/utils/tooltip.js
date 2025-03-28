@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Tooltip = ({ visible, content, x, y }) => {
+const Tooltip = ({ visible, content, x, y, tooltipId }) => {
     if (!visible) return null;
 
     const tooltipStyle = {
@@ -16,7 +16,7 @@ const Tooltip = ({ visible, content, x, y }) => {
         transform: 'translateX(-50%) translateY(+50%)'
       };
 
-    return <div className="tooltip" style={tooltipStyle}>{content}</div>
+    return <div className="tooltip" id={tooltipId} style={tooltipStyle}>{content}</div>
 };
 
 export default Tooltip;

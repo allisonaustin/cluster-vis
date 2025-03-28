@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale, colorScheme } from '../utils/colors.js';
 import { Card, List, Checkbox } from "antd";
 import * as d3 from 'd3';
-import Tooltip from '../utils/tooltip.js';
 
 const MRDMD = ({ data }) => {
     const svgContainerRef = useRef();
@@ -10,13 +9,6 @@ const MRDMD = ({ data }) => {
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 380 });
     const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 20, left: 20 });
-    const [tooltip, setTooltip] = useState({
-        visible: false,
-        content: '',
-        x: 0,
-        y: 0
-    });
-
 
     useEffect(() => {
         if (!svgContainerRef.current) return;

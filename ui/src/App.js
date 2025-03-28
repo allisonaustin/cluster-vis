@@ -43,7 +43,6 @@ function App() {
       const response = await fetch(`http://127.0.0.1:5010/nodeData/${selectedCols}`);
       const data = await response.json();
       if (response.ok) { 
-        console.log(data.data)
         setNodeData(data)
       } else {
         setNodeData(null);   

@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
+import Tooltip from '../utils/tooltip.js';
 import { getColor } from '../utils/colors.js';
 
 const LineChart = ({ data, field, index }) => {
@@ -8,11 +9,11 @@ const LineChart = ({ data, field, index }) => {
     const [chartId, setChartId] = useState(index);
     const chartdata = data;
     const [tooltip, setTooltip] = useState({
-            visible: false,
-            content: '',
-            x: 0,
-            y: 0
-        });
+        visible: false,
+        content: '',
+        x: 0,
+        y: 0
+    });
 
     useEffect(() => {
       console.log('rerendering');
@@ -127,17 +128,7 @@ const LineChart = ({ data, field, index }) => {
         .style("stroke-dashoffset", function() {
             return this.getTotalLength();
         })
-        .on('mouseover', function(event, d) {
-          // setIsLocalHover(true);
-          const tooltipWidth = 150; 
-          const windowWidth = window.innerWidth; 
-          
-          let tooltipX = event.clientX + 5;  
-          if (tooltipX + tooltipWidth > windowWidth) {
-              tooltipX = event.clientX - tooltipWidth - 5;  
-          }
-          // This causes every single component that takes hoveredPoint as a prop to rerender.
-          // setHoveredPoint(d[0]);
+        .on('mouseover', function(event, d) {    
           d3.select(this)
               .style("stroke-width", 3)
               .style("opacity", 1)
@@ -147,19 +138,16 @@ const LineChart = ({ data, field, index }) => {
               .transition()
               .duration(150)
               .attr("r", 8)  
-              .style("opacity", 1)
+              .style("opacity", 1)    
 
-          // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
-          // super close together it can trigger tons of component rerenders just by moving the mouse
-          // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
-          
+          setTooltip({
+              visible: true,
+              content: d[0],
+              x: event.clientX,
+              y: event.clientY,
+          });
         })
         .on('mouseout', function(event, d) {
-            // setIsLocalHover(false);
-
-            // This causes every single component that takes hoveredPoint as a prop to rerender.
-            // setHoveredPoint(null);
-
             d3.select(this)
                 .style("stroke-width", 1)
                 .style("opacity", 0.7)
@@ -168,13 +156,13 @@ const LineChart = ({ data, field, index }) => {
             d3.select(`#${d[0]}`)
               .transition()
               .duration(150)
-              .attr("r", 4)  
+              .attr("r", 4) 
               .style("opacity", 0.7)
 
-            // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
-            // super close together it can trigger tons of component rerenders just by moving the mouse
-            // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
-            // setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
+            setTooltip(prev => ({
+                ...prev,
+                visible: false,
+            }));
         });
 
         lines.transition()
@@ -196,49 +184,17 @@ const LineChart = ({ data, field, index }) => {
       focus.node().yScale = yScale;
       
       }, [data, field, index]);
-
-      // const updateChart = (newDomain) => {
-      //   const chart = d3.select(`#focus-line-${chartId}`);
-      //   const xScale = chart.node()?.xScale;
-      //   const yScale = chart.node()?.yScale;
-
-      //   // Causes OOM crash.
-      //   const newdata = chartdata.filter(d => selectedNodes.has(d.nodeId) && d.timestamp >= newDomain[0] && d.timestamp <= newDomain[1]);
-
-      //   if (!xScale || !yScale) return;
-
-      //   if (newdata.length == 0) return;
-
-      //   // updating scales
-      //   xScale.domain(newDomain);
-        
-      //   let newY = d3.extent(newdata.map(v => v.value));
-      //   yScale.domain([0, newY[1]])
-
-      //   const t = d3.transition()
-      //       .duration(400) 
-      //       .ease(d3.easeCubicInOut);
-
-      //   // updating x axes
-      //   // chart.select('.x-axis').call(d3.axisBottom(xScale));
-      //   chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale).ticks(size.height / 40))
-        
-      //   chart.select('.y-axis')
-      //     .selectAll("text")
-      //     .style("font-size", "16px")
-
-      //   // updating line
-      //   chart.select(`.line-${chartId}`)
-      //     .datum(newdata)
-      //     .transition()
-      //     .duration(500)
-      //     // .ease(d3.easeLinear)
-      //     .attr("d", d3.line()
-      //         .x(d => xScale(d.timestamp))
-      //         .y(d => yScale(d.value))
-      //     )
-      // };    
-      return <div ref={svgContainerRef} style={{ width: 'auto', height: '190px' }}></div>;
+  
+      return (<div>
+                 <div ref={svgContainerRef} style={{ width: 'auto', height: '190px' }}></div>
+                 <Tooltip
+                    visible={tooltip.visible}
+                    content={tooltip.content}
+                    x={tooltip.x}
+                    y={tooltip.y}
+                    tooltipId={`line-${index}-tooltip`}
+                 />
+              </div>);
 
 };
 
