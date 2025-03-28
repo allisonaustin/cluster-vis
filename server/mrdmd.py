@@ -234,17 +234,36 @@ def compute_zscores(df, baselines):
     return Z_final
 
 def get_cached_or_compute_baselines(df, force_recompute):
-    if (os.path.exists(ZSC_B_CACHE_NAME)) and (force_recompute == 0):
-        print('Reading cached baseline zscores from parquet')
-        return pd.read_parquet(ZSC_B_CACHE_NAME)
+    if os.path.exists(ZSC_B_CACHE_NAME) and force_recompute == 0:
+        print('Reading cached baseline z-scores from parquet')
+        ZSC_d = pd.read_parquet(ZSC_B_CACHE_NAME)
+    else:
+        ZSC_d = pd.DataFrame()  # Empty DataFrame if cache doesn't exist or force_recompute == 1
 
-    if force_recompute == 1:
-        print('Forcing fresh compute of baseline')
+    # Extract existing features in the cache
+    cached_features = set(ZSC_d['feature']) if not ZSC_d.empty else set()
     
-    ZSC_d = process_columns_baseline(df)
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    ZSC_d.to_parquet(ZSC_B_CACHE_NAME)
-    print(f'Cached baseline results to parquet {ZSC_B_CACHE_NAME}.')
+    # Extract features from df
+    df_features = set(df.columns) - {'nodeId', 'timestamp'}
+    
+    # Find missing features that need computation
+    missing_features = df_features - cached_features
+
+    if missing_features:
+        print(f'Computing baselines for missing features: {missing_features}')
+        missing_df = df[['nodeId', 'timestamp'] + list(missing_features)]
+        new_baselines = process_columns_baseline(missing_df)
+        
+        # Append new baselines to cached ones
+        ZSC_d = pd.concat([ZSC_d, new_baselines], ignore_index=True) if not ZSC_d.empty else new_baselines
+        
+        # Save updated baselines
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        ZSC_d.to_parquet(ZSC_B_CACHE_NAME)
+        print(f'Updated cached baseline results to parquet {ZSC_B_CACHE_NAME}.')
+    else:
+        print("All features already exist in the cached baseline.")
+
     return ZSC_d
 
 def get_mrdmd(df, force_recompute):

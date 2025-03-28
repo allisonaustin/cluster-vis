@@ -13,7 +13,7 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
     const [fields, setFields] = useState(['Activity_P1']);
       
     useEffect(() => {
-      if (!svgContainerRef.current || !mgrData ) return;
+      if (!svgContainerRef.current || !mgrData || !nodeDataStart ) return;
       
       const margin = { top: 10, right: 30, bottom: 70, left: 30 };
 
@@ -160,6 +160,7 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
       ]
 
       const earliestNodeDataTime = xScale(new Date(nodeDataStart)) || 0;
+      console.log(nodeDataStart)
       const brush = d3.brushX(xScale)
         .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
         // .on('brush', (event) => brushed(event, chartdata))
@@ -224,7 +225,7 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
         // updating charts
         setTimeout(() => {
             window.dispatchEvent(new CustomEvent('batch-update-charts', { detail: newDomain }));
-            console.log("Batch update triggered asynchronously. Selecting new time range: ", newDomain);
+            // console.log("Batch update triggered asynchronously. Selecting new time range: ", newDomain);
         }, 0);
 
       };

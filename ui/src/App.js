@@ -16,11 +16,11 @@ function App() {
   const [triggerData, setTriggerData] = useState([]);
   const [nodeData, setNodeData] = useState(null);
   const [zScores, setzScores] = useState(null);
+  const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
   const [selectedPoints, setSelectedPoints] = useState(["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"]);
-  const [hoveredPoint, setHoveredPoint] = useState(null);
-  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_speed', 'cpu_system', 'proc_run', 'proc_total']);
+  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_system', 'proc_run', 'proc_total']);
   const [bStart, setBStart] = useState('2024-02-21 16:07:30Z')
   const [bEnd, setBEnd] = useState('2024-02-21 17:41:45Z')
   const [recompute, setRecompute] = useState(0)
@@ -43,6 +43,7 @@ function App() {
       const response = await fetch(`http://127.0.0.1:5010/nodeData/${selectedCols}`);
       const data = await response.json();
       if (response.ok) { 
+        console.log(data.data)
         setNodeData(data)
       } else {
         setNodeData(null);   
@@ -81,14 +82,16 @@ function App() {
       const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${bStart}/${bEnd}/${selectedDims}/${recompute}`);
       const data = await response.json();
       if (response.ok) { 
-        console.log(data)
         setzScores(data.zscores)
+        setBaselines(data.baselines)
       } else {
         setzScores(null);   
+        setBaselines(null)
         setError("Failed to fetch data. Please check that the server is running.");
       }
     } catch (error) {
       setzScores(null)
+      setBaselines(null)
       setError("Failed to fetch data. Please check that the server is running.");
       console.error(error);     
     }
@@ -148,12 +151,18 @@ function App() {
       <Content style={{ marginTop: "10px" }}>
           <Row gutter={[8, 8]}>
             <Col span={12}>
-              <TimelineView 
-                  mgrData={mgrData}
-                  bStart={bStart}
-                  bEnd={bEnd}
-                  nodeDataStart={nodeData?.data[0]?.timestamp}
-                />
+              {((!nodeData) || (!mgrData)) ? (
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+                    <Spin size="large" />
+                  </div>
+                ) : (
+                <TimelineView 
+                    mgrData={mgrData}
+                    bStart={bStart}
+                    bEnd={bEnd}
+                    nodeDataStart={nodeData?.data[0]?.timestamp}
+                  />
+                  )}
                 {(!nodeData) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
@@ -164,8 +173,6 @@ function App() {
                     selectedDims={selectedDims}
                     selectedPoints={selectedPoints}
                     setSelectedDims={setSelectedDims}
-                    hoveredPoint={hoveredPoint} 
-                    setHoveredPoint={setHoveredPoint}
                   />
               )}
             </Col>
@@ -182,8 +189,6 @@ function App() {
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 
-                        hoveredPoint={hoveredPoint} 
-                        setHoveredPoint={setHoveredPoint} 
                       />
                   </div>
                   )}

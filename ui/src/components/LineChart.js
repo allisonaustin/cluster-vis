@@ -2,12 +2,11 @@ import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { getColor } from '../utils/colors.js';
 
-const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
+const LineChart = ({ data, field, index }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 800, height: 300 });
+    const [size, setSize] = useState({ width: 700, height: 300 });
     const [chartId, setChartId] = useState(index);
     const chartdata = data;
-    // const [isLocalHover, setIsLocalHover] = useState(false);
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -111,7 +110,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
         .x(d => xScale(d.timestamp))
         .y(d => yScale(d.value))
       
-      focus.selectAll('.line')
+      const lines = focus.selectAll('.line')
         .data(groupedData)
         .enter()
         .append('path')
@@ -121,6 +120,13 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
         .attr('stroke', (d) => getColor('default'))
         .attr('stroke-width', 1)
         .attr('d', d => line(d[1]))
+        .style("stroke-dasharray", function() {
+            const totalLength = this.getTotalLength();
+            return `${totalLength} ${totalLength}`;
+        })
+        .style("stroke-dashoffset", function() {
+            return this.getTotalLength();
+        })
         .on('mouseover', function(event, d) {
           // setIsLocalHover(true);
           const tooltipWidth = 150; 
@@ -137,15 +143,15 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
               .style("opacity", 1)
               .attr('stroke', (d) => getColor('select'));
 
+          d3.select(`#${d[0]}`) 
+              .transition()
+              .duration(150)
+              .attr("r", 8)  
+              .style("opacity", 1)
+
           // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
           // super close together it can trigger tons of component rerenders just by moving the mouse
           // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
-          // setTooltip({
-          //   visible: true,
-          //   content: `${d[0]}`,
-          //   x: tooltipX,
-          //   y: event.clientY
-          // });
           
         })
         .on('mouseout', function(event, d) {
@@ -159,11 +165,22 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
                 .style("opacity", 0.7)
                 .attr('stroke', (d) => getColor('default'));
 
+            d3.select(`#${d[0]}`)
+              .transition()
+              .duration(150)
+              .attr("r", 4)  
+              .style("opacity", 0.7)
+
             // This causes a rerender on every hover. Even though the graph is not redrawn, when lines are
             // super close together it can trigger tons of component rerenders just by moving the mouse
             // over the graph. Need to debounce this somehow or excessive rerenders will crash the page.
             // setTooltip({ visible: false, content: '', x: 0, y: 0 }); 
         });
+
+        lines.transition()
+          .duration(1000) 
+          .ease(d3.easeLinear)
+          .style("stroke-dashoffset", 0)
         
       focus.append("text")
         .attr("class", "grid-title")
@@ -178,7 +195,7 @@ const LineChart = ({ data, field, index, selectedPoints, setHoveredPoint }) => {
       focus.node().xScale = xScale;
       focus.node().yScale = yScale;
       
-      }, [data, field, index, selectedPoints]);
+      }, [data, field, index]);
 
       // const updateChart = (newDomain) => {
       //   const chart = d3.select(`#focus-line-${chartId}`);

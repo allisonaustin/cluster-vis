@@ -8,7 +8,7 @@ import Contributions from './Contributions.js';
 
 const { Option } = Select;
 
-const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, setHoveredPoint }) => {
+const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [size, setSize] = useState({ width: 400, height: 300 });
@@ -128,6 +128,23 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                     .attr("r", 8)
                     .style("opacity", 1)
 
+                let lines = d3.selectAll(".line-svg").selectAll("path.line");
+                lines.each(function(lineData) {
+                    if (lineData[0] === d.nodeId) {
+                        d3.select(this)
+                            .transition()
+                            .duration(150)
+                            .style("stroke-width", 3)
+                            .style("opacity", 1)
+                            .attr('stroke', getColor('select')); 
+                    } else {
+                        d3.select(this)
+                            .transition()
+                            .duration(150)
+                            .style("opacity", 0.2); 
+                    }
+                });
+
                 setTooltip({
                     visible: true,
                     content: d.nodeId,
@@ -143,6 +160,15 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints, hoveredPoint, 
                     .duration(150)
                     .attr("r", 4)
                     .style("opacity", 0.7)
+
+                let lines = d3.selectAll(".line-svg").selectAll("path.line");
+
+                // Resetting all line styles
+                lines.transition()
+                    .duration(150)
+                    .style("stroke-width", 1)
+                    .style("opacity", 1)
+                    .attr('stroke', getColor('default'));
 
                 setTooltip(prev => ({
                     ...prev,
