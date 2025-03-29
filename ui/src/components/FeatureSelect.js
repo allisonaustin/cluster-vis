@@ -1,8 +1,9 @@
 import { Checkbox, List } from "antd";
 import React from 'react';
+import FeatureContributionBarGraph from "./FeatureContributionBarGraph";
 
-export default function FeatureSelect({ data, processed, selectedDims, selectedPoints, setSelectedDims, featureData, setFeatureData }) {
-  const handleCheckboxChange = (key) => {
+export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, fcs }) {
+    const handleCheckboxChange = (key) => {
     const existingColumns = Object.keys(featureData);
     if (!existingColumns.includes(key)) {
         fetch(`http://127.0.0.1:5010/nodeData/${key}`)
@@ -32,7 +33,7 @@ export default function FeatureSelect({ data, processed, selectedDims, selectedP
         }
     });
   }
-  
+
   return (
     <List
       style={{ width: "100%", maxWidth: 500, overflowY: "scroll", maxHeight: 450, marginRight: "10px" }}
@@ -45,6 +46,7 @@ export default function FeatureSelect({ data, processed, selectedDims, selectedP
           <div style={{display: 'flex', flexDirection: 'column'}}>
               <div style={{display: 'flex'}}>
                   <Checkbox
+                      // TODO: refactor checkbox state so FeatureContributionBarGraph doesn't rerender on checkbox change
                       checked={selectedDims.includes(key)}
                       onChange={() => handleCheckboxChange(key)}
                       style={{ marginRight: "10px" }}
@@ -53,7 +55,13 @@ export default function FeatureSelect({ data, processed, selectedDims, selectedP
                       {key}
                   </span>
               </div>
-              <svg style={{width: '100%', height: 100}}></svg>
+              <FeatureContributionBarGraph graphId={`${key.replace(/\s/g, "_")}-feat-graph`} feature={key}
+                //TODO: fix issue with less FCs than available data features
+                fcData={!fcs || data.features.indexOf(key) === -1 || data.features.indexOf(key) >= fcs.agg_feat_contrib_mat.length ? []
+                            : fcs.order_col.map(clusterId => ({
+                                cluster: clusterId,
+                                value: fcs.agg_feat_contrib_mat[data.features.indexOf(key)][clusterId]
+                            }))}/>
           </div>
           </List.Item>
       );

@@ -315,13 +315,6 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                         </Form>
                     </div>
                 </Col>
-
-                {/* <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
-                    <Contributions
-                        data={data}
-                        FCs={fcs} 
-                    /> 
-                </Col> */}
             </Row>
         </Card>
         <Tooltip

@@ -172,6 +172,7 @@ function App() {
                     selectedDims={selectedDims}
                     selectedPoints={selectedPoints}
                     setSelectedDims={setSelectedDims}
+                    fcs={FCs}
                   />
               )}
             </Col>
@@ -184,7 +185,6 @@ function App() {
                   <div>
                       <DR 
                         data={DRTData} 
-                        fcs={FCs}
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 

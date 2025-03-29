@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims }) => {
+const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs }) => {
     let processed = {};
     const [featureData, setFeatureData] = useState(processed);
     
@@ -43,10 +43,11 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims }) =>
         <Row gutter={[16, 16]}>
             {/* Left column: List */}
             <Col span={10}>
+                {/* TODO: move this to sidebar at the app level */}
                 <FeatureSelect 
                     data={data} processed={processed} selectedDims={selectedDims}
                     selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
-                    featureData={featureData} setFeatureData={setFeatureData}/>
+                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs}/>
             </Col>
             <Col span={14}>
                 {selectedDims.map((field, index) => {
