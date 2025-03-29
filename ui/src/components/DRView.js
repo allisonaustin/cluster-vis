@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { colorScale, getColor } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import Tooltip from '../utils/tooltip.js';
-import Contributions from './Contributions.js';
 
 const { Option } = Select;
 
@@ -283,7 +282,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             style={{ height:'auto' }}
         >
             <Row>
-                <Col span={14}>
+                <Col span={24}>
                     <div ref={svgContainerRef}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
@@ -317,12 +316,12 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                     </div>
                 </Col>
 
-                <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
+                {/* <Col span={10} style={{ borderLeft: '1px solid #d9d9d9' }}>
                     <Contributions
                         data={data}
                         FCs={fcs} 
                     /> 
-                </Col>
+                </Col> */}
             </Row>
         </Card>
         <Tooltip
