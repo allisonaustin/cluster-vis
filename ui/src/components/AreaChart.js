@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor } from '../utils/colors.js';
 import * as d3 from 'd3';
+import React, { useEffect, useRef, useState } from 'react';
+import { getColor } from '../utils/colors.js';
 
 const AreaChart = ({ data, field, index, chartType }) => {
     const svgContainerRef = useRef();

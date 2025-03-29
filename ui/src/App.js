@@ -159,7 +159,8 @@ function App() {
                     mgrData={mgrData}
                     bStart={bStart}
                     bEnd={bEnd}
-                    nodeDataStart={nodeData?.data[0]?.timestamp}
+                    nodeDataStart={new Date(nodeData?.data[0]?.timestamp)}
+                    nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
                   />
                   )}
                 {(!nodeData) ? (
@@ -172,6 +173,7 @@ function App() {
                     selectedDims={selectedDims}
                     selectedPoints={selectedPoints}
                     setSelectedDims={setSelectedDims}
+                    fcs={FCs}
                   />
               )}
             </Col>
@@ -184,7 +186,6 @@ function App() {
                   <div>
                       <DR 
                         data={DRTData} 
-                        fcs={FCs}
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 

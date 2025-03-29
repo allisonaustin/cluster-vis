@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import Tooltip from '../utils/tooltip.js';
 import { getColor } from '../utils/colors.js';
+import Tooltip from '../utils/tooltip.js';
 
 const LineChart = ({ data, field, index }) => {
+    // console.log(`rendering line chart ${index} for field ${field}`, data);
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 300 });
     const [chartId, setChartId] = useState(index);
@@ -16,7 +17,6 @@ const LineChart = ({ data, field, index }) => {
     });
 
     useEffect(() => {
-      console.log('rerendering');
       if (!svgContainerRef.current || !data) return;
       const margin = { top: 40, right: 60, bottom: 60, left: 70 };
 
