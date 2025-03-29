@@ -1,11 +1,13 @@
-import { Card, Col, Row } from "antd";
-import React, { useMemo, useState } from 'react';
+import { Card, Col, Row, Switch} from "antd";
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, fcs, baselines, setBaselineEdit }) => {
     let processed = {};
-    const [featureData, setFeatureData] = useState(processed);
+    const baselinesRef = useRef({});
+    const baselineEditRef = useRef({});
+    const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
     data.data.forEach(row => {
         Object.keys(row).forEach(key => {
@@ -21,7 +23,7 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs 
             }
         });
     });
-    const [selectedTimeRange, setSelectedTimeRange] = useState(['2024-02-21 16:07:30Z', '2024-02-21 17:41:45Z'])
+    const [featureData, setFeatureData] = useState(processed);
     const filteredData = useMemo(() => {
         const selectedNodes = new Set(selectedPoints);
         const start = new Date(selectedTimeRange[0]);
@@ -31,6 +33,26 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs 
         console.log(newFilteredData);
         return newFilteredData;
     }, [selectedTimeRange, selectedPoints, featureData])
+
+    useEffect(() => {
+        if (!data || !baselines) return;
+        const initialBaselines = baselines.reduce((acc, baseline) => {
+            acc[baseline.feature] = {
+                baselineX: [new Date(baseline.b_start), new Date(baseline.b_end)],
+                baselineY: [baseline.v_min, baseline.v_max]
+            };
+            return acc;
+        })
+        baselinesRef.current = initialBaselines;
+    }, []);
+
+    if (!data || !baselines) return;
+
+    const updateBaseline = (field, newBaseline) => {
+        if (baselineEditRef.current) {
+            baselinesRef.current[field] = newBaseline;
+        }
+      };
 
     const handleUpdateEvent = (event) => {
         setSelectedTimeRange(event.detail);
@@ -42,7 +64,7 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs 
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
         <Row gutter={[16, 16]}>
             {/* Left column: List */}
-            <Col span={10}>
+            <Col span={8}>
                 {/* TODO: move this to sidebar at the app level */}
                 <FeatureSelect 
                     data={data} processed={processed} selectedDims={selectedDims}
@@ -50,6 +72,20 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs 
                     featureData={featureData} setFeatureData={setFeatureData} fcs={fcs}/>
             </Col>
             <Col span={14}>
+                <div>
+                    <label>
+                    Baseline edit:
+                    <Switch
+                        size="small"
+                        checked={baselineEditRef.current}
+                        onChange={() => { 
+                            baselineEditRef.current = !baselineEditRef.current;
+                            setBaselineEdit(prev => !prev);
+                        }}
+                        style={{ marginLeft: '10px' }}
+                    />
+                    </label>
+                </div>
                 {selectedDims.map((field, index) => {
                     return (
                         <LineChart 
@@ -57,6 +93,10 @@ const FeatureView = ({ data, selectedDims, selectedPoints, setSelectedDims, fcs 
                             data={filteredData.get(field)}
                             field={field} 
                             index={index}
+                            baselineX={baselinesRef[field]?.baselineX || []}
+                            baselineY={baselinesRef[field]?.baselineY || []}
+                            updateBaseline={updateBaseline}
+                            baselineEditRef={baselineEditRef}
                         />
                     )
                 })}

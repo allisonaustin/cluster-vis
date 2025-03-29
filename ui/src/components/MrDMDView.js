@@ -17,6 +17,7 @@ const MRDMD = ({ data }) => {
         
         firstRenderRef.current = false;
 
+        console.log(data)
         
     }, [data]);
       

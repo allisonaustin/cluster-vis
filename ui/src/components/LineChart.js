@@ -3,10 +3,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getColor } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index }) => {
-    // console.log(`rendering line chart ${index} for field ${field}`, data);
+const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, baselineEditRef }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 300 });
+    const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
     const [chartId, setChartId] = useState(index);
     const chartdata = data;
     const [tooltip, setTooltip] = useState({
@@ -17,9 +17,7 @@ const LineChart = ({ data, field, index }) => {
     });
 
     useEffect(() => {
-      if (!svgContainerRef.current || !data) return;
-      const margin = { top: 40, right: 60, bottom: 60, left: 70 };
-
+      if (!svgContainerRef.current || !data || !baselineEditRef) return;
       d3.select(svgContainerRef.current).selectAll("*").remove();
 
       const svg = d3.select(svgContainerRef.current)
@@ -67,7 +65,7 @@ const LineChart = ({ data, field, index }) => {
       
       const xAxis = d3.axisBottom(xScale)
           .tickValues(tickVals)
-          .tickFormat(d3.utcFormat('%H:%M'))
+          .tickFormat(d3.timeFormat('%H:%M'))
           .tickSizeOuter(0);
 
       focus.append("g")
@@ -184,17 +182,70 @@ const LineChart = ({ data, field, index }) => {
       focus.node().yScale = yScale;
       
       }, [data, field, index]);
+
+      useEffect(() => {
+        // baseline selection
+        const brush = d3.brush()
+          .extent([[margin.left, margin.top], [size.width - margin.right, size.height - margin.bottom]]) 
+          .on("end", updateBaselineHandler);
+
+        const focus = d3.selectAll('.focus')
+
+        const xScale = focus.node()?.xScale;
+        const yScale = focus.node()?.yScale;
+
+      function updateBaselineHandler(event) {
+        const s = event.selection;
+      
+        const [x0, y0] = s[0];  
+        const [x1, y1] = s[1];
+
+        const start = xScale.invert(x0);
+        const end = xScale.invert(x1);
+        const valueStart = yScale.invert(y1);
+        const valueEnd = yScale.invert(y0);
+
+        updateBaseline(field, {
+          baselineX: [start, end],
+          baselineY: [valueStart, valueEnd],
+        });
+      }
+
+      if (baselineEditRef.current) {
+        const brushSelection = focus.append('g')
+          .attr('class', 'brush')
+          .call(brush);
+
+        const xDomain = xScale.domain();
+        const yDomain = yScale.domain();
+
+        const x0 = xScale(baselineX[0]);
+        const x1 = xScale(baselineX[1]);
+        const y0 = yScale(baselineY[0]);
+        const y1 = yScale(baselineY[1]);
+
+        const xInDom = x0 >= xScale(xDomain[0]) && x1 <= xScale(xDomain[1]);
+        const yInDom = y0 >= yScale(yDomain[0]) && y1 <= yScale(yDomain[1]);
+
+        if (xInDom && yInDom) {
+          brushSelection
+            .call(brush.move, [[x0, y0], [x1, y1]]);
+        }
+      }
+    })
   
-      return (<div>
-                 <div ref={svgContainerRef} style={{ width: 'auto', height: '190px' }}></div>
-                 <Tooltip
-                    visible={tooltip.visible}
-                    content={tooltip.content}
-                    x={tooltip.x}
-                    y={tooltip.y}
-                    tooltipId={`line-${index}-tooltip`}
-                 />
-              </div>);
+      return (
+        <div>
+          <div ref={svgContainerRef} style={{ width: 'auto', height: '190px' }}></div>
+          <Tooltip
+            visible={tooltip.visible}
+            content={tooltip.content}
+            x={tooltip.x}
+            y={tooltip.y}
+            tooltipId={`line-${index}-tooltip`}
+          />
+      </div>
+    );
 
 };
 
