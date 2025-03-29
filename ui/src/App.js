@@ -159,7 +159,8 @@ function App() {
                     mgrData={mgrData}
                     bStart={bStart}
                     bEnd={bEnd}
-                    nodeDataStart={nodeData?.data[0]?.timestamp}
+                    nodeDataStart={new Date(nodeData?.data[0]?.timestamp)}
+                    nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
                   />
                   )}
                 {(!nodeData) ? (

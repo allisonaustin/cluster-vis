@@ -3,15 +3,16 @@ import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { generateColor } from '../utils/colors.js';
 
-const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
+const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(new Date(bStart));
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
     const [currentDate, setCurrentDate] = useState(null);
+    // TODO: any reason we still need this instead of just hardcoding Activity_P1?
     const [fields, setFields] = useState(['Activity_P1']);
-      
+    
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData || !nodeDataStart ) return;
       
@@ -34,25 +35,33 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
         if (mgrData[field] && typeof mgrData[field] === "object") { 
             chartdata[field] = [];
             
-            Object.keys(mgrData[field]).forEach((obj) => {
-                let date = new Date(parseInt(obj));
-                let value = mgrData[field][obj];
+            Object.keys(mgrData[field]).forEach((unixTimestamp) => {
+                let date = new Date(parseInt(unixTimestamp));
+                let value = mgrData[field][unixTimestamp];
 
                 chartdata[field].push({
                     timestamp: date, 
-                    row: value == 0 ? 0 : idx, 
+                    row: value === 0 ? 0 : idx, 
                     nodeId: 'mgr-01',
                     value: value
                 });
             });
         }
-    });    
-  
-    const minTimestamp = d3.min(chartdata[fields[0]], d => d.timestamp);
-    const maxTimestamp = d3.max(chartdata[fields[0]], d => d.timestamp);
-
+    });
+    // console.log(chartdata);
+    // console.log(chartdata['Activity_P1'].map(d => d.timestamp.getTime()));
+    const chartDataStart = d3.min(chartdata[fields[0]], d => d.timestamp);
+    const chartDataEnd = d3.max(chartdata[fields[0]], d => d.timestamp);
+    console.log('min/max from mgrData (UTC)', chartDataStart.toUTCString(), chartDataEnd.toUTCString());
+    console.log('min/max from nodeData (UTC)', nodeDataStart.toUTCString(), nodeDataEnd.toUTCString());
+    const startTime = new Date(Math.max(chartDataStart.getTime(), nodeDataStart.getTime()));
+    const endTime = new Date(Math.min(chartDataEnd.getTime(), nodeDataEnd.getTime()));
+    console.log(`time range (UTC) with both node and mgr data available: ${startTime.toUTCString()}, ${endTime.toUTCString()}`);
+    console.log('Plotting timeline with min/max timestamps from nodeData');
+    const dataInTimeRange = chartdata['Activity_P1'].filter(d => d.timestamp >= nodeDataStart && d.timestamp <= nodeDataEnd);
+    
       const xScale = d3.scaleTime()
-        .domain([new Date(minTimestamp), new Date(maxTimestamp)])
+        .domain([new Date(nodeDataStart), new Date(nodeDataEnd)])
         .range([margin.left, size.width - margin.right - 20])
         // .padding(0.1);
 
@@ -98,14 +107,14 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
         .curve(d3.curveCardinal);
 
     svg.append('path')
-        .datum(chartdata['Activity_P1'])
+        .datum(dataInTimeRange)
         .attr('class', `context-Activity_P1`)
         .attr('clip-path', 'url(#clip)')
         .style('fill', (d, i) => generateColor(i))
         .attr("fill-opacity", 0.6)
         .attr('d', areaGenerator)
 
-    // adding legend 
+    // adding legend
     const legend = svg.append('g')
         .attr('class', 'legend')
         .attr('transform', `translate(0, 0)`)
@@ -160,7 +169,6 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
       ]
 
       const earliestNodeDataTime = xScale(new Date(nodeDataStart)) || 0;
-      console.log(nodeDataStart)
       const brush = d3.brushX(xScale)
         .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height - margin.bottom + margin.top]])
         // .on('brush', (event) => brushed(event, chartdata))
@@ -185,8 +193,8 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-line-1`);
         const xScale = chart.node()?.xScale;
-        const timeFormat = d3.utcFormat('%H:%M');
-        const dateFormat = d3.timeFormat('%Y-%m-%d');
+        const utcFormat = d3.utcFormat('%H:%M');
+        const dateFormat = d3.utcFormat('%Y-%m-%d');
 
         if (!xScale) {
             return
@@ -218,7 +226,7 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart }) => {
 
         d3.selectAll('.focus .x-axis')
             .transition(t)
-            .call(d3.axisBottom(xScale).tickValues(tickVals).tickFormat(timeFormat).tickSizeOuter(0))
+            .call(d3.axisBottom(xScale).tickValues(tickVals).tickFormat(utcFormat).tickSizeOuter(0))
             .selectAll('text')
             .style('font-size', '16px');
 
