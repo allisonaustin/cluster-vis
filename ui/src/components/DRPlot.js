@@ -107,20 +107,22 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
-            // .style('fill', d => colorScale(d.Cluster))
-            .style('fill', (d) => {
+            .style('fill', d => colorScale(d.Cluster))
+            // .style('fill', (d) => {
+            //     const idVal = getIdVal(d);
+            //     if (selectedPoints.length === 0) {
+            //         return colorScale(d.Cluster);
+            //     } else {
+            //         return selectedPoints.includes(idVal) 
+            //             ? getColor('select') 
+            //             : getColor('default');
+            //         }
+            // })
+            .style("opacity", d => {
                 const idVal = getIdVal(d);
-                if (selectedPoints.length === 0) {
-                    return colorScale(d.Cluster);
-                } else {
-                    return selectedPoints.includes(idVal) 
-                        ? getColor('select') 
-                        : getColor('default');
-                    }
+                return selectedPoints.includes(idVal) ? 1 : 0.3;
             })
             .on("mouseover", function (event, d) {
-                // This causes every single component that takes hoveredPoint as a prop to rerender.
-                // setHoveredPoint(getIdVal(d));
                 d3.select(this)
                     .transition()
                     .duration(150)
@@ -158,7 +160,10 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                     .transition()
                     .duration(150)
                     .attr("r", 4)
-                    .style("opacity", 0.7)
+                    .style("opacity", d => {
+                        const idVal = getIdVal(d);
+                        return selectedPoints.includes(idVal) ? 1 : 0.3;
+                    })
 
                 let lines = d3.selectAll(".line-svg").selectAll("path.line");
 
@@ -179,7 +184,10 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             circs
                 .transition()
                 .duration(800)
-                .style("opacity", 1);
+                .style("opacity", d => {
+                    const idVal = getIdVal(d);
+                    return selectedPoints.includes(idVal) ? 1 : 0.3;
+                })
 
             svg.node().xScale = xScale;
             svg.node().yScale = yScale;
@@ -195,19 +203,19 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             .selectAll(".dr-circle")
             .transition()
             .duration(300)
-            .style("fill", d => {
-                const idVal = getIdVal(d);
-                if (selectedPoints.length === 0) {
-                    return colorScale(d.Cluster);
-                } else {
-                    return selectedPoints.includes(idVal) 
-                        ? getColor('select') 
-                        : getColor('default');
-                }
-            })
+            // .style("fill", d => {
+            //     const idVal = getIdVal(d);
+            //     if (selectedPoints.length === 0) {
+            //         return colorScale(d.Cluster);
+            //     } else {
+            //         return selectedPoints.includes(idVal) 
+            //             ? getColor('select') 
+            //             : getColor('default');
+            //     }
+            // })
             .style("opacity", d => {
                 const idVal = getIdVal(d);
-                return selectedPoints.includes(idVal) ? 1 : 0.7;
+                return selectedPoints.includes(idVal) ? 1 : 0.3;
             });
     }, [selectedPoints]);
 
@@ -255,23 +263,23 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
         setSelectedPoints(selected)
         
         chart.selectAll('.dr-circle')
-        .style('fill', d => {
-            const idVal = getIdVal(d);
-            return selected.includes(idVal) ? getColor('select') : getColor('default');
-        })
+        // .style('fill', d => {
+        //     const idVal = getIdVal(d);
+        //     return selected.includes(idVal) ? getColor('select') : getColor('default');
+        // })
         .style("opacity", d => {
             const idVal = getIdVal(d);
-            return selected.includes(idVal) ? 1 : 0.7;
+            return selected.includes(idVal) ? 1 : 0.3;
         });
 
-        const lineCharts = d3.selectAll(".line-svg"); 
-        lineCharts.selectAll(".line")
-        .style("stroke", d => {
-            return selected.includes(d[0]) ? getColor('select') : getColor('default');
-        })
-        .style("opacity", d => {
-            return selected.includes(d[0]) ? 1 : 0.5;
-        })
+        // const lineCharts = d3.selectAll(".line-svg"); 
+        // lineCharts.selectAll(".line")
+        // .style("stroke", d => {
+        //     return selected.includes(d[0]) ? getColor('select') : getColor('default');
+        // })
+        // .style("opacity", d => {
+        //     return selected.includes(d[0]) ? 1 : 0.5;
+        // })
     };
 
     return (

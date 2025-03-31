@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { generateColor } from '../utils/colors.js';
 
-const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => {
+const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
@@ -11,7 +11,7 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => 
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
     const [currentDate, setCurrentDate] = useState(null);
     // TODO: any reason we still need this instead of just hardcoding Activity_P1?
-    const [fields, setFields] = useState(['Activity_P1']);
+    const [fields, setFields] = useState(['no_activity']);
     
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData || !nodeDataStart || !nodeDataEnd ) return;
@@ -29,39 +29,16 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => 
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
-      let chartdata = {};
+      let chartdata = Array.from(d3.group(nodeData.data, d => d.timestamp), ([key, value]) => ({
+            timestamp: key,
+            values: value
+        }));;
 
-      fields.forEach((field, idx) => {
-        if (mgrData[field] && typeof mgrData[field] === "object") { 
-            chartdata[field] = [];
-            
-            Object.keys(mgrData[field]).forEach((unixTimestamp) => {
-                let date = new Date(parseInt(unixTimestamp));
-                let value = mgrData[field][unixTimestamp];
+    const chartDataStart = new Date(chartdata[0].timestamp);
+    const chartDataEnd = new Date(chartdata[chartdata.length-1].timestamp);
 
-                chartdata[field].push({
-                    timestamp: date, 
-                    row: value === 0 ? 0 : idx, 
-                    nodeId: 'mgr-01',
-                    value: value
-                });
-            });
-        }
-    });
-    // console.log(chartdata);
-    // console.log(chartdata['Activity_P1'].map(d => d.timestamp.getTime()));
-    const chartDataStart = d3.min(chartdata[fields[0]], d => d.timestamp);
-    const chartDataEnd = d3.max(chartdata[fields[0]], d => d.timestamp);
-    // console.log('min/max from mgrData (UTC)', chartDataStart.toUTCString(), chartDataEnd.toUTCString());
-    // console.log('min/max from nodeData (UTC)', nodeDataStart.toUTCString(), nodeDataEnd.toUTCString());
-    const startTime = new Date(Math.max(chartDataStart.getTime(), nodeDataStart.getTime()));
-    const endTime = new Date(Math.min(chartDataEnd.getTime(), nodeDataEnd.getTime()));
-    // console.log(`time range (UTC) with both node and mgr data available: ${startTime.toUTCString()}, ${endTime.toUTCString()}`);
-    // console.log('Plotting timeline with min/max timestamps from nodeData');
-    const dataInTimeRange = chartdata['Activity_P1'].filter(d => d.timestamp >= nodeDataStart && d.timestamp <= nodeDataEnd);
-    
       const xScale = d3.scaleTime()
-        .domain([new Date(nodeDataStart), new Date(nodeDataEnd)])
+        .domain([new Date(chartDataStart), new Date(chartDataEnd)])
         .range([margin.left, size.width - margin.right - 20])
         // .padding(0.1);
 
@@ -100,19 +77,24 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => 
 
       // adding areas
 
-      var areaGenerator = d3.area()
-        .x(function(d) { return xScale(d.timestamp) })
-        .y0(function(d) { return d.value !== 0 ? yScale(d.row + .2) : 0;  })
-        .y1(function(d) { return d.value !== 0 ? yScale(d.row + 1) : 0; })
-        .curve(d3.curveCardinal);
+      console.log(chartdata); 
 
-    svg.append('path')
-        .datum(dataInTimeRange)
-        .attr('class', `context-Activity_P1`)
-        .attr('clip-path', 'url(#clip)')
-        .style('fill', (d, i) => generateColor(i))
-        .attr("fill-opacity", 0.6)
-        .attr('d', areaGenerator)
+      fields.forEach((field, index) => {
+
+        var areaGenerator = d3.area()
+            .x(d => xScale(new Date(d.timestamp)))
+            .y0(d => +d.values[0][field] !== 0 ? yScale(index) : yScale(0)) 
+            .y1(d => +d.values[0][field] !== 0 ? yScale(index + 1) : yScale(0)) 
+            .curve(d3.curveCardinal);
+    
+        svg.append('path')
+            .datum(chartdata)
+            .attr('class', `context-${field}`)
+            .attr('clip-path', 'url(#clip)')
+            .style('fill', generateColor(index))
+            .attr("fill-opacity", 1)
+            .attr('d', areaGenerator);
+    });
 
     // adding legend
     const legend = svg.append('g')
@@ -147,7 +129,6 @@ const TimelineView = ({ mgrData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => 
             .attr('x', 20)
             .attr('y', 7)
             .text(field)
-            .style('font-size', '10px')
             .attr('alignment-baseline', 'middle')
             .style("font-size", "14px")
     })

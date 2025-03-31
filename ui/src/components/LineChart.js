@@ -5,7 +5,7 @@ import Tooltip from '../utils/tooltip.js';
 
 const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, baselineEditRef }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 300 });
+    const [size, setSize] = useState({ width: 800, height: 300 });
     const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
     const [chartId, setChartId] = useState(index);
     const chartdata = data;
@@ -136,7 +136,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
               .transition()
               .duration(150)
               .attr("r", 8)  
-              .style("opacity", 1)    
+              .style("opacity", 1)
 
           setTooltip({
               visible: true,
@@ -155,7 +155,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
               .transition()
               .duration(150)
               .attr("r", 4) 
-              .style("opacity", 0.7)
+              .style("opacity", 0.3)
 
             setTooltip(prev => ({
                 ...prev,

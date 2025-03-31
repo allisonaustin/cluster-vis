@@ -1,7 +1,7 @@
 import { Col, Layout, Row, Spin } from "antd";
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import DR from './components/DRView.js';
+import DR from './components/DRPlot.js';
 import FeatureView from './components/FeatureView.js';
 import MRDMD from './components/MrDMDView.js';
 import TimelineView from './components/TimelineView.js';
@@ -160,6 +160,7 @@ function App() {
                     mgrData={mgrData}
                     bStart={bStart}
                     bEnd={bEnd}
+                    nodeData={nodeData}
                     nodeDataStart={new Date(nodeData?.data[0]?.timestamp)}
                     nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
                   />

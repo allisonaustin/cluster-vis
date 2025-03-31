@@ -93,6 +93,9 @@ def get_node_data(selectedCols):
     excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE']
     all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
     
+    check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
+    df['no_activity'] = (df[check_cols] == 0).all(axis=1).astype(int)
+
     return jsonify({
         "data": df.to_dict(orient='records'),
         "features": all_features

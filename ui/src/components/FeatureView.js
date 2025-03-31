@@ -30,7 +30,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         const end = new Date(selectedTimeRange[1]);
         const newFilteredData = new Map(Object.entries(featureData)
             .map(([feature, data]) => ([feature, data.filter(d => selectedNodes.has(d.nodeId) && new Date(d.timestamp) >= start && new Date(d.timestamp) <= end)])));
-        console.log(newFilteredData);
         return newFilteredData;
     }, [selectedTimeRange, selectedPoints, featureData])
 
@@ -63,16 +62,8 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     return (
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
         <Row gutter={[16, 16]}>
-            {/* Left column: List */}
-            <Col span={8}>
-                {/* TODO: move this to sidebar at the app level */}
-                <FeatureSelect 
-                    data={data} processed={processed} selectedDims={selectedDims}
-                    selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
-                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs}/>
-            </Col>
-            <Col span={14}>
-                <div>
+            <Col span={16}>
+                {/* <div>
                     <label>
                     Baseline edit:
                     <Switch
@@ -85,7 +76,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                         style={{ marginLeft: '10px' }}
                     />
                     </label>
-                </div>
+                </div> */}
                 {selectedDims.map((field, index) => {
                     return (
                         <LineChart 
@@ -100,6 +91,14 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                         />
                     )
                 })}
+            </Col>
+            {/* Right column: List */}
+            <Col span={8}>
+                {/* TODO: move this to sidebar at the app level */}
+                <FeatureSelect 
+                    data={data} processed={processed} selectedDims={selectedDims}
+                    selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
+                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs}/>
             </Col>
         </Row>
       </Card>
