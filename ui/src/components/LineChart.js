@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import { getColor } from '../utils/colors.js';
+import { getColor, colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, baselineEditRef }) => {
+const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, nodeClusterMap }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
@@ -17,7 +17,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
     });
 
     useEffect(() => {
-      if (!svgContainerRef.current || !data || !baselineEditRef) return;
+      if (!svgContainerRef.current || !data) return;
       d3.select(svgContainerRef.current).selectAll("*").remove();
 
       const svg = d3.select(svgContainerRef.current)
@@ -116,7 +116,10 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
         .attr('class', (d) => `line line-${chartId}`)
         .attr('nodeId', d => d[0])
         .attr('fill', 'none')
-        .attr('stroke', (d) => getColor('default'))
+        .attr('stroke', (d) => { 
+          const cluster = nodeClusterMap.get(d[0]);
+          return colorScale(+cluster);
+        })
         .attr('stroke-width', 1)
         .attr('d', d => line(d[1]))
         .style("stroke-dasharray", function() {
@@ -149,7 +152,10 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
             d3.select(this)
                 .style("stroke-width", 1)
                 .style("opacity", 0.7)
-                .attr('stroke', (d) => getColor('default'));
+                .attr('stroke', (d) => {
+                  const cluster = nodeClusterMap.get(d[0]);
+                  return colorScale(+cluster);
+                });
 
             d3.select(`#${d[0]}`)
               .transition()
@@ -211,26 +217,24 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, b
         });
       }
 
-      if (baselineEditRef.current) {
-        const brushSelection = focus.append('g')
-          .attr('class', 'brush')
-          .call(brush);
+      const brushSelection = focus.append('g')
+        .attr('class', 'brush')
+        .call(brush);
 
-        const xDomain = xScale.domain();
-        const yDomain = yScale.domain();
+      const xDomain = xScale.domain();
+      const yDomain = yScale.domain();
 
-        const x0 = xScale(baselineX[0]);
-        const x1 = xScale(baselineX[1]);
-        const y0 = yScale(baselineY[0]);
-        const y1 = yScale(baselineY[1]);
+      const x0 = xScale(baselineX[0]);
+      const x1 = xScale(baselineX[1]);
+      const y0 = yScale(baselineY[0]);
+      const y1 = yScale(baselineY[1]);
 
-        const xInDom = x0 >= xScale(xDomain[0]) && x1 <= xScale(xDomain[1]);
-        const yInDom = y0 >= yScale(yDomain[0]) && y1 <= yScale(yDomain[1]);
+      const xInDom = x0 >= xScale(xDomain[0]) && x1 <= xScale(xDomain[1]);
+      const yInDom = y0 >= yScale(yDomain[0]) && y1 <= yScale(yDomain[1]);
 
-        if (xInDom && yInDom) {
-          brushSelection
-            .call(brush.move, [[x0, y0], [x1, y1]]);
-        }
+      if (xInDom && yInDom) {
+        brushSelection
+          .call(brush.move, [[x0, y0], [x1, y1]]);
       }
     })
   

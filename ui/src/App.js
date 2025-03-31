@@ -165,7 +165,7 @@ function App() {
                     nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
                   />
                   )}
-                {((!nodeData) && (!baselines)) ? (
+                {((!nodeData) || (!baselines) || (!DRTData)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -179,6 +179,7 @@ function App() {
                     setSelectedDims={setSelectedDims}
                     baselines={baselines}
                     setBaselineEdit={setBaselineEdit}
+                    DRData={DRTData}
                   />
               )}
             </Col>

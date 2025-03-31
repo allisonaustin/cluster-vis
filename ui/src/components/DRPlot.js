@@ -10,6 +10,7 @@ const { Option } = Select;
 const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
+    const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
     const [size, setSize] = useState({ width: 400, height: 300 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
@@ -29,6 +30,13 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
         
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setChartData(data);
+
+        const clusters = new Map();
+        data.forEach(d => {
+            clusters.set(d.nodeId, d.Cluster);
+        });
+        setNodeClusterMap(clusters);
+
         // NOTE: this currently does nothing as 1) setSize() runs after this useEffect() runs,
         //       and 2) this useEffect() does not depend on Size. All logic will be run with the default
         //       size of 400 x 300.
@@ -137,7 +145,7 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                             .duration(150)
                             .style("stroke-width", 3)
                             .style("opacity", 1)
-                            .attr('stroke', getColor('select')); 
+                            .attr('stroke', colorScale(d.Cluster)); 
                     } else {
                         d3.select(this)
                             .transition()
@@ -172,7 +180,6 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                     .duration(150)
                     .style("stroke-width", 1)
                     .style("opacity", 1)
-                    .attr('stroke', getColor('default'));
 
                 setTooltip(prev => ({
                     ...prev,
@@ -203,20 +210,16 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             .selectAll(".dr-circle")
             .transition()
             .duration(300)
-            // .style("fill", d => {
-            //     const idVal = getIdVal(d);
-            //     if (selectedPoints.length === 0) {
-            //         return colorScale(d.Cluster);
-            //     } else {
-            //         return selectedPoints.includes(idVal) 
-            //             ? getColor('select') 
-            //             : getColor('default');
-            //     }
-            // })
             .style("opacity", d => {
                 const idVal = getIdVal(d);
                 return selectedPoints.includes(idVal) ? 1 : 0.3;
             });
+        // const lineCharts = d3.selectAll(".line-svg"); 
+        // lineCharts.selectAll(".line")
+        //     .style("stroke", d => {
+        //         const cluster = nodeClusterMap.get(d[0]);
+        //         return colorScale(+cluster);
+        // });
     }, [selectedPoints]);
 
     const updateChart = (method1, method2) => {
@@ -263,23 +266,10 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
         setSelectedPoints(selected)
         
         chart.selectAll('.dr-circle')
-        // .style('fill', d => {
-        //     const idVal = getIdVal(d);
-        //     return selected.includes(idVal) ? getColor('select') : getColor('default');
-        // })
-        .style("opacity", d => {
-            const idVal = getIdVal(d);
-            return selected.includes(idVal) ? 1 : 0.3;
+            .style("opacity", d => {
+                const idVal = getIdVal(d);
+                return selected.includes(idVal) ? 1 : 0.3;
         });
-
-        // const lineCharts = d3.selectAll(".line-svg"); 
-        // lineCharts.selectAll(".line")
-        // .style("stroke", d => {
-        //     return selected.includes(d[0]) ? getColor('select') : getColor('default');
-        // })
-        // .style("opacity", d => {
-        //     return selected.includes(d[0]) ? 1 : 0.5;
-        // })
     };
 
     return (

@@ -3,10 +3,9 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, fcs, baselines, setBaselineEdit }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, fcs, baselines, DRData }) => {
     let processed = {};
     const baselinesRef = useRef({});
-    const baselineEditRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
     data.data.forEach(row => {
@@ -24,6 +23,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         });
     });
     const [featureData, setFeatureData] = useState(processed);
+    const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
     const filteredData = useMemo(() => {
         const selectedNodes = new Set(selectedPoints);
         const start = new Date(selectedTimeRange[0]);
@@ -34,7 +34,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     }, [selectedTimeRange, selectedPoints, featureData])
 
     useEffect(() => {
-        if (!data || !baselines) return;
+        if (!baselines) return;
         const initialBaselines = baselines.reduce((acc, baseline) => {
             acc[baseline.feature] = {
                 baselineX: [new Date(baseline.b_start), new Date(baseline.b_end)],
@@ -45,12 +45,20 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         baselinesRef.current = initialBaselines;
     }, []);
 
+    useEffect(() => {
+        if (!DRData) return; 
+        const clusters = new Map();
+        DRData.forEach(d => {
+            clusters.set(d.nodeId, d.Cluster);
+        });
+        setNodeClusterMap(clusters);  
+        console.log(clusters)
+    }, [DRData]);
+
     if (!data || !baselines) return;
 
     const updateBaseline = (field, newBaseline) => {
-        if (baselineEditRef.current) {
-            baselinesRef.current[field] = newBaseline;
-        }
+        baselinesRef.current[field] = newBaseline;
       };
 
     const handleUpdateEvent = (event) => {
@@ -63,21 +71,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
         <Row gutter={[16, 16]}>
             <Col span={16}>
-                {/* <div>
-                    <label>
-                    Baseline edit:
-                    <Switch
-                        size="small"
-                        checked={baselineEditRef.current}
-                        onChange={() => { 
-                            baselineEditRef.current = !baselineEditRef.current;
-                            setBaselineEdit(prev => !prev);
-                        }}
-                        style={{ marginLeft: '10px' }}
-                    />
-                    </label>
-                </div> */}
-                {selectedDims.map((field, index) => {
+                {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
                     return (
                         <LineChart 
                             key={`chart-${index}`}
@@ -87,9 +81,9 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             baselineX={baselinesRef[field]?.baselineX || []}
                             baselineY={baselinesRef[field]?.baselineY || []}
                             updateBaseline={updateBaseline}
-                            baselineEditRef={baselineEditRef}
+                            nodeClusterMap={nodeClusterMap}
                         />
-                    )
+                    );
                 })}
             </Col>
             {/* Right column: List */}

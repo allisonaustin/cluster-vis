@@ -5,7 +5,7 @@ import { generateColor } from '../utils/colors.js';
 
 const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 150 });
+    const [size, setSize] = useState({ width: 700, height: 180 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(new Date(bStart));
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
@@ -44,9 +44,10 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
 
       xScaleRef.current = xScale; 
 
-      const yScale = d3.scaleLinear()
-          .domain([0, 4])
-          .range([size.height - margin.bottom, margin.top]);
+      const yScale = d3.scaleBand()
+            .domain(fields)
+            .range([0, size.height - margin.bottom + 5])
+            .padding(0.05);
       
       const xAxis = d3.axisBottom(xScale)
           .tickFormat(d3.timeFormat('%H:%M'))
@@ -77,23 +78,25 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
 
       // adding areas
 
-      console.log(chartdata); 
-
       fields.forEach((field, index) => {
-
-        var areaGenerator = d3.area()
-            .x(d => xScale(new Date(d.timestamp)))
-            .y0(d => +d.values[0][field] !== 0 ? yScale(index) : yScale(0)) 
-            .y1(d => +d.values[0][field] !== 0 ? yScale(index + 1) : yScale(0)) 
-            .curve(d3.curveCardinal);
+        const fieldData = chartdata.filter(d => d.values.some(value => value[field] === 1));
     
-        svg.append('path')
-            .datum(chartdata)
-            .attr('class', `context-${field}`)
-            .attr('clip-path', 'url(#clip)')
-            .style('fill', generateColor(index))
-            .attr("fill-opacity", 1)
-            .attr('d', areaGenerator);
+        svg.selectAll(`.box-${field}`)
+            .data(fieldData)
+            .enter()
+            .append("rect")
+            .attr("class", `box-${field}`)
+            .attr("x", d => {
+                let parsedTime = new Date(d.timestamp);
+                let xPos = xScale(parsedTime);
+                return xPos;
+            })  
+            .attr("y", yScale(field))  
+            .attr("width", 5)  
+            .attr("height", yScale.bandwidth())  
+            .style("fill", generateColor(index))  
+            .style("fill-opacity", 0.6)
+            .attr('clip-path', 'url(#clip)');
     });
 
     // adding legend
@@ -104,20 +107,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
     fields.forEach((field, i) => {
         const legendItem = legend.append('g')
             .attr('transform', `translate(0, ${i * 80})`)
-            .on('mouseover', function() {
-                svg.selectAll('path')
-                    .transition().duration(200)
-                    .attr('fill-opacity', 0);
-    
-                svg.selectAll(`.context-${field}`)
-                    .transition().duration(200)
-                    .attr('fill-opacity', 0.6)
-            })
-            .on('mouseout', function() {
-                svg.selectAll('path')
-                    .transition().duration(200)
-                    .attr('fill-opacity', 0.6);
-            });
         
         legendItem.append('rect')
             .attr('width', 15)
