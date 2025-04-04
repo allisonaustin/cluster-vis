@@ -32,7 +32,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
       let chartdata = Array.from(d3.group(nodeData.data, d => d.timestamp), ([key, value]) => ({
             timestamp: key,
             values: value
-        }));;
+        }));
 
     const chartDataStart = new Date(chartdata[0].timestamp);
     const chartDataEnd = new Date(chartdata[chartdata.length-1].timestamp);

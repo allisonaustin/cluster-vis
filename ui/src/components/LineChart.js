@@ -197,40 +197,60 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
                     [size.width - margin.right, size.height - margin.bottom]]) 
           .on("end", updateBaselineHandler);
 
-        const focus = d3.selectAll('.focus')
+        const focus = d3.select(`#focus-line-${index}`)
 
         const xScale = focus.node()?.xScale;
         const yScale = focus.node()?.yScale;
 
-      function updateBaselineHandler(event) {
-        const s = event.selection;
-      
-        const [x0, y0] = s[0];  
-        const [x1, y1] = s[1];
+        function updateBaselineHandler(event) {
+          const s = event.selection;
+        
+          const [x0, y0] = s[0];  
+          const [x1, y1] = s[1];
 
-        const start = xScale.invert(x0);
-        const end = xScale.invert(x1);
-        const valueStart = yScale.invert(y1);
-        const valueEnd = yScale.invert(y0);
+          const start = xScale.invert(x0);
+          const end = xScale.invert(x1);
+          const valueStart = yScale.invert(y1);
+          const valueEnd = yScale.invert(y0);
 
-        updateBaseline(field, {
-          baselineX: [start, end],
-          baselineY: [valueStart, valueEnd],
-        });
-      }
+          updateBaseline(field, {
+            baselineX: [start, end],
+            baselineY: [valueStart, valueEnd],
+          });
+        }
 
       const brushSelection = focus.append('g')
-        .attr('class', 'brush')
-        .attr('id', `brush-${field}`)
+        .attr('class', `brush-${field}`)
         .call(brush);
 
       const xDomain = xScale.domain();
       const yDomain = yScale.domain();
 
-      const x0 = baselineX[0] >= xDomain[0] ? xScale(baselineX[0]) : xScale(xDomain[0]);
-      const x1 = baselineX[1] <= xDomain[1] ? xScale(baselineX[1]) : xScale(xDomain[1]);
-      const y0 = baselineY[0] >= yDomain[0] ? yScale(baselineY[0]) : yScale(yDomain[0]);
-      const y1 = baselineY[1] <= yDomain[1] ? yScale(baselineY[1]) : yScale(yDomain[1]);
+      var x0;
+      var x1;
+      var y0;
+      var y1;
+
+      if (baselineX[0] <= xDomain[0]) { // clamp
+        x0 = xScale(xDomain[0]);
+      } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) {
+        x0 = xScale(baselineX[0]);
+      } else return; // does not contain values in the domain
+      var x1 = xScale(baselineX[1]);
+      if (baselineX[1] >= xDomain[1]) {
+        x1 = xScale(xDomain[1]);
+      }
+
+      if (baselineY[0] <= yDomain[0]) { // clamp
+        y0 = yScale(yDomain[0]);
+      } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) {
+        y0 = yScale(baselineY[0]);
+      } else return; 
+      if (baselineY[1] >= yDomain[1]) { // clamp
+        y1 = yScale(yDomain[1]);
+      } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) { 
+        y1 = yScale(baselineY[1]);
+      } else return;
 
         brushSelection
           .call(brush.move, [[x0, y1], [x1, y0]]);
