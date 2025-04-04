@@ -48,7 +48,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
       const groupedData = d3.group(filtered, d => d.nodeId);
 
       const xScale = d3.scaleTime()
-        .domain(d3.extent(filtered, d => d.timestamp))
+        .domain(d3.extent(filtered, d => new Date(d.timestamp)))
         .range([margin.left, size.width - margin.right]);
         
         const steps = 6;
@@ -121,6 +121,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
           return colorScale(+cluster);
         })
         .attr('stroke-width', 1)
+        .attr('opacity', 0.8)
         .attr('d', d => line(d[1]))
         .style("stroke-dasharray", function() {
             const totalLength = this.getTotalLength();
@@ -129,45 +130,45 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
         .style("stroke-dashoffset", function() {
             return this.getTotalLength();
         })
-        .on('mouseover', function(event, d) {    
-          d3.select(this)
-              .style("stroke-width", 3)
-              .style("opacity", 1)
-              .attr('stroke', (d) => getColor('select'));
+        // .on('mouseover', function(event, d) {    
+        //   d3.select(this)
+        //       .style("stroke-width", 3)
+        //       .style("opacity", 1)
+        //       .attr('stroke', (d) => getColor('select'));
 
-          d3.select(`#${d[0]}`) 
-              .transition()
-              .duration(150)
-              .attr("r", 8)  
-              .style("opacity", 1)
+        //   d3.select(`#${d[0]}`) 
+        //       .transition()
+        //       .duration(150)
+        //       .attr("r", 8)  
+        //       .style("opacity", 1)
 
-          setTooltip({
-              visible: true,
-              content: d[0],
-              x: event.clientX,
-              y: event.clientY,
-          });
-        })
-        .on('mouseout', function(event, d) {
-            d3.select(this)
-                .style("stroke-width", 1)
-                .style("opacity", 0.7)
-                .attr('stroke', (d) => {
-                  const cluster = nodeClusterMap.get(d[0]);
-                  return colorScale(+cluster);
-                });
+        //   setTooltip({
+        //       visible: true,
+        //       content: d[0],
+        //       x: event.clientX,
+        //       y: event.clientY,
+        //   });
+        // })
+        // .on('mouseout', function(event, d) {
+        //     d3.select(this)
+        //         .style("stroke-width", 1)
+        //         .style("opacity", 0.7)
+        //         .attr('stroke', (d) => {
+        //           const cluster = nodeClusterMap.get(d[0]);
+        //           return colorScale(+cluster);
+        //         });
 
-            d3.select(`#${d[0]}`)
-              .transition()
-              .duration(150)
-              .attr("r", 4) 
-              .style("opacity", 0.3)
+        //     d3.select(`#${d[0]}`)
+        //       .transition()
+        //       .duration(150)
+        //       .attr("r", 4) 
+        //       .style("opacity", 0.3)
 
-            setTooltip(prev => ({
-                ...prev,
-                visible: false,
-            }));
-        });
+        //     setTooltip(prev => ({
+        //         ...prev,
+        //         visible: false,
+        //     }));
+        // });
 
         lines.transition()
           .duration(1000) 
@@ -192,7 +193,8 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
       useEffect(() => {
         // baseline selection
         const brush = d3.brush()
-          .extent([[margin.left, margin.top], [size.width - margin.right, size.height - margin.bottom]]) 
+          .extent([[margin.left, margin.top], 
+                    [size.width - margin.right, size.height - margin.bottom]]) 
           .on("end", updateBaselineHandler);
 
         const focus = d3.selectAll('.focus')
@@ -219,23 +221,19 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
 
       const brushSelection = focus.append('g')
         .attr('class', 'brush')
+        .attr('id', `brush-${field}`)
         .call(brush);
 
       const xDomain = xScale.domain();
       const yDomain = yScale.domain();
 
-      const x0 = xScale(baselineX[0]);
-      const x1 = xScale(baselineX[1]);
-      const y0 = yScale(baselineY[0]);
-      const y1 = yScale(baselineY[1]);
+      const x0 = baselineX[0] >= xDomain[0] ? xScale(baselineX[0]) : xScale(xDomain[0]);
+      const x1 = baselineX[1] <= xDomain[1] ? xScale(baselineX[1]) : xScale(xDomain[1]);
+      const y0 = baselineY[0] >= yDomain[0] ? yScale(baselineY[0]) : yScale(yDomain[0]);
+      const y1 = baselineY[1] <= yDomain[1] ? yScale(baselineY[1]) : yScale(yDomain[1]);
 
-      const xInDom = x0 >= xScale(xDomain[0]) && x1 <= xScale(xDomain[1]);
-      const yInDom = y0 >= yScale(yDomain[0]) && y1 <= yScale(yDomain[1]);
-
-      if (xInDom && yInDom) {
         brushSelection
-          .call(brush.move, [[x0, y0], [x1, y1]]);
-      }
+          .call(brush.move, [[x0, y1], [x1, y0]]);
     })
   
       return (

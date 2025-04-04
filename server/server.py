@@ -1,6 +1,5 @@
 import json
 import os
-
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -57,8 +56,9 @@ def get_dr_time_data():
 def get_mrdmd_results(nodes, b_start, b_end, selectedCols, recompute_base=0):
     global ts_data
 
-    baseline_start = pd.to_datetime(b_start.replace('%', ' '))
-    baseline_end = pd.to_datetime(b_end.replace('%', ' '))
+    baseline_start = pd.to_datetime(b_start)
+    baseline_end = pd.to_datetime(b_end)
+
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
     nodeList = list(set(nodes.split(',')))
     cols = ['timestamp', 'nodeId'] + colsList
@@ -90,11 +90,15 @@ def get_node_data(selectedCols):
     cols = ['timestamp', 'nodeId'] + colsList
     df = ts_data[cols].copy()
     
-    excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE']
+    excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE', 'Cluster']
     all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
     
     check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
-    df['no_activity'] = (df[check_cols] == 0).all(axis=1).astype(int)
+    df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
+
+    downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
+    downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
+    df = df.merge(downtime_counts, on='timestamp', how='left')
 
     return jsonify({
         "data": df.to_dict(orient='records'),

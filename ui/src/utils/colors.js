@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 export const COLORS = {
-    default: '#6f80b1',
+    default: '#828080',
     select: '#F6828C',
     highlight: '#4EA5D9'
 }
@@ -14,7 +14,7 @@ export const getColor = (field) => {
 }
 
 export const generateColor = (index) => {
-    const palette = ["#4EA5D9", "#F6828C", "#57467B", "#70F8BA"];
+    const palette = ["#828080", "#4EA5D9", "#F6828C", "#57467B", "#70F8BA", "#6f80b1"];
     return palette[index % palette.length];
 }
 

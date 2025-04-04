@@ -11,7 +11,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
     const [currentDate, setCurrentDate] = useState(null);
     // TODO: any reason we still need this instead of just hardcoding Activity_P1?
-    const [fields, setFields] = useState(['no_activity']);
+    const [fields, setFields] = useState(['downtime']);
     
     useEffect(() => {
       if (!svgContainerRef.current || !mgrData || !nodeDataStart || !nodeDataEnd ) return;
@@ -119,7 +119,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
             .attr('y', 7)
             .text(field)
             .attr('alignment-baseline', 'middle')
-            .style("font-size", "14px")
+            .style("font-size", "12px")
     })
 
     // const formattedDate = dateFormat(start);

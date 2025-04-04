@@ -37,7 +37,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         if (!baselines) return;
         const initialBaselines = baselines.reduce((acc, baseline) => {
             acc[baseline.feature] = {
-                baselineX: [new Date(baseline.b_start), new Date(baseline.b_end)],
+                baselineX: [new Date(baseline.b_start.replace("GMT", "")), new Date(baseline.b_end.replace("GMT", ""))],
                 baselineY: [baseline.v_min, baseline.v_max]
             };
             return acc;
@@ -52,7 +52,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
             clusters.set(d.nodeId, d.Cluster);
         });
         setNodeClusterMap(clusters);  
-        console.log(clusters)
     }, [DRData]);
 
     if (!data || !baselines) return;
@@ -78,8 +77,8 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             data={filteredData.get(field)}
                             field={field} 
                             index={index}
-                            baselineX={baselinesRef[field]?.baselineX || []}
-                            baselineY={baselinesRef[field]?.baselineY || []}
+                            baselineX={baselinesRef.current[field]?.baselineX || []}
+                            baselineY={baselinesRef.current[field]?.baselineY || []}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
                         />

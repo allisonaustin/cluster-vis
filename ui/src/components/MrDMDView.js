@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getColor, colorScale, colorScheme } from '../utils/colors.js';
 import { Card, List, Checkbox } from "antd";
+import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
 const MRDMD = ({ data }) => {
@@ -9,14 +10,18 @@ const MRDMD = ({ data }) => {
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 200 });
     const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 20, left: 20 });
+    const [tooltip, setTooltip] = useState({
+            visible: false,
+            content: '',
+            x: 0,
+            y: 0
+        });
 
     useEffect(() => {
         if (!svgContainerRef.current || !data) return;        
         firstRenderRef.current = false;
 
         d3.select(svgContainerRef.current).selectAll("*").remove();
-
-        console.log(data)
 
         const nodeIds = data.map(d => d.nodeId);
         const features = Object.keys(data[0]).filter(key => key !== "nodeId")
@@ -91,38 +96,6 @@ const MRDMD = ({ data }) => {
         var myColor = d3.scaleDiverging()
             .interpolator(d3.interpolateRdBu) 
             .domain([-5, 0, 5]); 
-    
-        var tooltip = d3.select("#heatmap-svg")
-            .append("div")
-            .style("opacity", 0)
-            .attr("class", "tooltip")
-            .style("background-color", "white")
-            .style("border", "solid")
-            .style("border-width", "2px")
-            .style("border-radius", "5px")
-            .style("padding", "5px")
-        
-        var mouseover = function(event, d) {
-            tooltip.style("opacity", 1);
-            d3.select(this)
-                .style("stroke", "black")
-                .style("opacity", 1);
-        };
-        
-        var mousemove = function(event, d) {
-            var coords = d3.pointer(event);
-            tooltip
-                .html(d.value)
-                .style("left", (coords[0] + 70) + "px")
-                .style("top", (coords[1]) + "px");
-        };
-        
-        var mouseleave = function(event, d) {
-            tooltip.style("opacity", 0);
-            d3.select(this)
-                .style("stroke", "none")
-                .style("opacity", 0.8);
-        };
 
         svg.selectAll()
             .data(matrix, function(d) {return d.nodeId+':'+d.feature;})
@@ -139,9 +112,30 @@ const MRDMD = ({ data }) => {
                 .style("stroke", "none")
                 .style("opacity", 0.8)
             .attr('transform', "translate(" + margin.left + ",0)")
-            .on("mouseover", mouseover)
-            .on("mousemove", mousemove)
-            .on("mouseleave", mouseleave);
+            .on("mouseover", function(event, d) {
+                d3.select(this)
+                    .style("stroke", "black")
+                    .style("stroke-width", "2px")
+                    .style("opacity", 1);
+
+                setTooltip({
+                    visible: true,
+                    content: `${d.nodeId}, ${d.value.toFixed(3)}`,
+                    x: event.clientX,
+                    y: event.clientY,
+                });
+
+            })
+            .on("mouseout", function(event, d) {
+                d3.select(this)
+                    .style("stroke", "none")  
+                    .style("opacity", 0.8);
+
+                setTooltip(prev => ({
+                    ...prev,
+                    visible: false,
+                }));
+            });
 
 
         // legend
@@ -194,6 +188,13 @@ return (
         <div style={{ position: "relative", width: "100%", height: "280px" }}>
           <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
         </div>
+        <Tooltip
+            visible={tooltip.visible}
+            content={tooltip.content}
+            x={tooltip.x}
+            y={tooltip.y}
+            tooltipId={`zscores-tooltip`}
+          />
     </Card>
     );
 };
