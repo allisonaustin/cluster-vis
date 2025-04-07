@@ -199,6 +199,8 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
 
         const focus = d3.select(`#focus-line-${index}`)
 
+        if (!focus.node() || !focus.node().xScale || !focus.node().yScale) return;
+
         const xScale = focus.node()?.xScale;
         const yScale = focus.node()?.yScale;
 

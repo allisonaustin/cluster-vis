@@ -4,24 +4,28 @@ import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
 const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, fcs, baselines, DRData }) => {
-    let processed = {};
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
-    data.data.forEach(row => {
-        Object.keys(row).forEach(key => {
+    const processed = useMemo(() => {
+        const proc = {};
+        data.data.forEach(row => {
+          Object.keys(row).forEach(key => {
             if (key !== "timestamp" && key !== "nodeId") { 
-                if (!processed[key]) {
-                    processed[key] = []; 
-                }
-                processed[key].push({
-                    value: row[key],
-                    timestamp: new Date(row.timestamp),
-                    nodeId: row.nodeId
-                });
+              if (!proc[key]) {
+                proc[key] = [];
+              }
+              proc[key].push({
+                value: row[key],
+                timestamp: new Date(row.timestamp),
+                nodeId: row.nodeId
+              });
             }
+          });
         });
-    });
+        return proc;
+      }, [data]); 
+
     const [featureData, setFeatureData] = useState(processed);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
     const filteredData = useMemo(() => {
@@ -54,17 +58,21 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         setNodeClusterMap(clusters);  
     }, [DRData]);
 
+    useEffect(() => {
+        const handleUpdateEvent = (event) => {
+          setSelectedTimeRange(event.detail);
+        };
+        window.addEventListener("batch-update-charts", handleUpdateEvent);
+        return () => {
+          window.removeEventListener("batch-update-charts", handleUpdateEvent);
+        };
+      }, []);
+
     if (!data || !baselines) return;
 
     const updateBaseline = (field, newBaseline) => {
         baselinesRef.current[field] = newBaseline;
       };
-
-    const handleUpdateEvent = (event) => {
-        setSelectedTimeRange(event.detail);
-    };
-
-    window.addEventListener(`batch-update-charts`, handleUpdateEvent);
 
     return (
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
