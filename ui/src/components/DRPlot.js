@@ -137,6 +137,12 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                     .attr("r", 8)
                     .style("opacity", 1)
 
+                d3.selectAll(`.node-${d.nodeId}`)
+                    .transition()
+                    .duration(150)
+                    .style("stroke", "black")
+                    .style("stroke-width", 2);
+
                 let lines = d3.selectAll(".line-svg").selectAll("path.line");
                 lines.each(function(lineData) {
                     if (lineData[0] === d.nodeId) {
@@ -162,8 +168,6 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                 });
             })
             .on("mouseout", function (event, d) {
-                // This causes every single component that takes hoveredPoint as a prop to rerender.
-                // setHoveredPoint(null);
                 d3.select(this)
                     .transition()
                     .duration(150)
@@ -172,6 +176,12 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                         const idVal = getIdVal(d);
                         return selectedPoints.includes(idVal) ? 1 : 0.3;
                     })
+
+                d3.selectAll(`.node-${d.nodeId}`)
+                    .transition()
+                    .duration(150)
+                    .style("stroke", "none") // Remove border
+                    .style("stroke-width", 0);
 
                 let lines = d3.selectAll(".line-svg").selectAll("path.line");
 

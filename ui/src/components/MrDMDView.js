@@ -101,6 +101,7 @@ const MRDMD = ({ data }) => {
             .data(matrix, function(d) {return d.nodeId+':'+d.feature;})
             .enter()
             .append("rect")
+                .attr('class', (d) => `heatmap-cell node-${d.nodeId}`)
                 .attr("x", function(d) { return xScale(extractNumber(d.nodeId)) })
                 .attr("y", function(d) { return yScale(d.feature) })
                 .attr("rx", 4)
@@ -117,6 +118,12 @@ const MRDMD = ({ data }) => {
                     .style("stroke", "black")
                     .style("stroke-width", "2px")
                     .style("opacity", 1);
+                
+                d3.select(`#${d.nodeId}`) 
+                    .transition()
+                    .duration(150)
+                    .attr("r", 8)  
+                    .style("opacity", 1)
 
                 setTooltip({
                     visible: true,
@@ -130,6 +137,11 @@ const MRDMD = ({ data }) => {
                 d3.select(this)
                     .style("stroke", "none")  
                     .style("opacity", 0.8);
+
+                d3.select(`#${d.nodeId}`)
+                    .transition()
+                    .duration(150)
+                    .attr("r", 4)
 
                 setTooltip(prev => ({
                     ...prev,
