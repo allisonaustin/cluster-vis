@@ -19,7 +19,7 @@ function mergeZScores(oldZScores, newZScores, newFeature) {
     return Object.values(zscoreMap);
 }
 
-export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, zScores, setzScores, fcs }) {
+export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, zScores, setzScores, baselines, baselinesRef, setBaselines, fcs }) {
     const handleCheckboxChange = (key) => {
     const existingColumns = Object.keys(featureData);
     if (!existingColumns.includes(key)) {
@@ -49,14 +49,28 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
         .then(dmdData => {
             const newzScores = mergeZScores(zScores, dmdData.zscores, key)
             setzScores(newzScores) // updating zscores
+            setBaselines([...baselines, dmdData.baselines])
+            const newBaselines = dmdData.baselines;
+            setBaselines(newBaselines); // updating baselines
+
+            newBaselines.forEach(baseline => {
+                baselinesRef.current[baseline.feature] = {
+                    baselineX: [
+                        new Date(baseline.b_start.replace("GMT", "")), 
+                        new Date(baseline.b_end.replace("GMT", ""))
+                    ],
+                    baselineY: [baseline.v_min, baseline.v_max]
+                };
+            });
+
+            setSelectedDims(prevSelectedDims => {
+                if (prevSelectedDims.includes(key)) {
+                    return prevSelectedDims.filter(dim => dim !== key);
+                } else {
+                    return [...prevSelectedDims, key];
+                }
+            });
         })
-    setSelectedDims(prevSelectedDims => {
-        if (prevSelectedDims.includes(key)) {
-            return prevSelectedDims.filter(dim => dim !== key);
-        } else {
-            return [...prevSelectedDims, key];
-        }
-    });
   }
 
   return (

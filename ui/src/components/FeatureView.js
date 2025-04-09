@@ -41,11 +41,15 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         if (!baselines) return;
         const initialBaselines = baselines.reduce((acc, baseline) => {
             acc[baseline.feature] = {
-                baselineX: [new Date(baseline.b_start.replace("GMT", "")), new Date(baseline.b_end.replace("GMT", ""))],
+                baselineX: [
+                    new Date(baseline.b_start.replace("GMT", "")), 
+                    new Date(baseline.b_end.replace("GMT", ""))
+                ],
                 baselineY: [baseline.v_min, baseline.v_max]
             };
-            return acc;
-        })
+            return acc;  
+        }, {});
+    
         baselinesRef.current = initialBaselines;
     }, []);
 
@@ -100,7 +104,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                     data={data} processed={processed} selectedDims={selectedDims}
                     selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
                     featureData={featureData} setFeatureData={setFeatureData} fcs={fcs} zScores={zScores} 
-                    setzScores={setzScores} />
+                    setzScores={setzScores} baselines={baselines} setBaselines={setBaselines} baselinesRef={baselinesRef} />
             </Col>
         </Row>
       </Card>

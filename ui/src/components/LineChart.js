@@ -130,45 +130,6 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
         .style("stroke-dashoffset", function() {
             return this.getTotalLength();
         })
-        // .on('mouseover', function(event, d) {    
-        //   d3.select(this)
-        //       .style("stroke-width", 3)
-        //       .style("opacity", 1)
-        //       .attr('stroke', (d) => getColor('select'));
-
-        //   d3.select(`#${d[0]}`) 
-        //       .transition()
-        //       .duration(150)
-        //       .attr("r", 8)  
-        //       .style("opacity", 1)
-
-        //   setTooltip({
-        //       visible: true,
-        //       content: d[0],
-        //       x: event.clientX,
-        //       y: event.clientY,
-        //   });
-        // })
-        // .on('mouseout', function(event, d) {
-        //     d3.select(this)
-        //         .style("stroke-width", 1)
-        //         .style("opacity", 0.7)
-        //         .attr('stroke', (d) => {
-        //           const cluster = nodeClusterMap.get(d[0]);
-        //           return colorScale(+cluster);
-        //         });
-
-        //     d3.select(`#${d[0]}`)
-        //       .transition()
-        //       .duration(150)
-        //       .attr("r", 4) 
-        //       .style("opacity", 0.3)
-
-        //     setTooltip(prev => ({
-        //         ...prev,
-        //         visible: false,
-        //     }));
-        // });
 
         lines.transition()
           .duration(1000) 
@@ -201,6 +162,8 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
 
         if (!focus.node() || !focus.node().xScale || !focus.node().yScale) return;
 
+        focus.select(`.brush-${field}`).remove(); // removing existing brush instances
+
         const xScale = focus.node()?.xScale;
         const yScale = focus.node()?.yScale;
 
@@ -221,42 +184,43 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
           });
         }
 
-      const brushSelection = focus.append('g')
-        .attr('class', `brush-${field}`)
-        .call(brush);
+        const brushSelection = focus.append('g')
+          .attr('class', `brush-${field}`)
+          .call(brush);
 
-      const xDomain = xScale.domain();
-      const yDomain = yScale.domain();
+          const xDomain = xScale.domain();
+          const yDomain = yScale.domain();
 
-      var x0;
-      var x1;
-      var y0;
-      var y1;
+          var x0;
+          var x1;
+          var y0;
+          var y1;
 
-      if (baselineX[0] <= xDomain[0]) { // clamp
-        x0 = xScale(xDomain[0]);
-      } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) {
-        x0 = xScale(baselineX[0]);
-      } else return; // does not contain values in the domain
-      var x1 = xScale(baselineX[1]);
-      if (baselineX[1] >= xDomain[1]) {
-        x1 = xScale(xDomain[1]);
-      }
+          if (baselineX[0] <= xDomain[0]) { // clamp
+            x0 = xScale(xDomain[0]);
+          } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) {
+            x0 = xScale(baselineX[0]);
+          } else return; 
+          if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) { 
+            var x1 = xScale(baselineX[1]);
+          } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
+            x1 = xScale(xDomain[1]);
+          } else return; 
 
-      if (baselineY[0] <= yDomain[0]) { // clamp
-        y0 = yScale(yDomain[0]);
-      } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) {
-        y0 = yScale(baselineY[0]);
-      } else return; 
-      if (baselineY[1] >= yDomain[1]) { // clamp
-        y1 = yScale(yDomain[1]);
-      } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) { 
-        y1 = yScale(baselineY[1]);
-      } else return;
+          if (baselineY[0] <= yDomain[0]) { // clamp
+            y0 = yScale(yDomain[0]);
+          } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) {
+            y0 = yScale(baselineY[0]);
+          } else return; 
+          if (baselineY[1] >= yDomain[1]) { // clamp
+            y1 = yScale(yDomain[1]);
+          } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) { 
+            y1 = yScale(baselineY[1]);
+          } else return;
 
-      brushSelection
-        .call(brush.move, [[x0, y1], [x1, y0]]);
-    })
+          brushSelection
+            .call(brush.move, [[x0, y1], [x1, y0]]);
+        })
   
       return (
         <div>
