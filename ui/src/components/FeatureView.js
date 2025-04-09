@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, fcs, baselines, DRData }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, DRData }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
@@ -99,7 +99,8 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                 <FeatureSelect 
                     data={data} processed={processed} selectedDims={selectedDims}
                     selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
-                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs}/>
+                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs} zScores={zScores} 
+                    setzScores={setzScores} />
             </Col>
         </Row>
       </Card>

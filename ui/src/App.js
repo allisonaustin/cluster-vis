@@ -79,7 +79,7 @@ function App() {
 
   const getMrDMD = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${bStart}/${bEnd}/${selectedDims}/${recompute}`);
+      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/${recompute}`);
       const data = await response.json();
       if (response.ok) { 
         setzScores(data.zscores)
@@ -165,7 +165,7 @@ function App() {
                     nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
                   />
                   )}
-                {((!nodeData) || (!baselines) || (!DRTData)) ? (
+                {((!nodeData) || (!baselines) || (!DRTData) || (!zScores)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -179,6 +179,9 @@ function App() {
                     setSelectedDims={setSelectedDims}
                     baselines={baselines}
                     setBaselineEdit={setBaselineEdit}
+                    zScores={zScores}
+                    setzScores={setzScores}
+                    setBaselines={setBaselines}
                     DRData={DRTData}
                   />
               )}

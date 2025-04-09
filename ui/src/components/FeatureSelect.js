@@ -2,10 +2,28 @@ import { Checkbox, List } from "antd";
 import React from 'react';
 import FeatureContributionBarGraph from "./FeatureContributionBarGraph";
 
-export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, fcs }) {
+function mergeZScores(oldZScores, newZScores, newFeature) {
+    let zscoreMap = Object.fromEntries(
+        oldZScores.map(entry => [entry.nodeId, { ...entry }])
+    );
+
+    newZScores.forEach(entry => {
+        const { nodeId, ...newValues } = entry;
+        if (zscoreMap[nodeId]) {
+            zscoreMap[nodeId][newFeature] = newValues[newFeature];
+        } else {
+            zscoreMap[nodeId] = { nodeId, [newFeature]: newValues[newFeature] };
+        }
+    });
+
+    return Object.values(zscoreMap);
+}
+
+export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, zScores, setzScores, fcs }) {
     const handleCheckboxChange = (key) => {
     const existingColumns = Object.keys(featureData);
     if (!existingColumns.includes(key)) {
+        // fetching time series
         fetch(`http://127.0.0.1:5010/nodeData/${key}`)
             .then(response => response.json())
             .then(newData => {
@@ -25,6 +43,13 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
             })
             .catch(error => console.error('Error fetching data:', error));
     }
+    // getting mrdmd results for selected column
+    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1`)
+        .then(response => response.json())
+        .then(dmdData => {
+            const newzScores = mergeZScores(zScores, dmdData.zscores, key)
+            setzScores(newzScores) // updating zscores
+        })
     setSelectedDims(prevSelectedDims => {
         if (prevSelectedDims.includes(key)) {
             return prevSelectedDims.filter(dim => dim !== key);

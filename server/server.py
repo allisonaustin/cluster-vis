@@ -52,12 +52,9 @@ def get_dr_time_data():
     }
     return jsonify(response)
 
-@app.route('/mrdmd/<nodes>/<b_start>/<b_end>/<selectedCols>/<recompute_base>', methods=['GET'])
-def get_mrdmd_results(nodes, b_start, b_end, selectedCols, recompute_base=0):
+@app.route('/mrdmd/<nodes>/<selectedCols>/<recompute_base>', methods=['GET'])
+def get_mrdmd_results(nodes, selectedCols, recompute_base=0):
     global ts_data
-
-    baseline_start = pd.to_datetime(b_start)
-    baseline_end = pd.to_datetime(b_end)
 
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
     nodeList = list(set(nodes.split(',')))

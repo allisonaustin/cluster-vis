@@ -254,8 +254,8 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
         y1 = yScale(baselineY[1]);
       } else return;
 
-        brushSelection
-          .call(brush.move, [[x0, y1], [x1, y0]]);
+      brushSelection
+        .call(brush.move, [[x0, y1], [x1, y0]]);
     })
   
       return (
