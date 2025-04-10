@@ -23,7 +23,7 @@ function App() {
   const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_system', 'proc_run', 'proc_total']);
   const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
   const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
-  const [recompute, setRecompute] = useState(0)
+  const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
   
   useEffect(() => {
@@ -187,7 +187,7 @@ function App() {
               )}
             </Col>
               <Col span={8}>
-                {((!DRTData) && (!FCs)) ? (
+                {((!DRTData) || (!FCs) || (!zScores)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -198,6 +198,11 @@ function App() {
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 
+                        selectedDims={selectedDims}
+                        zScores={zScores}
+                        setzScores={setzScores}
+                        baselines={baselines}
+                        setBaselines={setBaselines}
                       />
                   </div>
                   )}

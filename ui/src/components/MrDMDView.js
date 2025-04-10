@@ -119,11 +119,30 @@ const MRDMD = ({ data }) => {
                     .style("stroke-width", "2px")
                     .style("opacity", 1);
                 
-                d3.select(`#${d.nodeId}`) 
+                // highlighting circle in dr plot
+                let circs = d3.select(`#${d.nodeId}`) 
+                circs
                     .transition()
                     .duration(150)
                     .attr("r", 8)  
                     .style("opacity", 1)
+
+
+                // highlighting time series
+                let lines = d3.selectAll(".line-svg").selectAll("path.line");
+                lines.each(function(lineData) {
+                    if (lineData[0] === d.nodeId) {
+                        d3.select(this)
+                            .transition()
+                            .duration(150)
+                            .style("opacity", 1)
+                    } else {
+                        d3.select(this)
+                            .transition()
+                            .duration(150)
+                            .style("opacity", 0.2); 
+                    }
+                });
 
                 setTooltip({
                     visible: true,
@@ -138,10 +157,18 @@ const MRDMD = ({ data }) => {
                     .style("stroke", "none")  
                     .style("opacity", 0.8);
 
-                d3.select(`#${d.nodeId}`)
+                let circs = d3.select(`#${d.nodeId}`)
+                circs
                     .transition()
                     .duration(150)
                     .attr("r", 4)
+
+                let lines = d3.selectAll(".line-svg").selectAll("path.line");
+                // Resetting all line styles
+                lines.transition()
+                    .duration(150)
+                    .style("stroke-width", 1)
+                    .style("opacity", 1)
 
                 setTooltip(prev => ({
                     ...prev,

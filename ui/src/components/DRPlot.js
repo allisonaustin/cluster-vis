@@ -7,7 +7,7 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
+const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScores, setzScores, baselines, setBaselines }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
@@ -116,42 +116,39 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
             .attr('stroke-width', '1px')
             .attr("r", 4)
             .style('fill', d => colorScale(d.Cluster))
-            // .style('fill', (d) => {
-            //     const idVal = getIdVal(d);
-            //     if (selectedPoints.length === 0) {
-            //         return colorScale(d.Cluster);
-            //     } else {
-            //         return selectedPoints.includes(idVal) 
-            //             ? getColor('select') 
-            //             : getColor('default');
-            //         }
-            // })
             .style("opacity", d => {
-                const idVal = getIdVal(d);
-                return selectedPoints.includes(idVal) ? 1 : 0.3;
+                return selectedPoints.includes(d.nodeId) ? 1 : 0.3;
+            })
+            .attr("_prevOpacity", d => {
+                return selectedPoints.includes(d.nodeId) ? 1 : 0.3;
             })
             .on("mouseover", function (event, d) {
-                d3.select(this)
+                let circle = d3.select(this)
+
+                circle.attr("_prevOpacity", circle.style("opacity"));
+
+                circle
                     .transition()
                     .duration(150)
                     .attr("r", 8)
                     .style("opacity", 1)
 
+                // highlighting mrdmd cell 
                 d3.selectAll(`.node-${d.nodeId}`)
                     .transition()
                     .duration(150)
                     .style("stroke", "black")
                     .style("stroke-width", 2);
 
+                // highlighting time series
                 let lines = d3.selectAll(".line-svg").selectAll("path.line");
                 lines.each(function(lineData) {
                     if (lineData[0] === d.nodeId) {
                         d3.select(this)
                             .transition()
                             .duration(150)
-                            .style("stroke-width", 3)
                             .style("opacity", 1)
-                            .attr('stroke', colorScale(d.Cluster)); 
+                            // .attr('stroke', colorScale(d.Cluster)); 
                     } else {
                         d3.select(this)
                             .transition()
@@ -168,14 +165,13 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                 });
             })
             .on("mouseout", function (event, d) {
-                d3.select(this)
-                    .transition()
+                let circle = d3.select(this)
+
+                let prevOpacity = circle.attr("_prevOpacity") || 0.3; 
+                circle.transition()
                     .duration(150)
                     .attr("r", 4)
-                    .style("opacity", d => {
-                        const idVal = getIdVal(d);
-                        return selectedPoints.includes(idVal) ? 1 : 0.3;
-                    })
+                    .style("opacity", prevOpacity);
 
                 d3.selectAll(`.node-${d.nodeId}`)
                     .transition()
@@ -280,6 +276,16 @@ const DR = ({ data, fcs, type, setSelectedPoints, selectedPoints }) => {
                 const idVal = getIdVal(d);
                 return selected.includes(idVal) ? 1 : 0.3;
         });
+
+        if (selected.length) {
+             // running mrdmd on new nodes with recomputed baselines
+            fetch(`http://127.0.0.1:5010/mrdmd/${selected}/${selectedDims}/1`)
+                .then(response => response.json())
+                .then(dmdData => {
+                    setzScores(dmdData.zscores) // updating zscores
+                    setBaselines(dmdData.baselines) // updating baselines
+                })
+        }
     };
 
     return (

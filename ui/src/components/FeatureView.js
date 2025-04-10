@@ -79,7 +79,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       };
 
     return (
-      <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '530px', overflow:'auto' }}> 
+      <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
         <Row gutter={[16, 16]}>
             <Col span={16}>
                 {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
