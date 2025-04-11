@@ -1,4 +1,4 @@
-# Tachyon Visualization
+# Cluster-Based Visual Analytics System for HPC Performance Data
 
 ## Frontend (React)
 

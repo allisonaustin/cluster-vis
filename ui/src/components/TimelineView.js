@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { generateColor } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd }) => {
+const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 220 });
     const xScaleRef = useRef(null); 

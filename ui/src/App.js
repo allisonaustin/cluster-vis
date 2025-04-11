@@ -25,6 +25,8 @@ function App() {
   const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
   const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
+  const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
+  
   
   useEffect(() => {
     Promise.all([ 
@@ -64,6 +66,11 @@ function App() {
       if (response.ok) {
         setDRTData(data.dr_features);
         setFCs(data.feat_contributions);
+        const clusters = new Map();
+        data.dr_features.forEach(d => {
+            clusters.set(d.nodeId, d.Cluster);
+        });
+        setNodeClusterMap(clusters);  
         setError(null); 
       } else {
         setDRTData(null);  
@@ -151,7 +158,7 @@ function App() {
       <Content style={{ marginTop: "10px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
-              {((!nodeData) || (!mgrData)) ? (
+              {((!nodeData) || (!mgrData) || (!DRTData)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -163,6 +170,7 @@ function App() {
                     nodeData={nodeData}
                     nodeDataStart={new Date(nodeData?.data[0]?.timestamp)}
                     nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
+                    nodeClusterMap={nodeClusterMap}
                   />
                   )}
                 {((!nodeData) || (!baselines) || (!DRTData) || (!zScores)) ? (
@@ -182,12 +190,12 @@ function App() {
                     zScores={zScores}
                     setzScores={setzScores}
                     setBaselines={setBaselines}
-                    DRData={DRTData}
+                    nodeClusterMap={nodeClusterMap}
                   />
               )}
             </Col>
               <Col span={8}>
-                {((!DRTData) || (!FCs) || (!zScores)) ? (
+                {((!DRTData) || (!FCs)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -199,9 +207,7 @@ function App() {
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 
                         selectedDims={selectedDims}
-                        zScores={zScores}
                         setzScores={setzScores}
-                        baselines={baselines}
                         setBaselines={setBaselines}
                       />
                   </div>

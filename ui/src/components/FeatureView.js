@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, DRData }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
@@ -27,7 +27,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       }, [data]); 
 
     const [featureData, setFeatureData] = useState(processed);
-    const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
     const filteredData = useMemo(() => {
         const selectedNodes = new Set(selectedPoints);
         const start = new Date(selectedTimeRange[0]);
@@ -52,15 +51,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     
         baselinesRef.current = initialBaselines;
     }, []);
-
-    useEffect(() => {
-        if (!DRData) return; 
-        const clusters = new Map();
-        DRData.forEach(d => {
-            clusters.set(d.nodeId, d.Cluster);
-        });
-        setNodeClusterMap(clusters);  
-    }, [DRData]);
 
     useEffect(() => {
         const handleUpdateEvent = (event) => {

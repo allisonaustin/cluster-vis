@@ -1,4 +1,4 @@
-import { Card, Col, Form, Row, Select } from "antd";
+import { Card, Col, Form, Row, Select, InputNumber } from "antd";
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { colorScale, getColor } from '../utils/colors.js';
@@ -14,6 +14,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const [size, setSize] = useState({ width: 400, height: 300 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
+    const [numClusters, setNumClusters] = useState(4);
     const [tooltip, setTooltip] = useState({
               visible: false,
               content: '',
@@ -325,6 +326,18 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                                 <Option value="tSNE">t-SNE</Option>
                                 <Option value="PC">PCA</Option>
                             </Select>
+                            </Form.Item>
+                        </Form>
+
+                        <Form layout="inline">
+                            <Form.Item label="Clusters">
+                            <InputNumber
+                                min={2}
+                                max={20}
+                                value={numClusters}
+                                onChange={(value) => setNumClusters(value)}
+                                style={{ width: "35px" }}
+                            />
                             </Form.Item>
                         </Form>
                     </div>
