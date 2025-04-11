@@ -186,7 +186,23 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
       .attr("x", d => xScale1(d.data.timestamp))
       .attr("y", d => yScale1(d[1]))
       .attr("height", d => yScale1(d[0]) - yScale1(d[1]))
-      .attr("width", size.width / stackDataTotal.length - 2);
+      .attr("width", size.width / stackDataTotal.length - 2)
+      .on("mouseover", function(event, d) {
+        const total = d3.sum(clusterKeysTotal, k => d.data[k] || 0);
+        let content = `Total: ${total}\n`;
+        clusterKeysTotal.forEach(k => {
+          content += `c${k}: ${d.data[k] || 0}\n`;
+        });
+        setTooltip({
+          visible: true,
+          content: content,
+          x: event.clientX,
+          y: event.clientY
+        });
+      })
+      .on("mouseout", function() {
+        setTooltip(prev => ({ ...prev, visible: false }));
+      });
 
     // svg.selectAll("total-bars")
     //   .data(nodesTotal)
@@ -197,20 +213,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
     //   .attr("width", size.width / nodesTotal.length - 2) 
     //   .attr("height", d => size.height/2 - margin.bottom - yScale1(d.num_nodes))
     //   .attr("fill", generateColor(0))
-      // .on('mouseover', function(event, d) {
-      //   setTooltip({
-      //     visible: true,
-      //     content: d.num_nodes,
-      //     x: event.clientX,
-      //     y: event.clientY,
-      //   });
-      // })
-      // .on('mouseout', function(event, d) {
-      //   setTooltip(prev => ({
-      //     ...prev,
-      //     visible: false,
-      //   }));
-      // });
 
 
         // chart 2
@@ -326,12 +328,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
         //       y: event.clientY,
         //     });
         //   })
-        //   .on('mouseout', function(event, d) {
-        //     setTooltip(prev => ({
-        //       ...prev,
-        //       visible: false,
-        //     }));
-        //   });
 
       // adding brush
 

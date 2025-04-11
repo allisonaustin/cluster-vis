@@ -13,6 +13,7 @@ const Tooltip = ({ visible, content, x, y, tooltipId }) => {
         borderRadius: '4px',
         pointerEvents: 'none',
         zIndex: 1000,
+        whiteSpace: 'pre-wrap',
         transform: 'translateX(-50%) translateY(+50%)'
       };
 
