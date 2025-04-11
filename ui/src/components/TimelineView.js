@@ -84,18 +84,25 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
       }
 
    
-    const binClusterCountsTotal = d3.rollup(
-      flattenedData,
-      v => {
-        const counts = {};
-        v.forEach(d => {
-          const cluster = nodeClusterMap.get(d.nodeId) || "0";
-          counts[cluster] = (counts[cluster] || 0) + 1;
-        });
-        return counts;
-      },
-      d => Math.floor(d.timestamp.getTime() / binWidth) * binWidth
-    );
+      const binClusterCountsTotal = d3.rollup(
+        flattenedData,
+        v => {
+          const counts = {};
+          v.forEach(d => {
+            const cluster = nodeClusterMap.get(d.nodeId) || "0";
+            if (!counts[cluster]) {
+              counts[cluster] = new Set();
+            }
+            counts[cluster].add(d.nodeId);
+          });
+          Object.keys(counts).forEach(k => {
+            counts[k] = counts[k].size;
+          });
+          return counts;
+        },
+        d => Math.floor(d.timestamp.getTime() / binWidth) * binWidth
+      );
+      
 
     
     const clusterKeysTotal = Array.from(
@@ -146,8 +153,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
         .attr("class", "y-axis1")
           .attr("transform", `translate(${margin.left},0)`)
           .call(yAxis1)
-          .selectAll("text")
-          .style("font-size", "8px");
 
       svg.append("text")
         .attr("class", "y-label")
@@ -219,12 +224,19 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
         const counts = {};
         v.forEach(d => {
           const cluster = nodeClusterMap.get(d.nodeId) || "0";
-          counts[cluster] = (counts[cluster] || 0) + 1;
+          if (!counts[cluster]) {
+            counts[cluster] = new Set();
+          }
+          counts[cluster].add(d.nodeId);
+        });
+        Object.keys(counts).forEach(k => {
+          counts[k] = counts[k].size;
         });
         return counts;
       },
       d => Math.floor(d.timestamp.getTime() / binWidth) * binWidth
     );
+    
     
     const clusterKeysDown = Array.from(
       new Set(downData.map(d => nodeClusterMap.get(d.nodeId) || "0"))
@@ -270,8 +282,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
           .attr("class", "y-axis2")
             .attr("transform", `translate(${margin.left},0)`)
             .call(yAxis2)
-            .selectAll("text")
-            .style("font-size", "8px");
           
           svg.append("text")
             .attr("class", "y-label")
