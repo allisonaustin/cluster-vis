@@ -2,6 +2,7 @@ import { Checkbox, List } from "antd";
 import React from 'react';
 import FeatureContributionBarGraph from "./FeatureContributionBarGraph";
 
+
 function mergeZScores(oldZScores, newZScores, newFeature) {
     let zscoreMap = Object.fromEntries(
         oldZScores.map(entry => [entry.nodeId, { ...entry }])
@@ -10,7 +11,11 @@ function mergeZScores(oldZScores, newZScores, newFeature) {
     newZScores.forEach(entry => {
         const { nodeId, ...newValues } = entry;
         if (zscoreMap[nodeId]) {
-            zscoreMap[nodeId][newFeature] = newValues[newFeature];
+            zscoreMap[nodeId] = { 
+                nodeId, 
+                [newFeature]: newValues[newFeature],  
+                ...zscoreMap[nodeId] 
+            };
         } else {
             zscoreMap[nodeId] = { nodeId, [newFeature]: newValues[newFeature] };
         }
@@ -34,8 +39,8 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
                         nodeId: row.nodeId
                     }));    
                     setFeatureData(featureData => ({
-                        ...featureData,
-                        [key]: processedColumn  // new column
+                        [key]: processedColumn, // new column
+                        ...featureData
                     }));
                 } else {
                     console.error(`Data length mismatch: expected ${processed[Object.keys(processed)[0]].length}, got ${newData.data.length}`);
@@ -49,7 +54,7 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
         .then(dmdData => {
             const newzScores = mergeZScores(zScores, dmdData.zscores, key)
             setzScores(newzScores) // updating zscores
-            setBaselines([...baselines, dmdData.baselines])
+            setBaselines([dmdData.baselines, ...baselines])
             const newBaselines = dmdData.baselines;
             setBaselines(newBaselines); // updating baselines
 
@@ -67,7 +72,7 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
                 if (prevSelectedDims.includes(key)) {
                     return prevSelectedDims.filter(dim => dim !== key);
                 } else {
-                    return [...prevSelectedDims, key];
+                    return [key, ...prevSelectedDims];
                 }
             });
         })

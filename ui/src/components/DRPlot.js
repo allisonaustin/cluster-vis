@@ -153,7 +153,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                         d3.select(this)
                             .transition()
                             .duration(150)
-                            .style("opacity", 0.2); 
+                            .style("opacity", 0.1); 
                     }
                 });
 

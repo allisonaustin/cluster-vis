@@ -95,7 +95,7 @@ const MRDMD = ({ data }) => {
 
         var myColor = d3.scaleDiverging()
             .interpolator(d3.interpolateRdBu) 
-            .domain([-5, 0, 5]); 
+            .domain([5, 0, -5]); 
 
         svg.selectAll()
             .data(matrix, function(d) {return d.nodeId+':'+d.feature;})
@@ -140,7 +140,7 @@ const MRDMD = ({ data }) => {
                         d3.select(this)
                             .transition()
                             .duration(150)
-                            .style("opacity", 0.2); 
+                            .style("opacity", 0.1); 
                     }
                 });
 

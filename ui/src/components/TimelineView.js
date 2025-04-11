@@ -142,33 +142,6 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
       //   }));
       // });
 
-     // adding brush
-
-      const defaultWindow = [
-        xScale1(brushStart),
-        xScale1(brushEnd)
-      ]
-
-      const earliestNodeDataTime = xScale1(new Date(nodeDataStart)) || 0;
-
-      const brush = d3.brushX(xScale1)
-        .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height/2 - margin.bottom + margin.top]])
-        // .on('brush', (event) => brushed(event, chartdata))
-        .on('end', (event) => {
-            const selection = event.selection;
-            if (selection) {
-                const [start, end] = selection.map(xScale1.invert);
-                setBrushStart(start);
-                setBrushEnd(end);
-                updateCharts([start, end]);
-            }
-        })
-    
-        svg.append('g')
-          .attr('class', 'x-brush')
-          .attr('transform', `translate(0, ${-margin.top})`)
-          .call(brush)
-          .call(brush.move, defaultWindow)
 
         // chart 2
         const xScale2 = d3.scaleTime()
@@ -228,6 +201,35 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
               visible: false,
             }));
           });
+
+      // adding brush
+
+      const defaultWindow = [
+        xScale2(brushStart),
+        xScale2(brushEnd)
+      ]
+
+      const earliestNodeDataTime = xScale2(new Date(nodeDataStart)) || 0;
+
+      const brush = d3.brushX(xScale1)
+        .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height / 2]])
+        // .on('brush', (event) => brushed(event, chartdata))
+        .on('end', (event) => {
+            const selection = event.selection;
+            if (selection) {
+                const [start, end] = selection.map(xScale2.invert);
+                setBrushStart(start);
+                setBrushEnd(end);
+                updateCharts([start, end]);
+            }
+        })
+    
+        svg.append('g')
+          .attr('class', 'x-brush')
+          .attr('transform', `translate(0, ${size.height / 2 - margin.bottom})`)
+          .call(brush)
+          .call(brush.move, defaultWindow)
+
       
       }, [mgrData]);
 
