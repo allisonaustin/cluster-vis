@@ -70,6 +70,16 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
 
     return (
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
+        <div style={{
+          width: '16px',
+          height: '16px',
+          backgroundColor: 'grey',
+          marginRight: '8px',
+          border: '1px solid #999'
+        }} />
+        <span style={{ fontSize: '14px' }}>Baseline Region</span>
+      </div>
         <Row gutter={[16, 16]}>
             <Col span={16}>
                 {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
