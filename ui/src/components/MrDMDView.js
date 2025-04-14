@@ -9,7 +9,7 @@ const MRDMD = ({ data }) => {
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 200 });
-    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 20, left: 20 });
+    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 });
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -43,7 +43,6 @@ const MRDMD = ({ data }) => {
     }, [data]);
 
     const drawHeatmap = (matrix, featureNames, nodeIds) => {
-        const margin = { top: 50, right: 40, bottom: 100, left: 100 };
 
         function extractNumber(nodeId) {
             return nodeId.match(/\d+$/)[0]; 
@@ -88,10 +87,18 @@ const MRDMD = ({ data }) => {
             .padding(0.05);
 
         // y axis
-        svg.append('g')
+        const yAxis = svg.append('g')
             .style('font-size', 15)
             .attr("transform", `translate(${margin.left},0)`)
             .call(d3.axisLeft(yScale))
+
+        // yAxis.selectAll('text')
+        //     .each(function() {
+        //         const textWidth = this.getBBox().width;
+        //         if (textWidth > margin.left) {
+        //         d3.select(this).style('font-size', '11px');
+        //         }
+        //     });
 
         var myColor = d3.scaleDiverging()
             .interpolator(d3.interpolateRdBu) 
@@ -224,7 +231,7 @@ const MRDMD = ({ data }) => {
 
 return (
     <Card title="MRDMD Z-SCORES" size="small" style={{ height: "auto" }}>
-        <div style={{ position: "relative", width: "100%", height: "280px" }}>
+        <div style={{ position: "relative", width: "100%", height: "275px" }}>
           <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
         </div>
         <Tooltip

@@ -194,7 +194,7 @@ function App() {
                   />
               )}
             </Col>
-              <Col span={8}>
+              <Col span={10}>
                 {((!DRTData) || (!FCs)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />

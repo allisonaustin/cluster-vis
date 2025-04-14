@@ -11,7 +11,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
-    const [size, setSize] = useState({ width: 400, height: 300 });
+    const [size, setSize] = useState({ width: 350, height: 250 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
     const [numClusters, setNumClusters] = useState(4);
@@ -59,8 +59,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .domain([d3.min(data, d => +d[yKey]) - 1, d3.max(data, d => +d[yKey]) + 1])
             .range([height - margin.bottom, margin.top]);
         
-        // const xAxis = d3.axisBottom(xScale);
-        
         const svg = d3.select(svgContainerRef.current)
           .append("svg")
           .attr('id', `dr-chart-svg-${type}`)
@@ -68,6 +66,8 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
+
+        //   const xAxis = d3.axisBottom(xScale);
         
         // svg.append('g')
         //     .attr('class', 'x-axis')
@@ -76,7 +76,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         //     .selectAll("text")
         //     .style("font-size", "14px");
 
-        // x axis label
         // svg.append('text')
         //     .attr('id', 'x-axis-label-dr')
         //     .attr("x", width/2)
@@ -219,7 +218,11 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .duration(300)
             .style("opacity", d => {
                 const idVal = getIdVal(d);
-                return selectedPoints.includes(idVal) ? 1 : 0.3;
+                if (selectedPoints.includes(idVal) || selectedPoints.length == 0) {
+                    return 0.8;
+                } else {
+                    return 0.3
+                }
             });
         // const lineCharts = d3.selectAll(".line-svg"); 
         // lineCharts.selectAll(".line")
@@ -275,7 +278,11 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         chart.selectAll('.dr-circle')
             .style("opacity", d => {
                 const idVal = getIdVal(d);
-                return selected.includes(idVal) ? 1 : 0.3;
+                if (selected.includes(idVal) || selected.length == 0) {
+                    return 1; 
+                } else {
+                    return 0.3;
+                }
         });
 
         if (selected.length) {
@@ -297,7 +304,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             style={{ height:'auto' }}
         >
             <Row>
-                <Col span={24}>
+                <Col span={20}>
                     <div ref={svgContainerRef}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
