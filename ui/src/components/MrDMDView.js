@@ -48,6 +48,12 @@ const MRDMD = ({ data }) => {
             return nodeId.match(/\d+$/)[0]; 
         }
 
+        const sortedNodeIds = nodeIds.slice().sort((a, b) => {
+            const na = +extractNumber(a);
+            const nb = +extractNumber(b);
+            return na - nb;
+          });
+
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
             .attr('id', `heatmap-svg`)
@@ -58,7 +64,7 @@ const MRDMD = ({ data }) => {
             .attr("preserveAspectRatio", "xMidYMid meet");
 
         const xScale = d3.scaleBand()
-            .domain(nodeIds.map(d => extractNumber(d)))
+            .domain(sortedNodeIds.map(d => extractNumber(d)))
             .range([0, size.width - margin.left])
             .padding(0.05);
 
