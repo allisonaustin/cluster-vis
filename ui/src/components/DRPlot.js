@@ -11,7 +11,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
-    const [size, setSize] = useState({ width: 350, height: 250 });
+    const [size, setSize] = useState({ width: 400, height: 340 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
     const [numClusters, setNumClusters] = useState(4);
@@ -299,13 +299,13 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     return (
     <>
         <Card 
-            title="DR VIEW" 
+            title="NODE SIMILARITY VIEW" 
             size="small" 
             style={{ height:'auto' }}
         >
             <Row>
                 <Col span={20}>
-                    <div ref={svgContainerRef}></div>
+                    <div ref={svgContainerRef} style={{ width: 'auto', height: '340px' }}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 

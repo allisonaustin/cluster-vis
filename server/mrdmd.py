@@ -154,6 +154,10 @@ def process_columns_baseline(df):
 
 
 def extract_baselines(df, nbase_df, baselines, col):
+    if baselines[baselines['feature'] == col].empty:
+        print(f"[WARNING] No baseline found for column: {col}")
+        return None 
+    
     # extracting baseline, duplicating across time series
     b_start = pd.to_datetime(baselines.loc[baselines['feature'] == col, 'b_start'].values[0])
     b_end = pd.to_datetime(baselines.loc[baselines['feature'] == col, 'b_end'].values[0])
@@ -190,6 +194,9 @@ def compute_zscores(df, baselines):
         nodelist = nbase_df.index.tolist()
 
         base_ext = extract_baselines(df, nbase_df, baselines[baselines['feature']==col], col)
+
+        if (base_ext is None):
+            return None
         
         D = nbase_df.to_numpy()
         D = np.vstack([D,base_ext])
@@ -225,7 +232,9 @@ def compute_zscores(df, baselines):
     with ThreadPoolExecutor(max_workers=15) as executor:
         futures = [executor.submit(process_single_feature, col) for col in cols_df.columns]
         for future in futures:
-            results.append(future.result())
+            res = future.result()
+            if res is not None:
+                results.append(res)
 
     Z_final = pd.concat(results, axis=1)
     cols = Z_final.columns

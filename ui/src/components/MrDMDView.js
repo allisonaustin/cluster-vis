@@ -236,7 +236,7 @@ const MRDMD = ({ data }) => {
       
 
 return (
-    <Card title="MRDMD Z-SCORES" size="small" style={{ height: "auto" }}>
+    <Card title="Z-SCORES VIEW" size="small" style={{ height: "auto" }}>
         <div style={{ position: "relative", width: "100%", height: "275px" }}>
           <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
         </div>

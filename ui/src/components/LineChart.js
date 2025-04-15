@@ -3,11 +3,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getColor, colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, nodeClusterMap }) => {
+const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClusterMap }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
     const [chartId, setChartId] = useState(index);
+    const prevX = useRef([]); // for storing window values, might be clamped versions of baseline values 
+    const prevY = useRef([]); 
     const chartdata = data;
     const [tooltip, setTooltip] = useState({
         visible: false,
@@ -15,6 +17,7 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
         x: 0,
         y: 0
     });
+    const skipBrush = useRef(false);
 
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
@@ -168,7 +171,12 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
         const yScale = focus.node()?.yScale;
 
         function updateBaselineHandler(event) {
+          if (skipBrush.current) {
+            skipBrush.current = false; 
+            return;
+          }
           const s = event.selection;
+          if (!s) return;
         
           const [x0, y0] = s[0];  
           const [x1, y1] = s[1];
@@ -178,10 +186,43 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
           const valueStart = yScale.invert(y1);
           const valueEnd = yScale.invert(y0);
 
-          updateBaseline(field, {
-            baselineX: [start, end],
-            baselineY: [valueStart, valueEnd],
-          });
+          // checking which component of baseline needs to be updated
+          var newX0 = baselineX[0];
+          var newX1 = baselineX[1];
+          var newY0 = baselineY[0];
+          var newY1 = baselineY[1]; 
+
+          if (prevX.current[0].getTime() !== start.getTime()) {
+            newX0 = start;
+          }
+          if (prevX.current[1].getTime() !== end.getTime()) {
+            newX1 = end;
+          }
+          if (Math.abs(prevY.current[0] - valueStart) > 1e-6) {
+            newY0 = valueStart;
+          }
+          if (Math.abs(prevY.current[1] - valueEnd) > 1e-6) {
+            newY1 = valueEnd;
+          }
+
+          // no update
+          if (newX0 == prevX.current[0] &&
+            newX1 == prevX.current[1] && 
+            newY0 == prevY.current[0] &&
+            newY1 == prevY.current[1]
+          ) return;
+
+          // updating prev values
+          prevX.current = [newX0, newX1];
+          prevY.current = [newY0, newY1];
+
+          // updating baseline
+          const newBaseline = {
+            baselineX: [newX0, newX1],
+            baselineY: [newY0, newY1]
+          };
+          console.log('updating baseline...', field)
+          updateBaseline(field, newBaseline);
         }
 
         const brushSelection = focus.append('g')
@@ -190,36 +231,46 @@ const LineChart = ({ data, field, index, baselineX, baselineY, updateBaseline, n
 
           const xDomain = xScale.domain();
           const yDomain = yScale.domain();
+          const baselineX = baselinesRef.current[field].baselineX; 
+          const baselineY = baselinesRef.current[field].baselineY;
 
           var x0;
           var x1;
           var y0;
           var y1;
 
+          // checking X
           if (baselineX[0] <= xDomain[0]) { // clamp
-            x0 = xScale(xDomain[0]);
-          } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) {
-            x0 = xScale(baselineX[0]);
-          } else return; 
-          if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) { 
-            var x1 = xScale(baselineX[1]);
-          } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
-            x1 = xScale(xDomain[1]);
+            x0 = xDomain[0];
+          } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) { // baselineX update
+            x0 = baselineX[0];
           } else return; 
 
-          if (baselineY[0] <= yDomain[0]) { // clamp
-            y0 = yScale(yDomain[0]);
-          } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) {
-            y0 = yScale(baselineY[0]);
+          if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) {  // baselineX update
+            x1 = baselineX[1];
+          } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
+            x1 = xDomain[1];
           } else return; 
+
+          // checking Y
+          if (baselineY[0] <= yDomain[0]) { // clamp
+            y0 = yDomain[0];
+          } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) { // baselineY update
+            y0 = baselineY[0];
+          } else return; 
+
           if (baselineY[1] >= yDomain[1]) { // clamp
-            y1 = yScale(yDomain[1]);
-          } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) { 
-            y1 = yScale(baselineY[1]);
+            y1 = yDomain[1];
+          } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) {  // baselineY update
+            y1 = baselineY[1];
           } else return;
 
+          prevX.current = [x0, x1];
+          prevY.current = [y0, y1];
+
+          skipBrush.current = true;
           brushSelection
-            .call(brush.move, [[x0, y1], [x1, y0]]);
+            .call(brush.move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
         })
   
       return (

@@ -5,7 +5,6 @@ import LineChart from './LineChart.js';
 
 const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap }) => {
     const baselinesRef = useRef({});
-    const [dummy, setDummy] = useState(0);
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
     
     const processed = useMemo(() => {
@@ -27,6 +26,18 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         return proc;
       }, [data]); 
 
+      const initialBaselines = baselines.reduce((acc, baseline) => {
+        acc[baseline.feature] = {
+            baselineX: [
+                new Date(baseline.b_start.replace("GMT", "")), 
+                new Date(baseline.b_end.replace("GMT", ""))
+            ],
+            baselineY: [baseline.v_min, baseline.v_max]
+          };
+          return acc;  
+      }, {});
+      baselinesRef.current = initialBaselines;
+
     const [featureData, setFeatureData] = useState(processed);
     const filteredData = useMemo(() => {
         const selectedNodes = new Set(selectedPoints);
@@ -36,23 +47,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
             .map(([feature, data]) => ([feature, data.filter(d => selectedNodes.has(d.nodeId) && new Date(d.timestamp) >= start && new Date(d.timestamp) <= end)])));
         return newFilteredData;
     }, [selectedTimeRange, selectedPoints, featureData])
-
-    useEffect(() => {
-        if (!baselines) return;
-        const initialBaselines = baselines.reduce((acc, baseline) => {
-            acc[baseline.feature] = {
-                baselineX: [
-                    new Date(baseline.b_start.replace("GMT", "")), 
-                    new Date(baseline.b_end.replace("GMT", ""))
-                ],
-                baselineY: [baseline.v_min, baseline.v_max]
-            };
-            return acc;  
-        }, {});
-    
-        baselinesRef.current = initialBaselines;
-        setDummy(x => x + 1);
-    }, []);
 
     useEffect(() => {
         const handleUpdateEvent = (event) => {
@@ -66,26 +60,27 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
 
     if (!data || !baselines) return;
 
-    // const updateBaseline = (field, newBaseline) => {
-    //     baselinesRef.current[field] = newBaseline;
-    //     setDummy(x => x + 1);
-    //   };
+    function toCustomString(date) {
+      return date.toString().replace(/ GMT[^\)]+(\))/g, ' GMT');
+    }
 
     const updateBaseline = (field, newBaseline) => {
-      const current = baselinesRef.current[field];
-      if (
-        current &&
-        current.baselineX[0].getTime() === newBaseline.baselineX[0].getTime() &&
-        current.baselineX[1].getTime() === newBaseline.baselineX[1].getTime() &&
-        current.baselineY[0] === newBaseline.baselineY[0] &&
-        current.baselineY[1] === newBaseline.baselineY[1]
-      ) {
-        return;
-      }
       baselinesRef.current[field] = newBaseline;
-      setDummy(x => x + 1);
+      const [start, end] = newBaseline.baselineX;
+      const [v_min, v_max] = newBaseline.baselineY;
+
+      const b_start = toCustomString(start);
+      const b_end = toCustomString(end);
+      
+      // updating baselines
+      setBaselines(prevBaselines => 
+        prevBaselines.map(b => 
+          b.feature === field 
+            ? { ...b, b_start, b_end, v_min, v_max } 
+            : b
+        )
+      );
     };
-    
 
     return (
       <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
@@ -108,8 +103,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             data={filteredData.get(field)}
                             field={field} 
                             index={index}
-                            baselineX={baselinesRef.current[field]?.baselineX || []}
-                            baselineY={baselinesRef.current[field]?.baselineY || []}
+                            baselinesRef={baselinesRef}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
                         />

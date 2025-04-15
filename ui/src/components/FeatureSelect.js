@@ -56,7 +56,6 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
             setzScores(newzScores) // updating zscores
             setBaselines([dmdData.baselines, ...baselines])
             const newBaselines = dmdData.baselines;
-            setBaselines(newBaselines); // updating baselines
 
             newBaselines.forEach(baseline => {
                 baselinesRef.current[baseline.feature] = {
