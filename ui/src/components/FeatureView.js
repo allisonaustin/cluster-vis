@@ -26,6 +26,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         return proc;
       }, [data]); 
 
+      console.log(baselines)
       const initialBaselines = baselines.reduce((acc, baseline) => {
         acc[baseline.feature] = {
             baselineX: [
@@ -120,8 +121,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         .then(data => {
             // updating baselines and z-scores
             const updatedZScores = updateZScores(zScores, data.zscores);
-            const updatedBaselines = updateBaselines(baselines, data.baselines);
-            setBaselines(updatedBaselines)
             setzScores(updatedZScores)
         })
         .catch(error => console.error('Error fetching data:', error));

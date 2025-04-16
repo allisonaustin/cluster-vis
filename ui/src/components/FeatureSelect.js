@@ -54,7 +54,7 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
         .then(dmdData => {
             const newzScores = mergeZScores(zScores, dmdData.zscores, key)
             setzScores(newzScores) // updating zscores
-            setBaselines([dmdData.baselines, ...baselines])
+            setBaselines([...dmdData.baselines, ...baselines])
             const newBaselines = dmdData.baselines;
 
             newBaselines.forEach(baseline => {
