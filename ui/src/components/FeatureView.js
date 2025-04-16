@@ -64,6 +64,41 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       return date.toString().replace(/ GMT[^\)]+(\))/g, ' GMT');
     }
 
+    function updateZScores(oldZscores, newZscores) {
+      const updatesMap = new Map(
+        newZscores.map(d => {
+            const { nodeId, ...rest } = d;
+            return [nodeId, rest];
+          })
+      );
+
+      return oldZscores.map(d => {
+          if (updatesMap.has(d.nodeId)) {
+              return {
+                  ...d,
+                  ...updatesMap.get(d.nodeId)
+              };
+          }
+          return d;
+      });
+    }
+
+    function updateBaselines(oldBaselines, newBaselines) {
+      const baselineMap = new Map(
+        newBaselines.map(d => [d.feature, d])
+      );
+
+      return oldBaselines.map(b => {
+          if (baselineMap.has(b.feature)) {
+              return {
+                  ...b,
+                  ...baselineMap.get(b.feature)  
+              };
+          }
+          return b;
+      });
+    }
+
     const updateBaseline = (field, newBaseline) => {
       baselinesRef.current[field] = newBaseline;
       const [start, end] = newBaseline.baselineX;
@@ -83,11 +118,11 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${field}/0/1/${v_min}/${v_max}/${b_start}/${b_end}`)
         .then(response => response.json())
         .then(data => {
-            console.log(data.zscores)
-            console.log(data.baselines)
             // updating baselines and z-scores
-            // setBaselines(...)
-            // setzScores(...)
+            const updatedZScores = updateZScores(zScores, data.zscores);
+            const updatedBaselines = updateBaselines(baselines, data.baselines);
+            setBaselines(updatedBaselines)
+            setzScores(updatedZScores)
         })
         .catch(error => console.error('Error fetching data:', error));
     };
