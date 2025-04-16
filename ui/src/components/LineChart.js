@@ -76,7 +76,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         .attr("transform", `translate(0,${size.height - margin.bottom})`)
         .call(xAxis)
         .selectAll("text")
-        .style("font-size", "14px");
+        .style("font-size", "18px");
       
       const yAxis = d3.axisLeft(yScale).ticks(size.height / 40);
 
@@ -86,7 +86,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         .attr("y", size.height - 10)
         .style('text-anchor', 'middle')
         .text('Time (hh:mm)')
-        .style('font-size', '14px');
+        .style('font-size', '18px');
 
       focus.append("g")
         .attr("class", "y-axis")
@@ -101,12 +101,12 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
               .attr("y", 40)
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
-              .style('font-size', '14px')
+              .style('font-size', '18px')
               .text("Value")); // Y label   
 
       focus.select('.y-axis')
           .selectAll("text")
-          .style("font-size", "14px")
+          .style("font-size", "18px")
 
       const line = d3.line()
         .x(d => xScale(d.timestamp))
@@ -146,7 +146,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         .attr("dy", "1em")
         .style("text-anchor", "middle")
         .style("fill", 'black')
-        .style('font-size', '16')
+        .style('font-size', '24')
         .text(field);
 
       focus.node().xScale = xScale;

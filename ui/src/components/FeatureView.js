@@ -80,6 +80,16 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
             : b
         )
       );
+      fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${field}/0/1/${v_min}/${v_max}/${b_start}/${b_end}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.zscores)
+            console.log(data.baselines)
+            // updating baselines and z-scores
+            // setBaselines(...)
+            // setzScores(...)
+        })
+        .catch(error => console.error('Error fetching data:', error));
     };
 
     return (

@@ -71,6 +71,68 @@ def find_time_range(df, lower, upper):
     print("No valid period found within the baseline range.")
     return None, None
 
+# Running mrdmd on a single column with configured baseline (time and value range)
+def process_baseline(df, col, bmin, bmax, sob, eob):
+    Z_final = []
+    ml = 9
+    step = 10000
+    df_col = df.pivot(index="nodeId", columns="timestamp", values=col) \
+                .apply(pd.to_numeric, errors='coerce') \
+                .ffill(axis='rows') \
+                .bfill(axis='rows')
+    
+    if sob is not None and eob is not None:
+        df_col.columns = pd.to_datetime(df_col.columns)
+        sob = pd.to_datetime(sob)
+        eob = pd.to_datetime(eob)
+        df_col = df_col.loc[:, (df_col.columns >= sob) & (df_col.columns <= eob)]
+
+    D = df_col.iloc[:,:].to_numpy()
+
+    # run mrDMD
+    mrDMDZSC = mrdmd_zscore.MrDMDZscore()
+    nodes1 = mrDMDZSC.mrdmd(D, max_levels=ml, max_cycles=1, do_parallel=False)
+    
+    data = D.copy()
+    data1 = data
+    max_levels=ml
+    splt = mrDMDZSC.get_splt(step, max_levels)
+    nodes = nodes1
+    baselines = []
+    baseline_indx = []
+    for i in range(data.shape[0]):
+        t = data[i, :]
+        if (min(t) >= bmin and max(t) <= bmax):
+            baselines.append(t)
+            baseline_indx.append(i)
+    
+    n_baseline_indx = [nb for nb in range(data.shape[0]) if nb not in baseline_indx]
+   
+   # compute z-score
+    split_point = (data.shape[0] + 1) // 2
+    baseline_indx = np.arange(0, split_point)
+    n_baseline_indx = np.arange(split_point, data.shape[0])
+    std_baselines = mrDMDZSC.compute_zscore(data1, \
+                                            splt, \
+                                            nodes, \
+                                            baseline_indx, \
+                                            n_baseline_indx, \
+                                            for_baseline=True, \
+                                            plot=False)
+
+    std_baselines_df = pd.DataFrame({
+        "feature": col,
+        "b_start": sob,
+        "b_end": eob,
+        "v_min": bmin,
+        "v_max": bmax,
+        "z_score": std_baselines
+    })
+    
+    Z_final.append(std_baselines_df)
+    Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame()
+    return Z_final
+
 def process_columns_baseline(df):
     Z_final = []
     ml = 9
@@ -282,6 +344,21 @@ def get_mrdmd(df, force_recompute):
     bs_end = timer()
 
     # Step 2: Compute z-scores for the node selection compared to baseline z-scores
+    mr_dmdstart = timer()
+    zsc_d = compute_zscores(df, Z_b)
+    mr_dmdend = timer()
+
+    print(f'baseline in {(bs_end - bs_start)}s')
+    print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
+    return zsc_d, Z_b
+
+def get_mrdmd_with_new_base(df, col, bmin, bmax, sob, eob):
+    # Step 1: compute z-score for given baseline 
+    bs_start = timer()
+    Z_b = process_baseline(df, col, bmin, bmax, sob, eob)
+    bs_end = timer()
+
+    # Step 2: Compute z-scores for the node selection compared to new baseline z-score
     mr_dmdstart = timer()
     zsc_d = compute_zscores(df, Z_b)
     mr_dmdend = timer()

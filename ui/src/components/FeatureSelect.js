@@ -49,7 +49,7 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
             .catch(error => console.error('Error fetching data:', error));
     }
     // getting mrdmd results for selected column
-    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1`)
+    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
         .then(response => response.json())
         .then(dmdData => {
             const newzScores = mergeZScores(zScores, dmdData.zscores, key)

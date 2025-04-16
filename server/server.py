@@ -3,9 +3,10 @@ import os
 import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from datetime import datetime
 from scripts.dr_time import get_dr_time
 from scripts.dr_time import get_feat_contributions
-from mrdmd import get_mrdmd
+from mrdmd import get_mrdmd, get_mrdmd_with_new_base
 
 app = Flask(__name__)
 CORS(app)
@@ -52,8 +53,8 @@ def get_dr_time_data():
     }
     return jsonify(response)
 
-@app.route('/mrdmd/<nodes>/<selectedCols>/<recompute_base>', methods=['GET'])
-def get_mrdmd_results(nodes, selectedCols, recompute_base=0):
+@app.route('/mrdmd/<nodes>/<selectedCols>/<recompute_base>/<new_base>/<bmin>/<bmax>/<sob>/<eob>', methods=['GET'])
+def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=None, bmax=None, sob=None, eob=None):
     global ts_data
 
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
@@ -65,7 +66,12 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0):
     print('mrdmd:', filtered_data[cols].shape)
 
     if (filtered_data.shape[0] > 0):
-        zscores, baselines = get_mrdmd(filtered_data[cols], int(recompute_base))
+        if (int(new_base) == 0):
+            zscores, baselines = get_mrdmd(filtered_data[cols], int(recompute_base))
+        else:
+            start_time = pd.to_datetime(sob)
+            end_time = pd.to_datetime(eob)
+            zscores, baselines = get_mrdmd_with_new_base(filtered_data[cols], selectedCols, float(bmin), float(bmax), start_time, end_time)
     else: 
         zscores = pd.DataFrame()
         baselines = pd.DataFrame()

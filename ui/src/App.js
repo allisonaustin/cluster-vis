@@ -19,8 +19,34 @@ function App() {
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
+//   const [selectedPoints, setSelectedPoints] = useState([
+//     "novadaq-far-farm-125",
+//     "novadaq-far-farm-128",
+//     "novadaq-far-farm-134",
+//     "novadaq-far-farm-135",
+//     "novadaq-far-farm-136",
+//     "novadaq-far-farm-138",
+//     "novadaq-far-farm-141",
+//     "novadaq-far-farm-144",
+//     "novadaq-far-farm-146",
+//     "novadaq-far-farm-158",
+//     "novadaq-far-farm-159",
+//     "novadaq-far-farm-161",
+//     "novadaq-far-farm-163",
+//     "novadaq-far-farm-166",
+//     "novadaq-far-farm-167",
+//     "novadaq-far-farm-172",
+//     "novadaq-far-farm-179",
+//     "novadaq-far-farm-182",
+//     "novadaq-far-farm-185",
+//     "novadaq-far-farm-188",
+//     "novadaq-far-farm-191",
+//     "novadaq-far-farm-193",
+//     "novadaq-far-farm-195",
+//     "novadaq-far-farm-21"
+// ]);
   const [selectedPoints, setSelectedPoints] = useState(["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"]);
-  const [selectedDims, setSelectedDims] = useState(['cpu_nice', 'bytes_out', 'cpu_system', 'proc_run', 'proc_total']);
+  const [selectedDims, setSelectedDims] = useState(['cpu_system', 'bytes_out']);
   const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
   const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
   const [recompute, setRecompute] = useState(1)
@@ -86,7 +112,7 @@ function App() {
 
   const getMrDMD = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/${recompute}`);
+      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/${recompute}/0/0/0/0/0`);
       const data = await response.json();
       if (response.ok) { 
         setzScores(data.zscores)

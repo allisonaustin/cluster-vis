@@ -287,7 +287,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
 
         if (selected.length) {
              // running mrdmd on new nodes with recomputed baselines
-            fetch(`http://127.0.0.1:5010/mrdmd/${selected}/${selectedDims}/1`)
+            fetch(`http://127.0.0.1:5010/mrdmd/${selected}/${selectedDims}/1/0/0/0/0/0`)
                 .then(response => response.json())
                 .then(dmdData => {
                     setzScores(dmdData.zscores) // updating zscores
