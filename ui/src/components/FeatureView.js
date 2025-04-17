@@ -26,7 +26,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
         return proc;
       }, [data]); 
 
-      console.log(baselines)
       const initialBaselines = baselines.reduce((acc, baseline) => {
         acc[baseline.feature] = {
             baselineX: [
@@ -81,22 +80,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
               };
           }
           return d;
-      });
-    }
-
-    function updateBaselines(oldBaselines, newBaselines) {
-      const baselineMap = new Map(
-        newBaselines.map(d => [d.feature, d])
-      );
-
-      return oldBaselines.map(b => {
-          if (baselineMap.has(b.feature)) {
-              return {
-                  ...b,
-                  ...baselineMap.get(b.feature)  
-              };
-          }
-          return b;
       });
     }
 

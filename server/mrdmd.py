@@ -69,10 +69,11 @@ def find_time_range(df, lower, upper):
         return start_timestamp, end_timestamp
 
     print("No valid period found within the baseline range.")
-    return None, None
+    return pd.to_datetime(df.columns).min(), pd.to_datetime(df.columns).max()
 
 # Running mrdmd on a single column with configured baseline (time and value range)
 def process_baseline(df, col, bmin, bmax, sob, eob):
+    # TODO: save new baseline to cache
     Z_final = []
     ml = 9
     step = 10000
@@ -130,7 +131,7 @@ def process_baseline(df, col, bmin, bmax, sob, eob):
     })
     
     Z_final.append(std_baselines_df)
-    Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame()
+    Z_final = pd.concat(Z_final, ignore_index=True)
     return Z_final
 
 def process_columns_baseline(df):
@@ -141,9 +142,11 @@ def process_columns_baseline(df):
     def process_single_column(col):
         # computing upper and lower baseline value range
         bmin, bmax = compute_value_range(df[col])
-
         if bmin == 0 and bmax == 0:
-            return 
+            mean = df[col].mean()
+            std = df[col].std()
+            bmin = 0 if (mean - std) < 0 else mean - std
+            bmax = mean + std
 
         df_col = df.pivot(index="nodeId", columns="timestamp", values=col) \
                     .apply(pd.to_numeric, errors='coerce') \
@@ -153,14 +156,10 @@ def process_columns_baseline(df):
         # computing start and end of baseline and filter
         sob, eob = find_time_range(df_col, bmin, bmax)
             
-        if sob is not None and eob is not None:
-            df_col.columns = pd.to_datetime(df_col.columns)
-            sob = pd.to_datetime(sob)
-            eob = pd.to_datetime(eob)
-            df_col = df_col.loc[:, (df_col.columns >= sob) & (df_col.columns <= eob)]
-                
-        else: 
-            return 
+        df_col.columns = pd.to_datetime(df_col.columns)
+        sob = pd.to_datetime(sob)
+        eob = pd.to_datetime(eob)
+        df_col = df_col.loc[:, (df_col.columns >= sob) & (df_col.columns <= eob)]
 
         # extracting input, output matrices
         D = df_col.iloc[:,:].to_numpy()
@@ -168,7 +167,7 @@ def process_columns_baseline(df):
         # run mrDMD
         mrDMDZSC = mrdmd_zscore.MrDMDZscore()
         nodes1 = mrDMDZSC.mrdmd(D, max_levels=ml, max_cycles=1, do_parallel=False)
-        
+
         data = D.copy()
         data1 = data
         max_levels=ml
@@ -196,6 +195,8 @@ def process_columns_baseline(df):
                                                 for_baseline=True, \
                                                 plot=False)
 
+        if (len(std_baselines) == 0): std_baselines = [np.nan]
+        print(col, sob, eob, bmin, bmax, std_baselines)
         std_baselines_df = pd.DataFrame({
             "feature": col,
             "b_start": sob,
@@ -204,19 +205,18 @@ def process_columns_baseline(df):
             "v_max": bmax,
             "z_score": std_baselines
         })
-        
         Z_final.append(std_baselines_df)
 
     cols_df = df.drop(columns=['nodeId', 'timestamp'])
     with ThreadPoolExecutor(max_workers=15) as executor:
         executor.map(process_single_column, cols_df.columns)
     
-    Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame()
+    Z_final = pd.concat(Z_final, ignore_index=True) if Z_final else pd.DataFrame(columns=["feature", "b_start", "b_end", "v_min", "v_max", "z_score"])
     return Z_final
 
 
 def extract_baselines(df, nbase_df, baselines, col):
-    if baselines[baselines['feature'] == col].empty:
+    if (baselines[baselines['feature'] == col].empty or np.isnan(baselines[baselines['feature'] == col].z_score.values[0])):
         print(f"[WARNING] No baseline found for column: {col}")
         return None 
     
@@ -258,7 +258,7 @@ def compute_zscores(df, baselines):
         base_ext = extract_baselines(df, nbase_df, baselines[baselines['feature']==col], col)
 
         if (base_ext is None):
-            return None
+            return pd.DataFrame()
         
         D = nbase_df.to_numpy()
         D = np.vstack([D,base_ext])
@@ -326,8 +326,12 @@ def get_cached_or_compute_baselines(df, force_recompute):
         new_baselines = process_columns_baseline(missing_df)
         
         # Append new baselines to cached ones
-        ZSC_d = pd.concat([ZSC_d, new_baselines], ignore_index=True) if not ZSC_d.empty else new_baselines
-        
+        if not new_baselines.empty:
+            if not ZSC_d.empty:
+                pd.concat([ZSC_d, new_baselines], ignore_index=True) 
+            else:
+                ZSC_d = new_baselines
+
         # Save updated baselines
         os.makedirs(CACHE_DIR, exist_ok=True)
         ZSC_d.to_parquet(ZSC_B_CACHE_NAME)

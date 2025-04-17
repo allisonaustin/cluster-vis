@@ -187,10 +187,10 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           const valueEnd = yScale.invert(y0);
 
           // checking which component of baseline needs to be updated
-          var newX0 = baselineX[0];
-          var newX1 = baselineX[1];
-          var newY0 = baselineY[0];
-          var newY1 = baselineY[1]; 
+          var newX0 = baselineX?.[0] ?? start;
+          var newX1 = baselineX?.[1] ?? end;
+          var newY0 = baselineY?.[0] ?? valueStart;
+          var newY1 = baselineY?.[1] ?? valueEnd; 
 
           if (prevX.current[0].getTime() !== start.getTime()) {
             newX0 = start;
@@ -222,6 +222,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
             baselineY: [newY0, newY1]
           };
           console.log('updating baseline...', field)
+          baselinesRef.current[field] = newBaseline
           updateBaseline(field, newBaseline);
         }
 
@@ -231,8 +232,25 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
 
           const xDomain = xScale.domain();
           const yDomain = yScale.domain();
-          const baselineX = baselinesRef.current[field].baselineX; 
-          const baselineY = baselinesRef.current[field].baselineY;
+
+          const baseline = baselinesRef.current[field];
+          const baselineX = baseline?.baselineX ?? null; 
+          const baselineY = baseline?.baselineY ?? null;
+
+          skipBrush.current = true;
+
+          if (
+            !baseline ||
+            !baseline.baselineX ||
+            !baseline.baselineY ||
+            baseline.baselineX.length !== 2 ||
+            baseline.baselineY.length !== 2 ||
+            baseline.baselineX.some(v => v === null || v === undefined || isNaN(v)) ||
+            baseline.baselineY.some(v => v === null || v === undefined || isNaN(v))
+          ) {
+            console.log(`Skipping brush for ${field}: invalid baseline`);
+            return;
+          }
 
           var x0;
           var x1;
@@ -268,7 +286,6 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           prevX.current = [x0, x1];
           prevY.current = [y0, y1];
 
-          skipBrush.current = true;
           brushSelection
             .call(brush.move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
         })
