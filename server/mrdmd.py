@@ -195,8 +195,7 @@ def process_columns_baseline(df):
                                                 for_baseline=True, \
                                                 plot=False)
 
-        if (len(std_baselines) == 0): std_baselines = [np.nan]
-        print(col, sob, eob, bmin, bmax, std_baselines)
+        if (len(std_baselines) == 0): std_baselines = [None]
         std_baselines_df = pd.DataFrame({
             "feature": col,
             "b_start": sob,
@@ -216,7 +215,7 @@ def process_columns_baseline(df):
 
 
 def extract_baselines(df, nbase_df, baselines, col):
-    if (baselines[baselines['feature'] == col].empty or np.isnan(baselines[baselines['feature'] == col].z_score.values[0])):
+    if (baselines[baselines['feature'] == col].empty or (baselines[baselines['feature'] == col].z_score.values[0] is None)):
         print(f"[WARNING] No baseline found for column: {col}")
         return None 
     

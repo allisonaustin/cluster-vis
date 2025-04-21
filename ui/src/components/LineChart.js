@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getColor, colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClusterMap }) => {
+const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClusterMap, baselines }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });

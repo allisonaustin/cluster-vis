@@ -84,6 +84,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     }
 
     const updateBaseline = (field, newBaseline) => {
+      console.log(field, newBaseline)
       baselinesRef.current[field] = newBaseline;
       const [start, end] = newBaseline.baselineX;
       const [v_min, v_max] = newBaseline.baselineY;
@@ -92,13 +93,22 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
       const b_end = toCustomString(end);
       
       // updating baselines
-      setBaselines(prevBaselines => 
-        prevBaselines.map(b => 
-          b.feature === field 
-            ? { ...b, b_start, b_end, v_min, v_max } 
-            : b
-        )
-      );
+      setBaselines(prevBaselines => {
+        const exists = prevBaselines.some(b => b.feature === field);
+      
+        if (exists) {
+          return prevBaselines.map(b =>
+            b.feature === field
+              ? { ...b, b_start, b_end, v_min, v_max }
+              : b
+          );
+        } else {
+          return [
+            ...prevBaselines,
+            { feature: field, b_start, b_end, v_min, v_max }
+          ];
+        }
+      });
       fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${field}/0/1/${v_min}/${v_max}/${b_start}/${b_end}`)
         .then(response => response.json())
         .then(data => {
@@ -133,6 +143,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             baselinesRef={baselinesRef}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
+                            baselines={baselines}
                         />
                     );
                 })}
