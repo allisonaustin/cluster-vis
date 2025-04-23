@@ -110,6 +110,7 @@ const MRDMD = ({ data }) => {
             .data(matrix, d => d.nodeId + ':' + d.feature)
             .enter()
             .append("rect")
+            .attr('class', (d) => `heatmap-cell node-${d.nodeId}`)
               .attr("x", d => xScale(d.nodeId))
               .attr("y", d => yScale(d.feature))
               .attr("width", xScale.bandwidth())
@@ -230,7 +231,7 @@ const MRDMD = ({ data }) => {
       
 
 return (
-    <Card title="Z-SCORES VIEW" size="small" style={{ height: "auto" }}>
+    <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
         <div style={{ position: "relative", width: "100%", height: "275px" }}>
           <div ref={svgContainerRef} style={{ width: "100%", height: "100%", overflowX: 'scroll' }}></div>
         </div>

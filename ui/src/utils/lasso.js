@@ -40,7 +40,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
         .attr('id', 'lasso');
       svg.selectAll(targetItems)
         // .style('fill', getColor('default'))
-        .style("opacity", 0.5);
+        .style("opacity", 0.05);
       // Prevent mouseover events during lasso, which cause unnecessary rerenders
       svg.selectAll(".dr-circle").attr('pointer-events', 'none');
     };
