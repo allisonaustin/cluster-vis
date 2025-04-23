@@ -16,7 +16,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const [method2, setMethod2] = useState("UMAP");
     const [numClusters, setNumClusters] = useState(4);
     const [highlight, setHighlight] = useState(1);
-    const [nonHighlight, setNonHighlight] = useState(0.02);
+    const [nonHighlight, setNonHighlight] = useState(0.2);
     const [tooltip, setTooltip] = useState({
               visible: false,
               content: '',
