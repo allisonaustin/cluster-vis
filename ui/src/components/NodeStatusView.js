@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { generateColor, colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
+const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 700, height: 220 });
     const xScaleRef = useRef(null); 
@@ -19,7 +19,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
       });
     
     useEffect(() => {
-      if (!svgContainerRef.current || !mgrData || !nodeDataStart || !nodeDataEnd ) return;
+      if (!svgContainerRef.current || !nodeDataStart || !nodeDataEnd ) return;
       
       const margin = { top: 10, right: 30, bottom: 20, left: 50 };
 
@@ -358,7 +358,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
           .call(brush.move, defaultWindow)
 
       
-      }, [mgrData]);
+      }, []);
 
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-line-1`);
@@ -410,7 +410,7 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
 
       return  (
         <>
-          <Card title="TIMELINE VIEW" size="small" style={{ height: 'auto' }}>
+          <Card title="NODE STATUS VIEW" size="small" style={{ height: 'auto' }}>
               <div ref={svgContainerRef} style={{ width: '100%', height: '90%' }}></div>
           </Card>
           <Tooltip
@@ -425,4 +425,4 @@ const TimelineView = ({ mgrData, nodeData, bStart, bEnd, nodeDataStart, nodeData
     };
     
     
-export default TimelineView;
+export default NodeStatusView;

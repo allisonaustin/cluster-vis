@@ -9,3 +9,5 @@ mgr/
 .DS_Store
 
 *.ipynb
+
+scripts/

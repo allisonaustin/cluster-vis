@@ -40,7 +40,7 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
         .attr('id', 'lasso');
       svg.selectAll(targetItems)
         // .style('fill', getColor('default'))
-        .style("opacity", 0.5);
+        .style("opacity", 0.2);
       // Prevent mouseover events during lasso, which cause unnecessary rerenders
       svg.selectAll(".dr-circle").attr('pointer-events', 'none');
     };
@@ -74,9 +74,9 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
       
       if (selectedIds.size === 0) { // resetting plot
         circles
-          .style("opacity", 1);
+          .style("opacity", 0.05);
         lines
-          .style("opacity", 1);
+          .style("opacity", 0.05);
       }
       svg.select('#lasso').remove();
       // Reenable mouseover events

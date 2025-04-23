@@ -18,7 +18,7 @@ const MRDMD = ({ data }) => {
         });
 
     useEffect(() => {
-        if (!svgContainerRef.current || !data) return;        
+        if (!svgContainerRef.current || !data || data.length == 0) return;        
         firstRenderRef.current = false;
 
         d3.select(svgContainerRef.current).selectAll("*").remove();
@@ -238,7 +238,7 @@ const MRDMD = ({ data }) => {
 return (
     <Card title="Z-SCORES VIEW" size="small" style={{ height: "auto" }}>
         <div style={{ position: "relative", width: "100%", height: "275px" }}>
-          <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
+          <div ref={svgContainerRef} style={{ width: "100%", height: "100%", overflowX: 'scroll' }}></div>
         </div>
         <Tooltip
             visible={tooltip.visible}
