@@ -15,7 +15,7 @@ data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
 filepath = './data/farm/'
 CACHE_DIR = './cache'
-NODE_CACHE = './cache/buffer_node_data.parquet'
+NODE_CACHE = './cache/dune_node_data.parquet'
 
 def get_timeseries_data(file='far_data_2024-02-21.csv'):
     # TODO: convert to parquet instead of global

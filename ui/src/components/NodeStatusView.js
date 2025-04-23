@@ -158,7 +158,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
         .attr("class", "y-label")
         .attr("text-anchor", "middle")
         .attr("transform", `translate(${margin.left/3},${size.height / 4}) rotate(-90)`)
-        .text("Nodes Total");
+        .text("Active Nodes");
 
       svg.append("defs").append("svg:clipPath")
         .attr("id", "clip")
@@ -289,7 +289,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
             .attr("class", "y-label")
             .attr("text-anchor", "middle")
             .attr("transform", `translate(${margin.left / 3},${(size.height / 1.4)}) rotate(-90)`)
-            .text("Nodes Down");
+            .text("Inactive Nodes");
 
           const stackGeneratorDown = d3.stack()
             .keys(clusterKeysDown)
