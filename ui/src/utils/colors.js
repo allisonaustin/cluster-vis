@@ -7,7 +7,6 @@ export const COLORS = {
 }
 
 // export const colorScheme = d3.schemeObservable10;
-// export const colorScale = d3.scaleOrdinal(colorScheme);
 
 export const colorScheme = [
     "#228CDB", // blue

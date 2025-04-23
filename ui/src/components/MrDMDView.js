@@ -8,7 +8,7 @@ const MRDMD = ({ data }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 200 });
+    const [size, setSize] = useState({ width: 700, height: 130 });
     const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 });
     const [tooltip, setTooltip] = useState({
             visible: false,
@@ -54,24 +54,27 @@ const MRDMD = ({ data }) => {
             return na - nb;
           });
 
+        const cellWidth = 20;
+        const cellHeight = 30;
+        const totalWidth = nodeIds.length * cellWidth;
+        const totalHeight = featureNames.length * cellHeight;
+
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
             .attr('id', `heatmap-svg`)
             .attr('class', 'heatmap')
-            .attr("width", "100%")
-            .attr("height", "100%")
-            .attr("viewBox", `0 0 ${size.width} ${size.height}`)
-            .attr("preserveAspectRatio", "xMidYMid meet");
+            .attr("width", `${totalWidth + margin.left + margin.right}`)
+            .attr("height", `${totalHeight + margin.top + margin.bottom}`)
 
         const xScale = d3.scaleBand()
             .domain(sortedNodeIds.map(d => extractNumber(d)))
-            .range([0, size.width - margin.left])
+            .range([0, totalWidth])
             .padding(0.05);
 
         // x axis
         svg.append('g')
-            .style('font-size', 15)
-            .attr('transform', "translate(" + margin.left + "," + size.height + ")")
+            .style('font-size', 14)
+            .attr('transform', "translate(" + margin.left + "," + totalHeight + ")")
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
             .style("text-anchor", "end")
@@ -80,21 +83,21 @@ const MRDMD = ({ data }) => {
             .attr("transform", "rotate(-65)")
             .select('.domain').remove()
 
-        svg.append("text")
-            .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
-            .style("text-anchor", "middle")
-            .style("font-size", "18px")
-            .style("font-weight", "bold")
-            .text("Node ID");
+        // svg.append("text")
+        //     .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
+        //     .style("text-anchor", "middle")
+        //     .style("font-size", "18px")
+        //     .style("font-weight", "bold")
+        //     .text("Node ID");
 
         const yScale = d3.scaleBand()
             .domain(featureNames)
-            .range([0, size.height])
+            .range([0, totalHeight])
             .padding(0.05);
 
         // y axis
         const yAxis = svg.append('g')
-            .style('font-size', 15)
+            .style('font-size', 14)
             .attr("transform", `translate(${margin.left},0)`)
             .call(d3.axisLeft(yScale))
 
@@ -191,11 +194,11 @@ const MRDMD = ({ data }) => {
 
 
         // legend
-        const legendWidth = 300; 
+        const legendWidth = 150; 
         const legendHeight = 10;  
         
         const legendGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left}, ${-margin.top})`);
+            .attr("transform", `translate(${20}, ${size.height})`);
         
         const defs = svg.append("defs");
         const linearGradient = defs.append("linearGradient")
@@ -205,9 +208,9 @@ const MRDMD = ({ data }) => {
         
         linearGradient.selectAll("stop")
             .data([
-                { offset: "0%", color: myColor(-5) },  
+                { offset: "0%", color: myColor(-3) },  
                 { offset: "50%", color: myColor(0) },  
-                { offset: "100%", color: myColor(5) }  
+                { offset: "100%", color: myColor(3) }  
             ])
             .enter().append("stop")
             .attr("offset", d => d.offset)
@@ -230,15 +233,15 @@ const MRDMD = ({ data }) => {
         legendGroup.append("g")
             .attr("transform", `translate(0, ${legendHeight})`)
             .call(legendAxis)
-            .style('font-size', 15)
+            .style('font-size', 14)
             .select(".domain").remove();
     };
       
 
 return (
     <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
-        <div style={{ position: "relative", width: "100%", height: "275px" }}>
-          <div ref={svgContainerRef} style={{ width: "100%", height: "100%", overflowX: 'scroll' }}></div>
+        <div style={{ position: "relative", width: "100%", height: "275px", overflowY: 'auto', overflowX: 'auto'}}>
+          <div ref={svgContainerRef}></div>
         </div>
         <Tooltip
             visible={tooltip.visible}
