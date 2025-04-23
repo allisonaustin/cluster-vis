@@ -7,7 +7,7 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScores, setzScores, baselines, setBaselines }) => {
+const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
@@ -15,6 +15,8 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
     const [numClusters, setNumClusters] = useState(4);
+    const [highlight, setHighlight] = useState(1);
+    const [nonHighlight, setNonHighlight] = useState(0.02);
     const [tooltip, setTooltip] = useState({
               visible: false,
               content: '',
@@ -117,10 +119,10 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .attr("r", 4)
             .style('fill', d => colorScale(d.Cluster))
             .style("opacity", d => {
-                return selectedPoints.includes(d.nodeId) ? 1 : 0.3;
+                return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
             })
             .attr("_prevOpacity", d => {
-                return selectedPoints.includes(d.nodeId) ? 1 : 0.3;
+                return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
             })
             .on("mouseover", function (event, d) {
                 let circle = d3.select(this)
@@ -131,7 +133,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                     .transition()
                     .duration(150)
                     .attr("r", 8)
-                    .style("opacity", 1)
+                    .style("opacity", highlight)
 
                 // highlighting mrdmd cell 
                 d3.selectAll(`.node-${d.nodeId}`)
@@ -147,7 +149,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                         d3.select(this)
                             .transition()
                             .duration(150)
-                            .style("opacity", 1)
+                            .style("opacity", highlight)
                             // .attr('stroke', colorScale(d.Cluster)); 
                     } else {
                         d3.select(this)
@@ -167,7 +169,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .on("mouseout", function (event, d) {
                 let circle = d3.select(this)
 
-                let prevOpacity = circle.attr("_prevOpacity") || 0.3; 
+                let prevOpacity = circle.attr("_prevOpacity") || nonHighlight; 
                 circle.transition()
                     .duration(150)
                     .attr("r", 4)
@@ -185,22 +187,14 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                 lines.transition()
                     .duration(150)
                     .style("stroke-width", 1)
-                    .style("opacity", 1)
+                    .style("opacity", highlight)
 
                 setTooltip(prev => ({
                     ...prev,
                     visible: false,
                 }));
             })
-            .style('opacity', 0);
-
-            circs
-                .transition()
-                .duration(800)
-                .style("opacity", d => {
-                    const idVal = getIdVal(d);
-                    return selectedPoints.includes(idVal) ? 1 : 0.3;
-                })
+            .style('opacity', nonHighlight);
 
             svg.node().xScale = xScale;
             svg.node().yScale = yScale;
@@ -219,17 +213,11 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .style("opacity", d => {
                 const idVal = getIdVal(d);
                 if (selectedPoints.includes(idVal) || selectedPoints.length == 0) {
-                    return 0.8;
+                    return highlight;
                 } else {
-                    return 0.3
+                    return nonHighlight
                 }
             });
-        // const lineCharts = d3.selectAll(".line-svg"); 
-        // lineCharts.selectAll(".line")
-        //     .style("stroke", d => {
-        //         const cluster = nodeClusterMap.get(d[0]);
-        //         return colorScale(+cluster);
-        // });
     }, [selectedPoints]);
 
     const updateChart = (method1, method2) => {
@@ -279,9 +267,9 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .style("opacity", d => {
                 const idVal = getIdVal(d);
                 if (selected.includes(idVal) || selected.length == 0) {
-                    return 1; 
+                    return highlight; 
                 } else {
-                    return 0.3;
+                    return nonHighlight;
                 }
         });
 
@@ -310,7 +298,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
                     <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                        <Form layout="inline">
+                        {/* <Form layout="inline">
                             <Form.Item label="DR1">
                             <Select
                                 value={method1}
@@ -334,7 +322,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                                 <Option value="PC">PCA</Option>
                             </Select>
                             </Form.Item>
-                        </Form>
+                        </Form> */}
 
                         <Form layout="inline">
                             <Form.Item label="Clusters">

@@ -4,33 +4,27 @@ import './App.css';
 import DR from './components/DRPlot.js';
 import FeatureView from './components/FeatureView.js';
 import MRDMD from './components/MrDMDView.js';
-import TimelineView from './components/TimelineView.js';
+import NodeStatusView from './components/NodeStatusView.js';
 
 const { Header, Content } = Layout;
 
 function App() {
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
-  const [mgrData, setMgrData] = useState(null);
-  const [perfData, setPerfData] = useState([]);
-  const [triggerData, setTriggerData] = useState([]);
   const [nodeData, setNodeData] = useState(null);
   const [zScores, setzScores] = useState(null);
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
-  const [selectedFile, setSelectedFile] = useState('mgr/novadaq-far-mgr-01-full.json');
-  const [selectedPoints, setSelectedPoints] = useState(["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"]);
-  const [selectedDims, setSelectedDims] = useState(['cpu_system', 'bytes_out']);
-  const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
-  const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
+  const [selectedPoints, setSelectedPoints] = useState(['c0-0c0s6n0','c0-0c0s6n1','c0-0c0s7n0','c0-0c0s7n1','c0-0c0s15n0','c0-0c0s15n1','c0-0c1s0n0','c0-0c1s0n1','c1-0c0s0n0','c1-0c0s0n1','c1-0c0s1n0','c1-0c0s1n1','c1-0c0s2n0','c1-0c0s2n1','c1-0c0s3n0','c1-0c0s3n1','c1-0c0s4n0','c1-0c0s4n1','c1-0c0s10n0','c1-0c0s10n1','c1-0c0s11n0','c1-0c0s11n1','c2-0c0s5n0','c2-0c0s14n0','c2-0c0s14n1']);
+  const [selectedDims, setSelectedDims] = useState(['P_VPP012_POUT', 'P_VCCMP0123_POUT', 'P_VCCMP4567_POUT', 'I_VPP012_IOUT']);
+  const [bStart, setBStart] = useState('2018-06-09 09:00:00Z')
+  const [bEnd, setBEnd] = useState('2018-06-09 10:15:00Z')
   const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
   
-  
   useEffect(() => {
     Promise.all([ 
-        getMgrData(selectedFile),
         getNodeData(selectedDims),
         getDRTimeData()
       ])
@@ -104,67 +98,17 @@ function App() {
     }
   };
 
-  const getMgrData = async (filePath) => {
-    if (!filePath) return;
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/mgrData`);
-      const data = await response.json();
-      if (response.ok) {
-        setMgrData(data);  
-        setError(null); 
-        const trigFilt = Object.keys(data)
-          .filter((key) => (
-              key.includes('P1') &&
-              (key.includes('Data Driven') || (key.includes('Trigger'))) &&
-              !key.includes('Activity') &&
-              !key.includes('prescale')
-            ))
-          .reduce((obj, key) => {
-            obj[key] = data[key];
-            return obj;
-          }, {});
-      // Filter data for performance (keys not containing 'P1')
-      const perfFilt = Object.keys(data)
-        .filter((key) => !key.includes('P1'))
-        .reduce((obj, key) => {
-          obj[key] = data[key];
-          return obj;
-        }, {});
-
-      setTriggerData(trigFilt);
-      setPerfData(perfFilt);
-      } else {
-        setMgrData(null);  
-        setTriggerData(null);   
-        setPerfData(null);   
-        setError("Failed to fetch data. Please check that the server is running.");
-      }
-    } catch (error) {
-      setMgrData(null);    
-      setTriggerData(null);
-      setPerfData(null);
-      setError("Failed to fetch data. Please check that the server is running.");
-      console.error(error);     
-    }
-  };
-
-  const onFileChange = (newFile) => {
-    setSelectedFile(newFile); 
-    getMgrData(newFile);
-  };
-
   return (
     <Layout style={{ height: "100vh", padding: "10px" }}>
       <Content style={{ marginTop: "10px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
-              {((!nodeData) || (!mgrData) || (!DRTData)) ? (
+              {((!nodeData) || (!DRTData)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
                 ) : (
-                <TimelineView 
-                    mgrData={mgrData}
+                <NodeStatusView 
                     bStart={bStart}
                     bEnd={bEnd}
                     nodeData={nodeData}

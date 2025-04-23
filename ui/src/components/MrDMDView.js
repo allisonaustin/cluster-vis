@@ -8,8 +8,8 @@ const MRDMD = ({ data }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 200 });
-    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 });
+    const [size, setSize] = useState({ width: 700, height: 160 });
+    const [margin, setMargin] = useState({ top: 80, right: 40, bottom: 90, left: 180 });
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -18,7 +18,7 @@ const MRDMD = ({ data }) => {
         });
 
     useEffect(() => {
-        if (!svgContainerRef.current || !data) return;        
+        if (!svgContainerRef.current || !data || data.length == 0) return;        
         firstRenderRef.current = false;
 
         d3.select(svgContainerRef.current).selectAll("*").remove();
@@ -44,15 +44,11 @@ const MRDMD = ({ data }) => {
 
     const drawHeatmap = (matrix, featureNames, nodeIds) => {
 
-        function extractNumber(nodeId) {
-            return nodeId.match(/\d+$/)[0]; 
-        }
-
-        const sortedNodeIds = nodeIds.slice().sort((a, b) => {
-            const na = +extractNumber(a);
-            const nb = +extractNumber(b);
-            return na - nb;
-          });
+        // const sortedNodeIds = nodeIds.slice().sort((a, b) => {
+        //     const na = +a;
+        //     const nb = +b;
+        //     return na - nb;
+        //   });
 
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
@@ -64,13 +60,13 @@ const MRDMD = ({ data }) => {
             .attr("preserveAspectRatio", "xMidYMid meet");
 
         const xScale = d3.scaleBand()
-            .domain(sortedNodeIds.map(d => extractNumber(d)))
+            .domain(nodeIds)
             .range([0, size.width - margin.left])
             .padding(0.05);
 
         // x axis
         svg.append('g')
-            .style('font-size', 15)
+            .style('font-size', 14)
             .attr('transform', "translate(" + margin.left + "," + size.height + ")")
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
@@ -80,12 +76,12 @@ const MRDMD = ({ data }) => {
             .attr("transform", "rotate(-65)")
             .select('.domain').remove()
 
-        svg.append("text")
-            .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
-            .style("text-anchor", "middle")
-            .style("font-size", "18px")
-            .style("font-weight", "bold")
-            .text("Node ID");
+        // svg.append("text")
+        //     .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
+        //     .style("text-anchor", "middle")
+        //     .style("font-size", "18px")
+        //     .style("font-weight", "bold")
+        //     .text("Node ID");
 
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -93,7 +89,7 @@ const MRDMD = ({ data }) => {
             .padding(0.05);
 
         // y axis
-        const yAxis = svg.append('g')
+        svg.append('g')
             .style('font-size', 15)
             .attr("transform", `translate(${margin.left},0)`)
             .call(d3.axisLeft(yScale))
@@ -111,20 +107,18 @@ const MRDMD = ({ data }) => {
             .domain([5, 0, -5]); 
 
         svg.selectAll()
-            .data(matrix, function(d) {return d.nodeId+':'+d.feature;})
+            .data(matrix, d => d.nodeId + ':' + d.feature)
             .enter()
             .append("rect")
-                .attr('class', (d) => `heatmap-cell node-${d.nodeId}`)
-                .attr("x", function(d) { return xScale(extractNumber(d.nodeId)) })
-                .attr("y", function(d) { return yScale(d.feature) })
-                .attr("rx", 4)
-                .attr("ry", 4)
-                .attr("width", xScale.bandwidth() )
-                .attr("height", yScale.bandwidth() )
-                .style("fill", function(d) { return myColor(d.value)} )
-                .style("stroke-width", 4)
-                .style("stroke", "none")
-                .style("opacity", 0.8)
+              .attr("x", d => xScale(d.nodeId))
+              .attr("y", d => yScale(d.feature))
+              .attr("width", xScale.bandwidth())
+              .attr("height", yScale.bandwidth())
+              .attr("rx", 4)
+              .attr("ry", 4)
+              .style("fill", d => myColor(d.value))
+              .style("stroke", "none")
+              .style("opacity", 0.8)
             .attr('transform', "translate(" + margin.left + ",0)")
             .on("mouseover", function(event, d) {
                 d3.select(this)
@@ -238,7 +232,7 @@ const MRDMD = ({ data }) => {
 return (
     <Card title="Z-SCORES VIEW" size="small" style={{ height: "auto" }}>
         <div style={{ position: "relative", width: "100%", height: "275px" }}>
-          <div ref={svgContainerRef} style={{ width: "100%", height: "100%" }}></div>
+          <div ref={svgContainerRef} style={{ width: "100%", height: "100%", overflowX: 'scroll' }}></div>
         </div>
         <Tooltip
             visible={tooltip.visible}

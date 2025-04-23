@@ -85,6 +85,7 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
       bordered
       dataSource={data.features}
       renderItem={(key, index) => {
+    if (key === "cname_processed" || key === "cname_id") return null;
       return (
           <List.Item key={key} style={{ display: "flex", alignItems: "center", padding: "5px 10px" }}>
           

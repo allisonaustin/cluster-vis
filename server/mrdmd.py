@@ -13,8 +13,8 @@ ml = 9
 step = 10000
 std_baselines_dict = {}
 CACHE_DIR = './cache'
-ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscores.parquet'
-ZSC_CACHE_NAME = './cache/mrDMDbaselineData.parquet'
+ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscoresTHETA.parquet'
+ZSC_CACHE_NAME = './cache/mrDMDbaselineDataTHETA.parquet'
 
 def preprocess(df, col):
     return df.pivot(index="nodeId", columns="timestamp", values=col) \

@@ -13,15 +13,18 @@ CORS(app)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
-filepath = './data/farm/'
+filepath = './data/theta/env-logs/'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/buffer_node_data.parquet'
 
-def get_timeseries_data(file='far_data_2024-02-21.csv'):
+def get_timeseries_data(file='theta_env_logs.csv'):
     # TODO: convert to parquet instead of global
     global ts_data
     global filepath
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
+    ts_data['timestamp'] = ts_data['time_secs']
+    ts_data['nodeId'] = ts_data['cname_processed']
+    ts_data.drop(columns=['time_secs', 'cname_id', 'cname_processed'], inplace=True)
     return ts_data
 
 @app.route('/mgrData', methods=['GET'])
@@ -59,6 +62,7 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
 
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
     nodeList = list(set(nodes.split(',')))
+    # nodeList = list(set([int(n.strip()) for n in nodes.split(',') if n.strip().isdigit()]))
     cols = ['timestamp', 'nodeId'] + colsList
 
     filtered_data = ts_data[ts_data['nodeId'].isin(nodeList)]
