@@ -254,6 +254,9 @@ def compute_zscores(df, baselines):
         nbase_df = preprocess(df, col)
         nodelist = nbase_df.index.tolist()
 
+        if (len(baselines.columns) == 0):
+            return pd.DataFrame()
+
         base_ext = extract_baselines(df, nbase_df, baselines[baselines['feature']==col], col)
 
         if (base_ext is None):

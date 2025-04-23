@@ -51,7 +51,9 @@ const MRDMD = ({ data }) => {
         //   });
 
         const cellWidth = 30;
+        const cellHeight = 20;
         const totalWidth = nodeIds.length * cellWidth;
+        const totalHeight = featureNames.length * cellHeight;
 
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
@@ -70,7 +72,7 @@ const MRDMD = ({ data }) => {
         // x axis
         svg.append('g')
             .style('font-size', 14)
-            .attr('transform', "translate(" + margin.left + "," + size.height + ")")
+            .attr('transform', "translate(" + margin.left + "," + totalHeight + ")")
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
             .style("text-anchor", "end")
@@ -88,7 +90,7 @@ const MRDMD = ({ data }) => {
 
         const yScale = d3.scaleBand()
             .domain(featureNames)
-            .range([0, size.height])
+            .range([0, totalHeight])
             .padding(0.05);
 
         // y axis
@@ -193,7 +195,7 @@ const MRDMD = ({ data }) => {
         const legendHeight = 10;  
         
         const legendGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left}, ${size.height + margin.top + 20})`);
+            .attr("transform", `translate(${20}, ${size.height + margin.top + 20})`);
         
         const defs = svg.append("defs");
         const linearGradient = defs.append("linearGradient")
@@ -203,9 +205,9 @@ const MRDMD = ({ data }) => {
         
         linearGradient.selectAll("stop")
             .data([
-                { offset: "0%", color: myColor(-5) },  
+                { offset: "0%", color: myColor(-3) },  
                 { offset: "50%", color: myColor(0) },  
-                { offset: "100%", color: myColor(5) }  
+                { offset: "100%", color: myColor(3) }  
             ])
             .enter().append("stop")
             .attr("offset", d => d.offset)

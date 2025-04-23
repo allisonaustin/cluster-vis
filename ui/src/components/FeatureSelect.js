@@ -26,57 +26,67 @@ function mergeZScores(oldZScores, newZScores, newFeature) {
 
 export default function FeatureSelect({ data, processed, selectedPoints, selectedDims, setSelectedDims, featureData, setFeatureData, zScores, setzScores, baselines, baselinesRef, setBaselines, fcs }) {
     const handleCheckboxChange = (key) => {
-    const existingColumns = Object.keys(featureData);
-    if (!existingColumns.includes(key)) {
-        // fetching time series
-        fetch(`http://127.0.0.1:5010/nodeData/${key}`)
+        // If already selected, it's being unchecked, so just remove it
+        if (selectedDims.includes(key)) {
+            setSelectedDims(prevSelectedDims =>
+                prevSelectedDims.filter(dim => dim !== key)
+            );
+            const updatedZScores = zScores.map(entry => {
+                const { [key]: _, ...rest } = entry;
+                return rest;
+              });
+            setzScores(updatedZScores);
+            return; // Skip fetching
+        }
+        const existingColumns = Object.keys(featureData);
+        if (!existingColumns.includes(key)) {
+            // fetching time series
+            fetch(`http://127.0.0.1:5010/nodeData/${key}`)
+                .then(response => response.json())
+                .then(newData => {
+                    if (newData.data.length === featureData[Object.keys(featureData)[0]].length) {
+                        const processedColumn = newData.data.map(row => ({
+                            value: row[key],  
+                            timestamp: new Date(row.timestamp), 
+                            nodeId: row.nodeId
+                        }));    
+                        setFeatureData(featureData => ({
+                            [key]: processedColumn, // new column
+                            ...featureData
+                        }));
+                    } else {
+                        console.error(`Data length mismatch: expected ${processed[Object.keys(processed)[0]].length}, got ${newData.data.length}`);
+                    }
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+        // getting mrdmd results for selected column
+        fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
             .then(response => response.json())
-            .then(newData => {
-                if (newData.data.length === featureData[Object.keys(featureData)[0]].length) {
-                    const processedColumn = newData.data.map(row => ({
-                        value: row[key],  
-                        timestamp: new Date(row.timestamp), 
-                        nodeId: row.nodeId
-                    }));    
-                    setFeatureData(featureData => ({
-                        [key]: processedColumn, // new column
-                        ...featureData
-                    }));
-                } else {
-                    console.error(`Data length mismatch: expected ${processed[Object.keys(processed)[0]].length}, got ${newData.data.length}`);
-                }
+            .then(dmdData => {
+                const newzScores = mergeZScores(zScores, dmdData.zscores, key)
+                setzScores(newzScores) // updating zscores
+                setBaselines([...dmdData.baselines, ...baselines])
+                const newBaselines = dmdData.baselines;
+
+                newBaselines.forEach(baseline => {
+                    baselinesRef.current[baseline.feature] = {
+                        baselineX: [
+                            new Date(baseline.b_start.replace("GMT", "")), 
+                            new Date(baseline.b_end.replace("GMT", ""))
+                        ],
+                        baselineY: [baseline.v_min, baseline.v_max]
+                    };
+                });
+
+                setSelectedDims(prevSelectedDims => {
+                    if (prevSelectedDims.includes(key)) {
+                        return prevSelectedDims.filter(dim => dim !== key);
+                    } else {
+                        return [key, ...prevSelectedDims];
+                    }
+                });
             })
-            .catch(error => console.error('Error fetching data:', error));
-    }
-    // getting mrdmd results for selected column
-    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
-        .then(response => response.json())
-        .then(dmdData => {
-            const newzScores = mergeZScores(zScores, dmdData.zscores, key)
-            setzScores(newzScores) // updating zscores
-            console.log(dmdData.baselines)
-            console.log(dmdData)
-            setBaselines([...dmdData.baselines, ...baselines])
-            const newBaselines = dmdData.baselines;
-
-            newBaselines.forEach(baseline => {
-                baselinesRef.current[baseline.feature] = {
-                    baselineX: [
-                        new Date(baseline.b_start.replace("GMT", "")), 
-                        new Date(baseline.b_end.replace("GMT", ""))
-                    ],
-                    baselineY: [baseline.v_min, baseline.v_max]
-                };
-            });
-
-            setSelectedDims(prevSelectedDims => {
-                if (prevSelectedDims.includes(key)) {
-                    return prevSelectedDims.filter(dim => dim !== key);
-                } else {
-                    return [key, ...prevSelectedDims];
-                }
-            });
-        })
   }
 
   return (

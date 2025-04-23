@@ -16,7 +16,7 @@ function App() {
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
   const [selectedPoints, setSelectedPoints] = useState(['c0-0c0s6n0','c0-0c0s6n1','c0-0c0s7n0','c0-0c0s7n1','c0-0c0s15n0','c0-0c0s15n1','c0-0c1s0n0','c0-0c1s0n1','c1-0c0s0n0','c1-0c0s0n1','c1-0c0s1n0','c1-0c0s1n1','c1-0c0s2n0','c1-0c0s2n1','c1-0c0s3n0','c1-0c0s3n1','c1-0c0s4n0','c1-0c0s4n1','c1-0c0s10n0','c1-0c0s10n1','c1-0c0s11n0','c1-0c0s11n1','c2-0c0s5n0','c2-0c0s14n0','c2-0c0s14n1']);
-  const [selectedDims, setSelectedDims] = useState(['P_VPP012_POUT', 'P_VCCMP0123_POUT', 'P_VCCMP4567_POUT', 'I_VPP012_IOUT']);
+  const [selectedDims, setSelectedDims] = useState(['P_VPP012_POUT', 'P_VCCMP0123_POUT', 'I_VCCMP4567_IOUT', 'I_VPP012_IOUT']);
   const [bStart, setBStart] = useState('2018-06-09 09:00:00Z')
   const [bEnd, setBEnd] = useState('2018-06-09 10:15:00Z')
   const [recompute, setRecompute] = useState(1)
