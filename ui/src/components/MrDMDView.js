@@ -8,7 +8,7 @@ const MRDMD = ({ data }) => {
     const svgContainerRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 160 });
+    const [size, setSize] = useState({ width: 700, height: 130 });
     const [margin, setMargin] = useState({ top: 80, right: 40, bottom: 90, left: 180 });
     const [tooltip, setTooltip] = useState({
             visible: false,
@@ -50,18 +50,21 @@ const MRDMD = ({ data }) => {
         //     return na - nb;
         //   });
 
+        const cellWidth = 30;
+        const totalWidth = nodeIds.length * cellWidth;
+
         const svg = d3.select(svgContainerRef.current)
             .append("svg")
             .attr('id', `heatmap-svg`)
             .attr('class', 'heatmap')
-            .attr("width", "100%")
-            .attr("height", "100%")
-            .attr("viewBox", `0 0 ${size.width} ${size.height}`)
-            .attr("preserveAspectRatio", "xMidYMid meet");
+            .attr("width", `${totalWidth + margin.left + margin.right}`)
+            .attr("height", `${size.height + margin.top + margin.bottom}`)
+            // .attr("viewBox", `0 0 ${size.width} ${size.height}`)
+            // .attr("preserveAspectRatio", "xMidYMid meet");
 
         const xScale = d3.scaleBand()
             .domain(nodeIds)
-            .range([0, size.width - margin.left])
+            .range([0, totalWidth])
             .padding(0.05);
 
         // x axis
@@ -186,11 +189,11 @@ const MRDMD = ({ data }) => {
 
 
         // legend
-        const legendWidth = 300; 
+        const legendWidth = 150; 
         const legendHeight = 10;  
         
         const legendGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left}, ${-margin.top})`);
+            .attr("transform", `translate(${margin.left}, ${size.height + margin.top + 20})`);
         
         const defs = svg.append("defs");
         const linearGradient = defs.append("linearGradient")
@@ -225,15 +228,15 @@ const MRDMD = ({ data }) => {
         legendGroup.append("g")
             .attr("transform", `translate(0, ${legendHeight})`)
             .call(legendAxis)
-            .style('font-size', 15)
+            .style('font-size', 14)
             .select(".domain").remove();
     };
       
 
 return (
     <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
-        <div style={{ position: "relative", width: "100%", height: "275px" }}>
-          <div ref={svgContainerRef} style={{ width: "100%", height: "100%", overflowX: 'scroll' }}></div>
+        <div style={{ position: "relative", width: "100%", height: "275px", overflowY: 'auto', overflowX: 'auto' }}>
+          <div ref={svgContainerRef}></div>
         </div>
         <Tooltip
             visible={tooltip.visible}
