@@ -55,16 +55,32 @@ const LassoSelection = ({ svgRef, targetItems, onSelect }) => {
 
     const dragEnd = () => {
       selectedIds.clear();
+
+      const transform = d3.zoomTransform(svg.select(".zoom-layer").node());
+
       // Check if each point is inside the lasso
       let circles = svg.selectAll(targetItems)
       let lines = d3.selectAll(".line-svg").selectAll("path.line");
       
+      // circles.each((d, i) => {
+      //   let point = [
+      //     +circles.nodes()[i].getAttribute('cx'),
+      //     +circles.nodes()[i].getAttribute('cy')
+      //   ];
+      //   if (pointInPolygon(point, coords)) {
+      //     selectedIds.add(d.nodeId);
+      //   }
+      // });
       circles.each((d, i) => {
-        let point = [
-          +circles.nodes()[i].getAttribute('cx'),
-          +circles.nodes()[i].getAttribute('cy')
-        ];
-        if (pointInPolygon(point, coords)) {
+        const node = circles.nodes()[i];
+    
+        const rawX = +node.getAttribute("cx");
+        const rawY = +node.getAttribute("cy");
+
+        const screenX = transform.applyX(rawX);
+        const screenY = transform.applyY(rawY);
+    
+        if (pointInPolygon([screenX, screenY], coords)) {
           selectedIds.add(d.nodeId);
         }
       });

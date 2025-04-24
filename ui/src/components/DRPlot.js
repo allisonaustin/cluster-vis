@@ -69,6 +69,9 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
+          const zoomLayer = svg.append("g")
+          .attr("class", "zoom-layer");
+
         //   const xAxis = d3.axisBottom(xScale);
         
         // svg.append('g')
@@ -106,7 +109,8 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         //     .selectAll("text")
         //     .style("font-size", "14px")
 
-        let circs = svg.selectAll(".dr-circle")
+        // let circs = svg.selectAll(".dr-circle")
+        let circs = zoomLayer.selectAll(".dr-circle")
             .data(data)
             .enter()
             .append("circle")
@@ -206,6 +210,15 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
 
             svg.node().xScale = xScale;
             svg.node().yScale = yScale;
+
+            const zoom = d3.zoom()
+            .scaleExtent([0.5, 10])
+            .filter(event => event.type === "wheel")   
+            .on("zoom", (event) => {
+              zoomLayer.attr("transform", event.transform);
+            });
+        
+            svg.call(zoom);
     
         return () => {
             svg.remove();
