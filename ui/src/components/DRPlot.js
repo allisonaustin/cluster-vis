@@ -69,44 +69,11 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
           .attr("preserveAspectRatio", "xMidYMid meet");
 
-        //   const xAxis = d3.axisBottom(xScale);
+        const zoomLayer = svg.append("g")
+            .attr("class", "zoom-layer")
+
         
-        // svg.append('g')
-        //     .attr('class', 'x-axis')
-        //     .attr('transform', `translate(0,${height - margin.bottom})`)
-        //     .call(xAxis)
-        //     .selectAll("text")
-        //     .style("font-size", "14px");
-
-        // svg.append('text')
-        //     .attr('id', 'x-axis-label-dr')
-        //     .attr("x", width/2)
-        //     .attr("y", height)
-        //     .style('text-anchor', 'middle')
-        //     .text(xKey)
-        //     .style('font-size', '16px');
-
-
-        // const yAxis = d3.axisLeft(yScale).ticks(height / 40);
-        // svg.append("g")
-        //     .attr("class", "y-axis")
-        //     .attr("transform", `translate(${margin.left},0)`)
-        //     .call(yAxis)
-        //     .call(g => g.append("text")
-        //         .attr('id', 'y-axis-label-dr')
-        //         .attr("x", -height/2)
-        //         .attr("y", -margin.right)
-        //         .attr("fill", "currentColor")
-        //         .attr("text-anchor", "start")
-        //         .attr("transform", "rotate(-90)")
-        //         .style('font-size', '16px')
-        //         .text(yKey)); // Y label
-
-        // svg.select('.y-axis')
-        //     .selectAll("text")
-        //     .style("font-size", "14px")
-
-        let circs = svg.selectAll(".dr-circle")
+        let circs = zoomLayer.selectAll(".dr-circle")
             .data(data)
             .enter()
             .append("circle")
@@ -198,6 +165,15 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
 
             svg.node().xScale = xScale;
             svg.node().yScale = yScale;
+
+            const zoom = d3.zoom()
+                .scaleExtent([0.5, 10])
+                .filter(event => event.type === "wheel")   
+                .on("zoom", (event) => {
+                zoomLayer.attr("transform", event.transform);
+            });
+            
+            svg.call(zoom);
     
         return () => {
             svg.remove();
