@@ -176,7 +176,7 @@ def apply_pca(df, n_components=2):
 def apply_umap(df):
     print('Applying DR2 UMAP')
     df_umap = df.copy(deep=True)
-    umap = UMAP(n_components=2, random_state=42)
+    umap = UMAP(n_components=2, min_dist=0.5, n_neighbors=50, random_state=42)
     embedding = umap.fit_transform(df_umap)
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
@@ -202,7 +202,7 @@ def apply_second_dr(df):
 
 def id_clusters_w_kmeans(df_pivot):
     X = df_pivot[['UMAP1', 'UMAP2']]
-    kmeans = KMeans(n_clusters=7, n_init=10)
+    kmeans = KMeans(n_clusters=5, n_init=10)
     df_pivot['Cluster'] = kmeans.fit_predict(X)
     df_pivot['nodeId'] = df_pivot.index
 

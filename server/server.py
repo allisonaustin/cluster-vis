@@ -27,17 +27,6 @@ def get_timeseries_data(file='theta_env_logs.csv'):
     ts_data.drop(columns=['time_secs', 'cname_id', 'cname_processed'], inplace=True)
     return ts_data
 
-@app.route('/mgrData', methods=['GET'])
-def get_json_data():
-    filename = 'mgr/novadaq-far-mgr-01-full.json'
-    file_path = os.path.join(data_dir, filename)
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": "Error reading file", "details": str(e)}), 500
-
 # PC across time points
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
@@ -67,11 +56,12 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
 
     filtered_data = ts_data[ts_data['nodeId'].isin(nodeList)]
 
-    print('mrdmd:', filtered_data[cols].shape)
+    avail_cols = [col for col in cols if col in filtered_data.columns]
+    print('mrdmd:', filtered_data[avail_cols].shape)
 
     if (filtered_data.shape[0] > 0):
         if (int(new_base) == 0):
-            zscores, baselines = get_mrdmd(filtered_data[cols], int(recompute_base))
+            zscores, baselines = get_mrdmd(filtered_data[avail_cols], int(recompute_base))
         else:
             start_time = pd.to_datetime(sob)
             end_time = pd.to_datetime(eob)
@@ -97,7 +87,7 @@ def get_node_data(selectedCols):
     cols = ['timestamp', 'nodeId'] + colsList
     df = ts_data[cols].copy()
     
-    excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE', 'Cluster']
+    excluded = ['nodeId', 'timestamp', 'PCA', 'UMAP', 't-SNE', 'Cluster']
     all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
     
     check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
@@ -111,20 +101,6 @@ def get_node_data(selectedCols):
         "data": df.to_dict(orient='records'),
         "features": all_features
     })
-
-def get_csv_data():
-    file_path = os.path.join(data_dir, 'farm/far_data_2024-02-21.csv')
-    if not os.path.exists(file_path):
-        return jsonify({"error": "File not found"}), 404
-    
-    try:
-        df = pd.read_csv(file_path)
-        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-        if 'timestamp' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-        return jsonify(df.to_dict(orient='records'))
-    except Exception as e:
-        return jsonify({"error": "Error reading CSV file", "details": str(e)}), 500
 
 @app.route('/files', methods=['GET'])
 def list_json_files():

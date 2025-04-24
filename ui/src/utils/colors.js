@@ -6,18 +6,17 @@ export const COLORS = {
     highlight: '#4EA5D9'
 }
 
-// export const colorScheme = d3.schemeObservable10;
-// export const colorScale = d3.scaleOrdinal(colorScheme);
+export const colorScheme = d3.schemeObservable10;
 
-export const colorScheme = [
-    "#AF5D63", // brown
-    "#7FB285", // green
-    "#8e44ad", // purple
-    "#2c3e50",  // dark blue
-    "#ED6B86", // pink
-    "#CCA43B", // gold
-    "#228CDB", // blue
-  ];
+// export const colorScheme = [
+//     "#AF5D63", // brown
+//     "#7FB285", // green
+//     "#8e44ad", // purple
+//     "#2c3e50",  // dark blue
+//     "#ED6B86", // pink
+//     "#CCA43B", // gold
+//     "#228CDB", // blue
+//   ];
   
   export const colorScale = d3.scaleOrdinal(colorScheme);
 

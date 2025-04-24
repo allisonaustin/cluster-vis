@@ -191,7 +191,7 @@ const MRDMD = ({ data }) => {
 
 
         // legend
-        const legendWidth = 150; 
+        const legendWidth = 120; 
         const legendHeight = 10;  
         
         const legendGroup = svg.append("g")
@@ -230,7 +230,7 @@ const MRDMD = ({ data }) => {
         legendGroup.append("g")
             .attr("transform", `translate(0, ${legendHeight})`)
             .call(legendAxis)
-            .style('font-size', 14)
+            .style('font-size', 12)
             .select(".domain").remove();
     };
       

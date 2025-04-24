@@ -11,10 +11,10 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
     const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
-    const [size, setSize] = useState({ width: 400, height: 340 });
+    const [size, setSize] = useState({ width: 450, height: 340 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
-    const [numClusters, setNumClusters] = useState(7);
+    const [numClusters, setNumClusters] = useState(5);
     const [highlight, setHighlight] = useState(1);
     const [nonHighlight, setNonHighlight] = useState(0.05);
     const [tooltip, setTooltip] = useState({
@@ -46,7 +46,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
         const { w, h } = svgContainerRef.current.getBoundingClientRect();
         setSize({ w, h });
         
-        const margin = { top: 10, right: 30, bottom: 50, left: 50 };
+        const margin = { top: 10, right: 10, bottom: 50, left: 10 };
         const width = size.width;
         const height = size.height;
 
@@ -292,8 +292,8 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
             style={{ height:'auto' }}
         >
             <Row>
-                <Col span={20}>
-                    <div ref={svgContainerRef} style={{ width: 'auto', height: '340px' }}></div>
+                <Col span={24}>
+                    <div ref={svgContainerRef} style={{ width: '100%', height: '340px' }}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
