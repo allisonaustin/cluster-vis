@@ -5,7 +5,10 @@ import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
 const MRDMD = ({ data }) => {
-    const svgContainerRef = useRef();
+    // const svgContainerRef = useRef();
+    const yAxisRef = useRef();
+    const heatmapRef = useRef();
+    const legendRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 130 });
@@ -18,10 +21,13 @@ const MRDMD = ({ data }) => {
         });
 
     useEffect(() => {
-        if (!svgContainerRef.current || !data || data.length == 0) return;        
+        if (!yAxisRef.current || !heatmapRef.current || !legendRef.current || !data || data.length == 0) return;        
         firstRenderRef.current = false;
 
-        d3.select(svgContainerRef.current).selectAll("*").remove();
+        // d3.select(svgContainerRef.current).selectAll("*").remove();
+        d3.select(yAxisRef.current).selectAll('*').remove();
+        d3.select(heatmapRef.current).selectAll('*').remove();
+        d3.select(legendRef.current).selectAll('*').remove();
 
         const nodeIds = data.map(d => d.nodeId);
         const features = Object.keys(data[0]).filter(key => key !== "nodeId")
@@ -59,22 +65,47 @@ const MRDMD = ({ data }) => {
         const totalWidth = nodeIds.length * cellWidth;
         const totalHeight = featureNames.length * cellHeight;
 
-        const svg = d3.select(svgContainerRef.current)
-            .append("svg")
-            .attr('id', `heatmap-svg`)
-            .attr('class', 'heatmap')
-            .attr("width", `${totalWidth + margin.left + margin.right}`)
-            .attr("height", `${totalHeight + margin.top + margin.bottom}`)
+        const ySvg = d3.select(yAxisRef.current)
+        .append('svg')
+        .attr('width', margin.left)
+        .attr('height',totalHeight);
+  
+        const yScale = d3.scaleBand()
+            .domain(featureNames)
+            .range([0, totalHeight])
+            .padding(0.05);
 
-        const xScale = d3.scaleBand()
+        // y axis
+        const yAxis = ySvg.append('g')
+            .style('font-size', 14)
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(yScale))
+
+
+        const hSvg = d3.select(heatmapRef.current)
+            .append('svg')
+            .attr('width', totalWidth + margin.right)
+            .attr('height', totalHeight + 40);
+
+            const xScale = d3.scaleBand()
             .domain(sortedNodeIds.map(d => extractNumber(d)))
             .range([0, totalWidth])
             .padding(0.05);
 
+
+        // const svg = d3.select(svgContainerRef.current)
+        //     .append("svg")
+        //     .attr('id', `heatmap-svg`)
+        //     .attr('class', 'heatmap')
+        //     .attr("width", `${totalWidth + margin.left + margin.right}`)
+        //     .attr("height", `${totalHeight + margin.top + margin.bottom}`)
+
+
+
         // x axis
-        svg.append('g')
+        hSvg.append('g')
             .style('font-size', 14)
-            .attr('transform', "translate(" + margin.left + "," + totalHeight + ")")
+            .attr('transform', "translate(" + 5 + "," + totalHeight + ")")
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
             .style("text-anchor", "end")
@@ -90,16 +121,7 @@ const MRDMD = ({ data }) => {
         //     .style("font-weight", "bold")
         //     .text("Node ID");
 
-        const yScale = d3.scaleBand()
-            .domain(featureNames)
-            .range([0, totalHeight])
-            .padding(0.05);
 
-        // y axis
-        const yAxis = svg.append('g')
-            .style('font-size', 14)
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(yScale))
 
         // yAxis.selectAll('text')
         //     .each(function() {
@@ -113,7 +135,7 @@ const MRDMD = ({ data }) => {
             .interpolator(d3.interpolateRdBu) 
             .domain([5, 0, -5]); 
 
-        svg.selectAll()
+        hSvg.selectAll()
             .data(matrix, function(d) {return d.nodeId+':'+d.feature;})
             .enter()
             .append("rect")
@@ -128,7 +150,7 @@ const MRDMD = ({ data }) => {
                 .style("stroke-width", 4)
                 .style("stroke", "none")
                 .style("opacity", 0.8)
-            .attr('transform', "translate(" + margin.left + ",0)")
+            // .attr('transform', "translate(" + margin.left + ",0)")
             .on("mouseover", function(event, d) {
                 d3.select(this)
                     .style("stroke", "black")
@@ -192,15 +214,19 @@ const MRDMD = ({ data }) => {
                 }));
             });
 
+        const lSvg = d3.select(legendRef.current)
+            .append('svg')
+            .attr('width',  200 )
+            .attr('height', 40);
 
         // legend
         const legendWidth = 150; 
         const legendHeight = 10;  
         
-        const legendGroup = svg.append("g")
-            .attr("transform", `translate(${20}, ${size.height})`);
+        const legendGroup = lSvg.append("g")
+            .attr("transform", `translate(20, 10)`);
         
-        const defs = svg.append("defs");
+        const defs = lSvg.append("defs");
         const linearGradient = defs.append("linearGradient")
             .attr("id", "legend-gradient")
             .attr("x1", "0%").attr("x2", "100%")
@@ -240,9 +266,15 @@ const MRDMD = ({ data }) => {
 
 return (
     <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
-        <div style={{ position: "relative", width: "100%", height: "275px", overflowY: 'auto', overflowX: 'auto'}}>
+        {/* <div style={{ position: "relative", width: "100%", height: "275px", overflowY: 'auto', overflowX: 'auto'}}>
           <div ref={svgContainerRef}></div>
+        </div> */}
+        <div style={{ display:'flex', position:'relative' }}>
+            <div ref={yAxisRef} style={{ flex:'none' }} />
+            <div ref={heatmapRef} style={{overflowX: 'auto', overflowY: 'hidden', flex: 1}}/>
         </div>
+
+        <div ref={legendRef} style={{ overflow:'hidden' }}  />
         <Tooltip
             visible={tooltip.visible}
             content={tooltip.content}
