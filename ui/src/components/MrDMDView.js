@@ -63,7 +63,7 @@ const MRDMD = ({ data }) => {
         const ySvg = d3.select(yAxisRef.current)
             .append('svg')
             .attr('width', margin.left)
-            .attr('height',totalHeight);
+            .attr('height',totalHeight + 10);
     
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -73,7 +73,7 @@ const MRDMD = ({ data }) => {
         // y axis
         const yAxis = ySvg.append('g')
             .style('font-size', 14)
-            .attr("transform", `translate(${margin.left},0)`)
+            .attr("transform", `translate(${margin.left-2},0)`)
             .call(d3.axisLeft(yScale))
 
         const hSvg = d3.select(heatmapRef.current)

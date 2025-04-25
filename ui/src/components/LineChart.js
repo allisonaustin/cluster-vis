@@ -171,6 +171,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         const yScale = focus.node()?.yScale;
 
         function updateBaselineHandler(event) {
+          console.log(skipBrush.current)
           if (skipBrush.current) {
             skipBrush.current = false; 
             return;
@@ -192,16 +193,16 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           var newY0 = baselineY?.[0] ?? valueStart;
           var newY1 = baselineY?.[1] ?? valueEnd; 
 
-          if (prevX.current[0].getTime() !== start.getTime()) {
+          if (prevX?.current[0].getTime() !== start.getTime()) {
             newX0 = start;
           }
-          if (prevX.current[1].getTime() !== end.getTime()) {
+          if (prevX?.current[1].getTime() !== end.getTime()) {
             newX1 = end;
           }
-          if (Math.abs(prevY.current[0] - valueStart) > 1e-6) {
+          if (Math.abs(prevY?.current[0] - valueStart) > 1e-6) {
             newY0 = valueStart;
           }
-          if (Math.abs(prevY.current[1] - valueEnd) > 1e-6) {
+          if (Math.abs(prevY?.current[1] - valueEnd) > 1e-6) {
             newY1 = valueEnd;
           }
 
@@ -256,32 +257,44 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           var x1;
           var y0;
           var y1;
-
+        
           // checking X
           if (baselineX[0] <= xDomain[0]) { // clamp
             x0 = xDomain[0];
           } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) { // baselineX update
             x0 = baselineX[0];
-          } else return; 
+          } else {
+            prevX.current = [baselineX[0], baselineX[1]];
+            return
+          }; 
 
           if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) {  // baselineX update
             x1 = baselineX[1];
           } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
             x1 = xDomain[1];
-          } else return; 
+          } else {
+            prevX.current = [baselineX[0], baselineX[1]];
+            return
+          } 
 
           // checking Y
           if (baselineY[0] <= yDomain[0]) { // clamp
             y0 = yDomain[0];
           } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) { // baselineY update
             y0 = baselineY[0];
-          } else return; 
+          } else {
+            prevY.current = [baselineY[0], baselineY[1]];
+            return
+          }; 
 
           if (baselineY[1] >= yDomain[1]) { // clamp
             y1 = yDomain[1];
           } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) {  // baselineY update
             y1 = baselineY[1];
-          } else return;
+          } else {
+            prevY.current = [baselineY[0], baselineY[1]];
+            return;
+          };
 
           prevX.current = [x0, x1];
           prevY.current = [y0, y1];

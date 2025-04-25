@@ -302,13 +302,14 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzS
 
                         <Form layout="inline">
                             <Form.Item label="Clusters">
-                            <InputNumber
+                                <InputNumber
                                 min={2}
                                 max={20}
                                 value={numClusters}
                                 onChange={(value) => setNumClusters(value)}
                                 style={{ width: "35px" }}
-                            />
+                                controls={false} 
+                                />
                             </Form.Item>
                         </Form>
                     </div>
