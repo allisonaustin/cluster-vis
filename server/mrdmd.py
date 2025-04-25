@@ -227,7 +227,6 @@ def extract_baselines(df, nbase_df, baselines, col):
     t_start = pd.to_datetime(nbase_df.columns[0])
     t_end = pd.to_datetime(nbase_df.columns[-1])
     t_diff = t_end - t_start
-    num_repeats = int(t_diff / b_diff) + 1
 
     base_df = df[(pd.to_datetime(df['timestamp']) >= b_start) \
                & (pd.to_datetime(df['timestamp']) <= b_end)] \
@@ -235,8 +234,12 @@ def extract_baselines(df, nbase_df, baselines, col):
                 .apply(pd.to_numeric, errors='coerce') \
                 .ffill(axis='rows') \
                 .bfill(axis='rows')
+    
+    base_ext = []
+    for _ in range((len(nbase_df.columns) // base_df.shape[1]) + 2):
+        base_ext.append(base_df)
 
-    base_ext = pd.concat([base_df] * num_repeats, axis=1)
+    base_ext = pd.concat(base_ext, axis=1)
     base_ext = base_ext.iloc[:, :len(nbase_df.columns)]
     base_ext.columns = nbase_df.columns
 

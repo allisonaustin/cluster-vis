@@ -63,7 +63,7 @@ const MRDMD = ({ data }) => {
         const ySvg = d3.select(yAxisRef.current)
             .append('svg')
             .attr('width', margin.left)
-            .attr('height',totalHeight + 10);
+            .attr('height',totalHeight);
     
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -141,6 +141,7 @@ const MRDMD = ({ data }) => {
                             .transition()
                             .duration(150)
                             .style("opacity", 1)
+                            .style("stroke-width", "2px")
                     } else {
                         d3.select(this)
                             .transition()
