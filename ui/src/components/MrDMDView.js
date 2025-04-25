@@ -174,6 +174,7 @@ const MRDMD = ({ data }) => {
                             .transition()
                             .duration(150)
                             .style("opacity", 1)
+                            .style("stroke-width", "2px")
                     } else {
                         d3.select(this)
                             .transition()
