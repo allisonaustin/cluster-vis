@@ -68,7 +68,7 @@ const MRDMD = ({ data }) => {
         const ySvg = d3.select(yAxisRef.current)
         .append('svg')
         .attr('width', margin.left)
-        .attr('height',totalHeight);
+        .attr('height',totalHeight + 10);
   
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -78,7 +78,7 @@ const MRDMD = ({ data }) => {
         // y axis
         const yAxis = ySvg.append('g')
             .style('font-size', 14)
-            .attr("transform", `translate(${margin.left},0)`)
+            .attr("transform", `translate(${margin.left-2},0)`)
             .call(d3.axisLeft(yScale))
 
 
@@ -104,7 +104,7 @@ const MRDMD = ({ data }) => {
 
         // x axis
         hSvg.append('g')
-            .style('font-size', 14)
+            .style('font-size', 13)
             .attr('transform', "translate(" + 5 + "," + totalHeight + ")")
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
@@ -220,7 +220,7 @@ const MRDMD = ({ data }) => {
             .attr('height', 40);
 
         // legend
-        const legendWidth = 150; 
+        const legendWidth = 120; 
         const legendHeight = 10;  
         
         const legendGroup = lSvg.append("g")
@@ -259,16 +259,13 @@ const MRDMD = ({ data }) => {
         legendGroup.append("g")
             .attr("transform", `translate(0, ${legendHeight})`)
             .call(legendAxis)
-            .style('font-size', 14)
+            .style('font-size', 12)
             .select(".domain").remove();
     };
       
 
 return (
     <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
-        {/* <div style={{ position: "relative", width: "100%", height: "275px", overflowY: 'auto', overflowX: 'auto'}}>
-          <div ref={svgContainerRef}></div>
-        </div> */}
         <div style={{ display:'flex', position:'relative' }}>
             <div ref={yAxisRef} style={{ flex:'none' }} />
             <div ref={heatmapRef} style={{overflowX: 'auto', overflowY: 'hidden', flex: 1}}/>

@@ -359,6 +359,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                                 value={numClusters}
                                 onChange={(value) => setNumClusters(value)}
                                 style={{ width: "35px" }}
+                                controls={false}
                             />
                             </Form.Item>
                         </Form>

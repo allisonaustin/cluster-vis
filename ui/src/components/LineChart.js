@@ -262,26 +262,38 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
             x0 = xDomain[0];
           } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) { // baselineX update
             x0 = baselineX[0];
-          } else return; 
+          } else {
+            prevX.current = [baselineX[0], baselineX[1]];
+            return
+          }; 
 
           if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) {  // baselineX update
             x1 = baselineX[1];
           } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
             x1 = xDomain[1];
-          } else return; 
+          } else {
+            prevX.current = [baselineX[0], baselineX[1]];
+            return
+          }; 
 
           // checking Y
           if (baselineY[0] <= yDomain[0]) { // clamp
             y0 = yDomain[0];
           } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) { // baselineY update
             y0 = baselineY[0];
-          } else return; 
+          } else {
+            prevY.current = [baselineY[0], baselineY[1]];
+            return
+          }; 
 
           if (baselineY[1] >= yDomain[1]) { // clamp
             y1 = yDomain[1];
           } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) {  // baselineY update
             y1 = baselineY[1];
-          } else return;
+          } else {
+            prevY.current = [baselineY[0], baselineY[1]];
+            return
+          }; 
 
           prevX.current = [x0, x1];
           prevY.current = [y0, y1];
