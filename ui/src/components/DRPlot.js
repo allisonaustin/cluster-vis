@@ -77,7 +77,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
-            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId))) // TODO: hoist this into separate useeffect just for nodeclustermap
+            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
             .style("opacity", d => {
                 return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
             })
@@ -288,7 +288,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                                 <Select
                                 style={{ width: 60 }}
                                 onChange={(value) => {
-                                    handleSubmitNKMeans({ numClusters: value }); // manually call submit when changed
+                                    handleSubmitNKMeans({ numClusters: value });
                                 }}
                                 >
                                     {clusterOptions.map((num) => (

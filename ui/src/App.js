@@ -37,8 +37,7 @@ function App() {
   }, []); // TODO: dependency on [selectedDims]
 
   const updateClustersCallback = useCallback(async (numClusters) => {
-    console.log(`updating clusters with k=${numClusters}`)
-    // TODO: get new cluster ids, rerun set node cluster map
+    console.log(`Recomputing clusters with numClusters=${numClusters}`)
     try {
       const response = await fetch(`http://127.0.0.1:5010/recomputeClusters/${numClusters}`);
       if (response.ok) {
