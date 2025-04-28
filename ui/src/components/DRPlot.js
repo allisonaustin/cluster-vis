@@ -1,16 +1,15 @@
-import { Card, Col, Form, Row, Select, InputNumber } from "antd";
+import { Card, Col, Form, Row, Select } from "antd";
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import { colorScale, getColor } from '../utils/colors.js';
+import { colorScale } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScores, setzScores, baselines, setBaselines }) => {
+const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScores, setzScores, baselines, setBaselines, nodeClusterMap, updateClustersCallback }) => {
     const svgContainerRef = useRef();
     const [chartData, setChartData] = useState([]);
-    const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
     const [size, setSize] = useState({ width: 400, height: 340 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
@@ -34,11 +33,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         d3.select(svgContainerRef.current).selectAll("*").remove();
         setChartData(data);
 
-        const clusters = new Map();
-        data.forEach(d => {
-            clusters.set(d.nodeId, d.Cluster);
-        });
-        setNodeClusterMap(clusters);
 
         // NOTE: this currently does nothing as 1) setSize() runs after this useEffect() runs,
         //       and 2) this useEffect() does not depend on Size. All logic will be run with the default
@@ -72,44 +66,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
           const zoomLayer = svg.append("g")
           .attr("class", "zoom-layer");
 
-        //   const xAxis = d3.axisBottom(xScale);
-        
-        // svg.append('g')
-        //     .attr('class', 'x-axis')
-        //     .attr('transform', `translate(0,${height - margin.bottom})`)
-        //     .call(xAxis)
-        //     .selectAll("text")
-        //     .style("font-size", "14px");
-
-        // svg.append('text')
-        //     .attr('id', 'x-axis-label-dr')
-        //     .attr("x", width/2)
-        //     .attr("y", height)
-        //     .style('text-anchor', 'middle')
-        //     .text(xKey)
-        //     .style('font-size', '16px');
-
-
-        // const yAxis = d3.axisLeft(yScale).ticks(height / 40);
-        // svg.append("g")
-        //     .attr("class", "y-axis")
-        //     .attr("transform", `translate(${margin.left},0)`)
-        //     .call(yAxis)
-        //     .call(g => g.append("text")
-        //         .attr('id', 'y-axis-label-dr')
-        //         .attr("x", -height/2)
-        //         .attr("y", -margin.right)
-        //         .attr("fill", "currentColor")
-        //         .attr("text-anchor", "start")
-        //         .attr("transform", "rotate(-90)")
-        //         .style('font-size', '16px')
-        //         .text(yKey)); // Y label
-
-        // svg.select('.y-axis')
-        //     .selectAll("text")
-        //     .style("font-size", "14px")
-
-        // let circs = svg.selectAll(".dr-circle")
         let circs = zoomLayer.selectAll(".dr-circle")
             .data(data)
             .enter()
@@ -121,7 +77,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
-            .style('fill', d => colorScale(d.Cluster))
+            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId))) // TODO: hoist this into separate useeffect just for nodeclustermap
             .style("opacity", d => {
                 return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
             })
@@ -154,7 +110,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                             .transition()
                             .duration(150)
                             .style("opacity", 1)
-                            // .attr('stroke', colorScale(d.Cluster)); 
                     } else {
                         d3.select(this)
                             .transition()
@@ -227,24 +182,23 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     }, [data, type]);
 
     useEffect(() => {
+        d3.select(".zoom-layer").selectAll(".dr-circle")
+            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
+    }, [nodeClusterMap]);
+
+    useEffect(() => {
         d3.select(svgContainerRef.current)
             .selectAll(".dr-circle")
             .transition()
             .duration(300)
             .style("opacity", d => {
                 const idVal = getIdVal(d);
-                if (selectedPoints.includes(idVal) || selectedPoints.length == 0) {
+                if (selectedPoints.includes(idVal) || selectedPoints.length === 0) {
                     return highlight;
                 } else {
                     return nonHighlight;
                 }
             });
-        // const lineCharts = d3.selectAll(".line-svg"); 
-        // lineCharts.selectAll(".line")
-        //     .style("stroke", d => {
-        //         const cluster = nodeClusterMap.get(d[0]);
-        //         return colorScale(+cluster);
-        // });
     }, [selectedPoints]);
 
     const updateChart = (method1, method2) => {
@@ -287,7 +241,6 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
     const handleSelection = (selected) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
         
-        // console.log("Selected Items:", selected);
         setSelectedPoints(selected)
         
         chart.selectAll('.dr-circle')
@@ -311,6 +264,11 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         }
     };
 
+    const handleSubmitNKMeans = values => {
+        updateClustersCallback(values.numClusters)
+    };
+    const clusterOptions = Array.from({ length: 19 }, (_, i) => i + 2); // [2..20]
+
     return (
     <>
         <Card 
@@ -325,42 +283,20 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
                     <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                        {/* <Form layout="inline">
-                            <Form.Item label="DR1">
-                            <Select
-                                value={method1}
-                                onChange={(value) => updateChart(value, method2)}
-                            >
-                                <Option value="UMAP">UMAP</Option>
-                                <Option value="tSNE">t-SNE</Option>
-                                <Option value="PC">PCA</Option>
-                            </Select>
-                            </Form.Item>
-                        </Form>
-
-                        <Form layout="inline">
-                            <Form.Item label="DR2">
-                            <Select
-                                value={method2}
-                                onChange={(value) => updateChart(method1, value)}
-                            >
-                                <Option value="UMAP">UMAP</Option>
-                                <Option value="tSNE">t-SNE</Option>
-                                <Option value="PC">PCA</Option>
-                            </Select>
-                            </Form.Item>
-                        </Form> */}
-
-                        <Form layout="inline">
-                            <Form.Item label="Clusters">
-                            <InputNumber
-                                min={2}
-                                max={20}
-                                value={numClusters}
-                                onChange={(value) => setNumClusters(value)}
-                                style={{ width: "35px" }}
-                                controls={false}
-                            />
+                        <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
+                            <Form.Item name="numClusters" label="# Clusters">
+                                <Select
+                                style={{ width: 60 }}
+                                onChange={(value) => {
+                                    handleSubmitNKMeans({ numClusters: value }); // manually call submit when changed
+                                }}
+                                >
+                                    {clusterOptions.map((num) => (
+                                        <Option key={num} value={num}>
+                                        {num}
+                                        </Option>
+                                    ))}
+                                </Select>
                             </Form.Item>
                         </Form>
                     </div>

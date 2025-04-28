@@ -1,5 +1,5 @@
 import { Col, Layout, Row, Spin } from "antd";
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import DR from './components/DRPlot.js';
 import FeatureView from './components/FeatureView.js';
@@ -36,29 +36,50 @@ function App() {
       .catch((err) => console.error("Error fetching data:", err));
   }, []); // TODO: dependency on [selectedDims]
 
+  const updateClustersCallback = useCallback(async (numClusters) => {
+    console.log(`updating clusters with k=${numClusters}`)
+    // TODO: get new cluster ids, rerun set node cluster map
+    try {
+      const response = await fetch(`http://127.0.0.1:5010/recomputeClusters/${numClusters}`);
+      if (response.ok) {
+        const data = await response.json();
+        const clusters = new Map();
+        data.node_cluster_map.forEach(d => {
+            clusters.set(d.nodeId, d.Cluster);
+        });
+        setNodeClusterMap(clusters);
+        setFCs(data.feat_contributions);
+      } else {
+        console.error("Failed to fetch new cluster IDs -", response.status, response.statusText);
+      }
+    } catch (e) {
+      console.error("Failed to fetch new cluster IDs -", e);
+    }
+  }, []);
+
   const getNodeData = async (selectedCols) => {
     try {
       const response = await fetch(`http://127.0.0.1:5010/nodeData/${selectedCols}`);
-      const data = await response.json();
       if (response.ok) { 
+        const data = await response.json();
         setNodeData(data)
       } else {
-        setNodeData(null);   
+        setNodeData(null);
         setError("Failed to fetch data. Please check that the server is running.");
       }
     } catch (error) {
-      setNodeData(null)
+      setNodeData(null);
       setError("Failed to fetch data. Please check that the server is running.");
-      console.error(error);     
+      console.error(error);
     }
   };
 
   const getDRTimeData = async () => {
     try {
       const response = await fetch(`http://127.0.0.1:5010/drTimeData`);
-      const data = await response.json();
       
       if (response.ok) {
+        const data = await response.json();
         setDRTData(data.dr_features);
         setFCs(data.feat_contributions);
         const clusters = new Map();
@@ -82,8 +103,8 @@ function App() {
   const getMrDMD = async () => {
     try {
       const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/${recompute}/0/0/0/0/0`);
-      const data = await response.json();
       if (response.ok) { 
+        const data = await response.json();
         setzScores(data.zscores)
         setBaselines(data.baselines)
       } else {
@@ -154,6 +175,8 @@ function App() {
                         selectedDims={selectedDims}
                         setzScores={setzScores}
                         setBaselines={setBaselines}
+                        nodeClusterMap={nodeClusterMap}
+                        updateClustersCallback={updateClustersCallback}
                       />
                   </div>
                   )}

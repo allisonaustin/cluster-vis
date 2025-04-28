@@ -5,18 +5,19 @@ from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
+from ccpca import CCPCA
+from mat_reorder import MatReorder
+from opt_sign_flip import OptSignFlip
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 from umap import UMAP
-from ccpca import CCPCA 
-from opt_sign_flip import OptSignFlip
-from mat_reorder import MatReorder
 
 # TODO: finish docstrings
 CACHE_DIR = './cache'
 DR1_CACHE_NAME = './cache/drTimeDataDR1.parquet'
+DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
@@ -208,9 +209,9 @@ def apply_second_dr(df):
                     tSNE1=tsne1,
                     tSNE2=tsne2)
 
-def id_clusters_w_kmeans(df_pivot):
+def id_clusters_w_kmeans(df_pivot, k=4):
     X = df_pivot[['UMAP1', 'UMAP2']]
-    kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     df_pivot['Cluster'] = kmeans.fit_predict(X)
     df_pivot['nodeId'] = df_pivot.index
 
@@ -283,6 +284,8 @@ def get_dr_time(df, components_only=False):
     dr2start = timer()
     DR2_d = apply_second_dr(DR1_d)
     dr2end = timer()
+    DR2_d.to_parquet(DR2_CACHE_NAME)
+    print(f'Cached DR2 results to parquet {DR2_CACHE_NAME}.')
     
     # Use kMeans to get cluster IDs
     kmeansStart = timer()
@@ -295,3 +298,29 @@ def get_dr_time(df, components_only=False):
     print(f'Returning {len(DR2_d)} rows')
     
     return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
+
+def recompute_clusters(numClusters):
+    kmeans_start = timer()
+    if not os.path.exists(DR2_CACHE_NAME):
+        print("No cached DR2 results. Make sure /drTimeData was called before /recomputeClusters.")
+        return None
+    cached_dr2_df = pd.read_parquet(DR2_CACHE_NAME)
+    id_clusters_w_kmeans(cached_dr2_df, numClusters)
+    kmeans_end = timer()
+    print(f'Recomputed cluster IDs for new k={numClusters} with cached DR2 results in {kmeans_end - kmeans_start}')
+
+    print(f'Recomputing feature contributions for new k={numClusters} clusters.')
+    fc_start = timer()
+    agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(cached_dr2_df)
+    fc_end = timer()
+    print(f'Recomputed feature contributions for new k={numClusters} clusters with cached DR2 results in {fc_end - fc_start}')
+
+    return {
+        "node_cluster_map": cached_dr2_df[['Cluster', 'nodeId']].to_dict(orient='records'),
+        "feat_contributions": {
+            "agg_feat_contrib_mat": agg_feat_contrib_mat.tolist(),
+            "label_to_rows": [list(rows) for rows in label_to_rows],
+            "label_to_rep_row": label_to_rep_row,
+            "order_col": order_col
+        },
+    }
