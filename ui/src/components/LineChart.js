@@ -186,24 +186,41 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           const valueStart = yScale.invert(y1);
           const valueEnd = yScale.invert(y0);
 
-          // checking which component of baseline needs to be updated
-          var newX0 = baselineX?.[0] ?? start;
-          var newX1 = baselineX?.[1] ?? end;
-          var newY0 = baselineY?.[0] ?? valueStart;
-          var newY1 = baselineY?.[1] ?? valueEnd; 
+          const hasPrevX = prevX?.current && prevX.current.length === 2;
+           const hasPrevY = prevY?.current && prevY.current.length === 2;
+ 
+           let newX0 = start;
+           let newX1 = end;
+           let newY0 = valueStart;
+           let newY1 = valueEnd;
+ 
+           if (hasPrevX) {
+              if (prevX.current[0].getTime() !== start.getTime()) {
+                newX0 = start;
+              } else {
+                newX0 = prevX.current[0];
+              }
 
-          if (prevX.current[0].getTime() !== start.getTime()) {
-            newX0 = start;
-          }
-          if (prevX.current[1].getTime() !== end.getTime()) {
-            newX1 = end;
-          }
-          if (Math.abs(prevY.current[0] - valueStart) > 1e-6) {
-            newY0 = valueStart;
-          }
-          if (Math.abs(prevY.current[1] - valueEnd) > 1e-6) {
-            newY1 = valueEnd;
-          }
+              if (prevX.current[1].getTime() !== end.getTime()) {
+                newX1 = end;
+              } else {
+                newX1 = prevX.current[1];
+              }
+            }
+          
+            if (hasPrevY) {
+              if (Math.abs(prevY.current[0] - valueStart) > 1e-6) {
+                newY0 = valueStart;
+              } else {
+                newY0 = prevY.current[0];
+              }
+
+              if (Math.abs(prevY.current[1] - valueEnd) > 1e-6) {
+                newY1 = valueEnd;
+              } else {
+                newY1 = prevY.current[1];
+              }
+            }
 
           // no update
           if (newX0 == prevX.current[0] &&
