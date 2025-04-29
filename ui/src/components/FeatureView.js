@@ -120,7 +120,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     };
 
     return (
-      <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
+      <Card title="METRIC READING VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
         <div style={{
           width: '16px',
