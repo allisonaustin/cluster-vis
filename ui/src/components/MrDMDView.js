@@ -68,7 +68,7 @@ const MRDMD = ({ data }) => {
         const ySvg = d3.select(yAxisRef.current)
         .append('svg')
         .attr('width', margin.left)
-        .attr('height',totalHeight + 10);
+        .attr('height',totalHeight + 20);
   
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -218,14 +218,14 @@ const MRDMD = ({ data }) => {
         const lSvg = d3.select(legendRef.current)
             .append('svg')
             .attr('width',  200 )
-            .attr('height', 40);
+            .attr('height', 50);
 
         // legend
         const legendWidth = 120; 
         const legendHeight = 10;  
         
         const legendGroup = lSvg.append("g")
-            .attr("transform", `translate(20, 10)`);
+            .attr("transform", `translate(20, 20)`);
         
         const defs = lSvg.append("defs");
         const linearGradient = defs.append("linearGradient")
@@ -262,11 +262,19 @@ const MRDMD = ({ data }) => {
             .call(legendAxis)
             .style('font-size', 12)
             .select(".domain").remove();
+
+        legendGroup.append('text')
+            .attr('x', legendWidth / 2)
+            .attr('y', -5)
+            .style('text-anchor', 'middle')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .text('Z-Scores');
     };
       
 
 return (
-    <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
+    <Card title="NODE BEHAVIOR VIEW" size="small" style={{ height: "auto" }}>
         <div style={{ display:'flex', position:'relative' }}>
             <div ref={yAxisRef} style={{ flex:'none' }} />
             <div ref={heatmapRef} style={{overflowX: 'auto', overflowY: 'hidden', flex: 1}}/>

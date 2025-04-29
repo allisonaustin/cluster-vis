@@ -94,7 +94,15 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
     <List
       style={{ width: "100%", maxWidth: 500, overflowY: "scroll", maxHeight: 450, marginRight: "10px" }}
       bordered
-      dataSource={data.features}
+      dataSource={[...data.features].sort((a, b) => {
+        const getMaxAbsContribution = (feature) => {
+          const i = data.features.indexOf(feature);
+          if (!fcs || i === -1 || i >= fcs.agg_feat_contrib_mat.length) return -Infinity;
+          return Math.max(...fcs.agg_feat_contrib_mat[i].map(v => Math.abs(v)));
+        };
+      
+        return getMaxAbsContribution(b) - getMaxAbsContribution(a);
+      })}
       renderItem={(key, index) => {
       return (
           <List.Item key={key} style={{ display: "flex", alignItems: "center", padding: "5px 10px" }}>
