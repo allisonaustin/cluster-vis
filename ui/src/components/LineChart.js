@@ -171,8 +171,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         const yScale = focus.node()?.yScale;
 
         function updateBaselineHandler(event) {
-          console.log(skipBrush.current)
-          if (skipBrush.current) {
+         if (skipBrush.current) {
             skipBrush.current = false; 
             return;
           }
@@ -316,9 +315,6 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
 
           prevX.current = [x0, x1];
           prevY.current = [y0, y1];
-
-          console.log(prevX.current)
-          console.log(prevY.current)
 
           brushSelection
             .call(brush.move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
