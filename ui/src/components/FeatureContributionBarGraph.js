@@ -8,6 +8,9 @@ export default function FeatureContributionBarGraph({ feature, fcData, graphId }
     const AXIS_TICK_FONT_SIZE = 50;
     useEffect(() => {
         if (!featureSvgRef.current || !fcData ) return;
+        // Clear graph for updates due to fcData (cluster ID) changes
+        d3.select(featureSvgRef.current).selectAll('*').remove()
+
         // console.log(feature, graphId, fcData);
         const margin = { top: 20, right: 0, bottom: 20, left: 0 };
         const xDomain = [-1, 1];

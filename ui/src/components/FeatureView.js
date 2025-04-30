@@ -1,12 +1,11 @@
-import { Card, Col, Row, Switch} from "antd";
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { Card, Col, Row } from "antd";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
 const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
-    
     const processed = useMemo(() => {
         const proc = {};
         data.data.forEach(row => {
@@ -150,7 +149,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
             </Col>
             {/* Right column: List */}
             <Col span={8}>
-                {/* TODO: move this to sidebar at the app level */}
                 <FeatureSelect 
                     data={data} processed={processed} selectedDims={selectedDims}
                     selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
