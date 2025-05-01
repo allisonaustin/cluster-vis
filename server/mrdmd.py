@@ -328,7 +328,11 @@ def get_cached_or_compute_baselines(df, force_recompute):
     if missing_features:
         print(f'Computing baselines for missing features: {missing_features}')
         missing_df = df[['nodeId', 'timestamp'] + list(missing_features)]
+        bs_start = timer()
         new_baselines = process_columns_baseline(missing_df)
+        bs_end = timer()
+        print(f'baseline in {(bs_end - bs_start)}s')
+
         
         # Append new baselines to cached ones
         if not new_baselines.empty:
@@ -348,16 +352,13 @@ def get_cached_or_compute_baselines(df, force_recompute):
 
 def get_mrdmd(df, force_recompute):
     # Step 1: Compute z-scores for baselines or get them from cache
-    bs_start = timer()
     Z_b = get_cached_or_compute_baselines(df, force_recompute)
-    bs_end = timer()
 
     # Step 2: Compute z-scores for the node selection compared to baseline z-scores
     mr_dmdstart = timer()
     zsc_d = compute_zscores(df, Z_b)
     mr_dmdend = timer()
 
-    print(f'baseline in {(bs_end - bs_start)}s')
     print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
     return zsc_d, Z_b
 
