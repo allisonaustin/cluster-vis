@@ -4,6 +4,7 @@ import pandas as pd
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
+from timeit import default_timer as timer
 from scripts.dr_time import get_dr_time
 from scripts.dr_time import get_feat_contributions
 from mrdmd import get_mrdmd, get_mrdmd_with_new_base
@@ -32,7 +33,11 @@ def get_timeseries_data(file='theta_env_logs.csv'):
 def get_dr_time_data():
     global ts_data
     df = get_dr_time(ts_data)
+    fc_start = timer()
     agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(df)
+    fc_end = timer()
+
+    print(f'ccpca in {(fc_end - fc_start)}s')
 
     response = {
         "dr_features": df.to_dict(orient='records'),  # main DR results + ClusterID
