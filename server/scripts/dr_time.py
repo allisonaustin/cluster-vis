@@ -176,8 +176,11 @@ def apply_pca(df, n_components=2):
 def apply_umap(df):
     print('Applying DR2 UMAP')
     df_umap = df.copy(deep=True)
+    dr2_start = timer()
     umap = UMAP(n_components=2, min_dist=0.5, n_neighbors=50, random_state=42)
     embedding = umap.fit_transform(df_umap)
+    dr2_end = timer()
+    print(f'DR2 in {(dr2_end - dr2_start)}s')
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
 def apply_tsne(df):
@@ -257,7 +260,10 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
     if force_recompute:
         print('Forcing fresh compute of DR1')
     
-    DR1_d, FC_final, explained_variance_dict = process_columns(df)
+    dr1_start = timer()
+    DR1_d, _, _ = process_columns(df)
+    dr1_end = timer()
+    print(f'DR1 in {(dr1_end - dr1_start)}s')
     os.makedirs(CACHE_DIR, exist_ok=True)
     DR1_d.to_parquet(DR1_CACHE_NAME)
     print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')
@@ -265,24 +271,16 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
 
 def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
-    dr1start = timer()
     DR1_d = get_cached_or_compute_dr1(df)
-    # DR1_d, FC_final, explained_variance_dict = process_columns(df)
-    dr1end = timer()
 
     # Second pass DR across Features
-    # PCA then tSNE and UMAP
-    dr2start = timer()
     DR2_d = apply_second_dr(DR1_d)
-    dr2end = timer()
     
     # Use kMeans to get cluster IDs
     kmeansStart = timer()
     id_clusters_w_kmeans(DR2_d)
     kmeansEnd = timer()
 
-    print(f'DR1 in {(dr1end - dr1start)}s')
-    print(f'DR2 in {(dr2end - dr2start)}s')
     print(f'kMeans in {(kmeansEnd - kmeansStart)}s')
     print(f'Returning {len(DR2_d)} rows')
     

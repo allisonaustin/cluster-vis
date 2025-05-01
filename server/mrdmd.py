@@ -368,10 +368,10 @@ def get_mrdmd_with_new_base(df, col, bmin, bmax, sob, eob):
     bs_end = timer()
 
     # Step 2: Compute z-scores for the node selection compared to new baseline z-score
-    mr_dmdstart = timer()
+    m_start = timer()
     zsc_d = compute_zscores(df, Z_b)
-    mr_dmdend = timer()
+    m_end = timer()
 
     print(f'baseline in {(bs_end - bs_start)}s')
-    print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
+    print(f'mrDMD in {(m_end - m_start)}s')
     return zsc_d, Z_b
