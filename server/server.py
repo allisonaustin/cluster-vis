@@ -32,11 +32,14 @@ def get_timeseries_data(file='theta_env_logs.csv'):
 @app.route('/drTimeData', methods=['GET'])
 def get_dr_time_data():
     global ts_data
+    dr_timestart = timer()
     df = get_dr_time(ts_data)
+    dr_timeend = timer()
     fc_start = timer()
     agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(df)
     fc_end = timer()
 
+    print(f'multidr in {(dr_timeend - dr_timestart)}s')
     print(f'ccpca in {(fc_end - fc_start)}s')
 
     response = {
@@ -64,6 +67,7 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
     avail_cols = [col for col in cols if col in filtered_data.columns]
     print('mrdmd:', filtered_data[avail_cols].shape)
 
+    mrdmd_start = timer()
     if (filtered_data.shape[0] > 0):
         if (int(new_base) == 0):
             zscores, baselines = get_mrdmd(filtered_data[avail_cols], int(recompute_base))
@@ -75,6 +79,9 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
         zscores = pd.DataFrame()
         baselines = pd.DataFrame()
         
+    mrdmd_end = timer()
+    print(f'mrdmd in {(mrdmd_end - mrdmd_start)}s')
+    
     response = {
         "zscores": zscores.to_dict(orient='records'),
         "baselines": baselines.to_dict(orient='records')

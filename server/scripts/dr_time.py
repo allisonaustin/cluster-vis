@@ -260,10 +260,7 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
     if force_recompute:
         print('Forcing fresh compute of DR1')
     
-    dr1_start = timer()
     DR1_d, _, _ = process_columns(df)
-    dr1_end = timer()
-    print(f'DR1 in {(dr1_end - dr1_start)}s')
     os.makedirs(CACHE_DIR, exist_ok=True)
     DR1_d.to_parquet(DR1_CACHE_NAME)
     print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')
@@ -271,7 +268,10 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
 
 def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
+    dr1_start = timer()
     DR1_d = get_cached_or_compute_dr1(df)
+    dr1_end = timer()
+    print(f'DR1 in {(dr1_end - dr1_start)}s')
 
     # Second pass DR across Features
     DR2_d = apply_second_dr(DR1_d)
