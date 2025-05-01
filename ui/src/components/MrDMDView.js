@@ -92,16 +92,6 @@ const MRDMD = ({ data }) => {
             .range([0, totalWidth])
             .padding(0.05);
 
-
-        // const svg = d3.select(svgContainerRef.current)
-        //     .append("svg")
-        //     .attr('id', `heatmap-svg`)
-        //     .attr('class', 'heatmap')
-        //     .attr("width", `${totalWidth + margin.left + margin.right}`)
-        //     .attr("height", `${totalHeight + margin.top + margin.bottom}`)
-
-
-
         // x axis
         hSvg.append('g')
             .style('font-size', 13)
@@ -113,23 +103,6 @@ const MRDMD = ({ data }) => {
             .attr("dy", ".15em")
             .attr("transform", "rotate(-65)")
             .select('.domain').remove()
-
-        // svg.append("text")
-        //     .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
-        //     .style("text-anchor", "middle")
-        //     .style("font-size", "18px")
-        //     .style("font-weight", "bold")
-        //     .text("Node ID");
-
-
-
-        // yAxis.selectAll('text')
-        //     .each(function() {
-        //         const textWidth = this.getBBox().width;
-        //         if (textWidth > margin.left) {
-        //         d3.select(this).style('font-size', '11px');
-        //         }
-        //     });
 
         var myColor = d3.scaleDiverging()
             .interpolator(d3.interpolateRdBu) 
