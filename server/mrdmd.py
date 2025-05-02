@@ -333,7 +333,7 @@ def get_cached_or_compute_baselines(df, force_recompute):
         # Append new baselines to cached ones
         if not new_baselines.empty:
             if not ZSC_d.empty:
-                pd.concat([ZSC_d, new_baselines], ignore_index=True) 
+                ZSC_d = pd.concat([ZSC_d, new_baselines], ignore_index=True) 
             else:
                 ZSC_d = new_baselines
 
