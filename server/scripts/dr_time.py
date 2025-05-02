@@ -180,9 +180,8 @@ def apply_pca(df, n_components=2):
     
 def apply_umap(df):
     print('Applying DR2 UMAP')
-    df_umap = df.copy(deep=True)
     umap = UMAP(n_components=2, random_state=42)
-    embedding = umap.fit_transform(df_umap)
+    embedding = umap.fit_transform(df)
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
 def apply_tsne(df):
@@ -195,18 +194,14 @@ def apply_tsne(df):
 def apply_second_dr(df):
     print('Applying DR2')
     df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
-    df_pca = apply_pca(df_pivot)
+    # df_pca = apply_pca(df_pivot)
     umap1, umap2 = apply_umap(df_pivot)
-    tsne1, tsne2 = apply_tsne(df_pivot)
+    # tsne1, tsne2 = apply_tsne(df_pivot)
 
-    # return df_pca['PC1']
     # append DR results to df
-    return df_pivot.assign(PC1=df_pca['PC1'],
-                    PC2=df_pca['PC2'],
+    return df_pivot.assign(
                     UMAP1=umap1,
-                    UMAP2=umap2,
-                    tSNE1=tsne1,
-                    tSNE2=tsne2)
+                    UMAP2=umap2)
 
 def id_clusters_w_kmeans(df_pivot):
     X = df_pivot[['UMAP1', 'UMAP2']]
@@ -215,7 +210,7 @@ def id_clusters_w_kmeans(df_pivot):
     df_pivot['nodeId'] = df_pivot.index
 
 def get_feat_contributions(df):
-    excluded_columns = ["UMAP1", "UMAP2", "nodeId", "tSNE1", "tSNE2", "PC1", "PC2", "Cluster"]
+    excluded_columns = ["UMAP1", "UMAP2", "nodeId", "Cluster"]
     X = df.drop(columns=excluded_columns)
     y = np.int_(df['Cluster'])
 
@@ -262,24 +257,19 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
     if force_recompute:
         print('Forcing fresh compute of DR1')
     
-    DR1_d, FC_final, explained_variance_dict = process_columns(df)
+    DR1_d, _, _ = process_columns(df)
     os.makedirs(CACHE_DIR, exist_ok=True)
     DR1_d.to_parquet(DR1_CACHE_NAME)
     print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')
-
-    explained_variance_df = pd.DataFrame(list(explained_variance_dict.items()), columns=["Column", "Explained Variance"])
-    explained_variance_df.to_csv('./data/farm/exp_var.csv', index=False)
     return DR1_d
 
 def get_dr_time(df, components_only=False):
     # First pass DR across Timestamps
     dr1start = timer()
     DR1_d = get_cached_or_compute_dr1(df)
-    # DR1_d, FC_final, explained_variance_dict = process_columns(df)
     dr1end = timer()
 
     # Second pass DR across Features
-    # PCA then tSNE and UMAP
     dr2start = timer()
     DR2_d = apply_second_dr(DR1_d)
     dr2end = timer()
@@ -294,4 +284,4 @@ def get_dr_time(df, components_only=False):
     print(f'kMeans in {(kmeansEnd - kmeansStart)}s')
     print(f'Returning {len(DR2_d)} rows')
     
-    return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
+    return DR2_d[['UMAP1', 'UMAP2', 'Cluster', 'nodeId']] if components_only else DR2_d
