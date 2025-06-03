@@ -19,7 +19,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
       });
     
     useEffect(() => {
-      if (!svgContainerRef.current || !nodeDataStart || !nodeDataEnd ) return;
+      if (!svgContainerRef.current || !nodeData || !nodeDataStart || !nodeDataEnd ) return;
       
       const margin = { top: 10, right: 30, bottom: 20, left: 50 };
 

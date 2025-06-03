@@ -3,9 +3,22 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
+
+    const headerMap = useMemo(() => {
+      console.log("headers", headers);
+      const map = {};
+      headers.forEach(h => {
+        if (h.filename && h.filename.endsWith('.json')) {
+          const name = h.filename.replace('.json', '');
+          map[name] = h;
+        }
+      });
+      return map;
+    }, [headers]);
+    
     const processed = useMemo(() => {
         const proc = {};
         data.data.forEach(row => {
@@ -119,7 +132,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     };
 
     return (
-      <Card title="FEATURE VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
+      <Card title="METRIC READING VIEW" size="small" style={{ height: "auto", maxHeight: '450px', overflow:'auto' }}> 
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
         <div style={{
           width: '16px',
@@ -142,7 +155,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             baselinesRef={baselinesRef}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
-                            baselines={baselines}
+                            metadata={headerMap[field]}
                         />
                     );
                 })}

@@ -5,6 +5,12 @@ from datetime import datetime
 import pandas as pd
 from flask import Flask, abort, jsonify
 from flask_cors import CORS
+
+from datetime import datetime
+from timeit import default_timer as timer
+from scripts.dr_time import get_dr_time
+from scripts.dr_time import get_feat_contributions
+
 from mrdmd import get_mrdmd, get_mrdmd_with_new_base
 from scripts.dr_time import (get_dr_time, get_feat_contributions,
                              recompute_clusters)
@@ -14,6 +20,7 @@ CORS(app)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
+headers = pd.DataFrame()
 filepath = './data/farm/'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/dune_node_data.parquet'
@@ -26,10 +33,26 @@ def get_timeseries_data(file='far_data_2024-02-21.csv'):
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
     return ts_data
 
+
 def clear_DR2_cache():
     print('Clearing DR2 cache on startup.')
     if os.path.exists(DR2_CACHE_NAME):
         os.remove(DR2_CACHE_NAME)
+
+@app.route('/headers', methods=['GET'])
+def get_headers():
+    global headers 
+
+    metadata = []
+    headers_dir = os.path.join(data_dir, 'headers')
+    try:
+        for fname in os.listdir(headers_dir):
+            if fname.endswith('.json'):
+                with open(os.path.join(headers_dir, fname), 'r', encoding='utf-8') as f:
+                    metadata.append(json.load(f))
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": "Could not read headers", "details": str(e)}), 500
 
 @app.route('/mgrData', methods=['GET'])
 def get_json_data():
@@ -47,7 +70,11 @@ def get_json_data():
 def get_dr_time_data():
     global ts_data
     df = get_dr_time(ts_data)
+    fc_start = timer()
     agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(df)
+    fc_end = timer()
+
+    print(f'ccpca in {(fc_end - fc_start)}s')
 
     response = {
         "dr_features": df.to_dict(orient='records'),  # main DR results + ClusterID

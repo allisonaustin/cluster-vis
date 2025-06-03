@@ -68,7 +68,7 @@ const MRDMD = ({ data }) => {
         const ySvg = d3.select(yAxisRef.current)
         .append('svg')
         .attr('width', margin.left)
-        .attr('height',totalHeight + 10);
+        .attr('height',totalHeight + 20);
   
         const yScale = d3.scaleBand()
             .domain(featureNames)
@@ -92,16 +92,6 @@ const MRDMD = ({ data }) => {
             .range([0, totalWidth])
             .padding(0.05);
 
-
-        // const svg = d3.select(svgContainerRef.current)
-        //     .append("svg")
-        //     .attr('id', `heatmap-svg`)
-        //     .attr('class', 'heatmap')
-        //     .attr("width", `${totalWidth + margin.left + margin.right}`)
-        //     .attr("height", `${totalHeight + margin.top + margin.bottom}`)
-
-
-
         // x axis
         hSvg.append('g')
             .style('font-size', 13)
@@ -113,23 +103,6 @@ const MRDMD = ({ data }) => {
             .attr("dy", ".15em")
             .attr("transform", "rotate(-65)")
             .select('.domain').remove()
-
-        // svg.append("text")
-        //     .attr("transform", `translate(${size.width / 2}, ${size.height + margin.bottom - 30})`)
-        //     .style("text-anchor", "middle")
-        //     .style("font-size", "18px")
-        //     .style("font-weight", "bold")
-        //     .text("Node ID");
-
-
-
-        // yAxis.selectAll('text')
-        //     .each(function() {
-        //         const textWidth = this.getBBox().width;
-        //         if (textWidth > margin.left) {
-        //         d3.select(this).style('font-size', '11px');
-        //         }
-        //     });
 
         var myColor = d3.scaleDiverging()
             .interpolator(d3.interpolateRdBu) 
@@ -207,7 +180,7 @@ const MRDMD = ({ data }) => {
                 lines.transition()
                     .duration(150)
                     .style("stroke-width", 1)
-                    .style("opacity", 1)
+                    .style("opacity", 0.8)
 
                 setTooltip(prev => ({
                     ...prev,
@@ -218,14 +191,14 @@ const MRDMD = ({ data }) => {
         const lSvg = d3.select(legendRef.current)
             .append('svg')
             .attr('width',  200 )
-            .attr('height', 40);
+            .attr('height', 50);
 
         // legend
         const legendWidth = 120; 
         const legendHeight = 10;  
         
         const legendGroup = lSvg.append("g")
-            .attr("transform", `translate(20, 10)`);
+            .attr("transform", `translate(20, 20)`);
         
         const defs = lSvg.append("defs");
         const linearGradient = defs.append("linearGradient")
@@ -262,11 +235,19 @@ const MRDMD = ({ data }) => {
             .call(legendAxis)
             .style('font-size', 12)
             .select(".domain").remove();
+
+        legendGroup.append('text')
+            .attr('x', legendWidth / 2)
+            .attr('y', -5)
+            .style('text-anchor', 'middle')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .text('Z-Scores');
     };
       
 
 return (
-    <Card title="NODE BEHAVIOR HEATMAP" size="small" style={{ height: "auto" }}>
+    <Card title="NODE BEHAVIOR VIEW" size="small" style={{ height: "auto" }}>
         <div style={{ display:'flex', position:'relative' }}>
             <div ref={yAxisRef} style={{ flex:'none' }} />
             <div ref={heatmapRef} style={{overflowX: 'auto', overflowY: 'hidden', flex: 1}}/>
