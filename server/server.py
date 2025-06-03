@@ -14,6 +14,7 @@ CORS(app)
 
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
+headers = pd.DataFrame()
 filepath = './data/farm/'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/dune_node_data.parquet'
@@ -24,6 +25,21 @@ def get_timeseries_data(file='far_data_2024-02-21.csv'):
     global filepath
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
     return ts_data
+
+@app.route('/headers', methods=['GET'])
+def get_headers():
+    global headers 
+
+    metadata = []
+    headers_dir = os.path.join(data_dir, 'headers')
+    try:
+        for fname in os.listdir(headers_dir):
+            if fname.endswith('.json'):
+                with open(os.path.join(headers_dir, fname), 'r', encoding='utf-8') as f:
+                    metadata.append(json.load(f))
+        return jsonify(metadata)
+    except Exception as e:
+        return jsonify({"error": "Could not read headers", "details": str(e)}), 500
 
 @app.route('/mgrData', methods=['GET'])
 def get_json_data():

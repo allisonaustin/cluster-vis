@@ -3,9 +3,21 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import FeatureSelect from "./FeatureSelect.js";
 import LineChart from './LineChart.js';
 
-const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap }) => {
+const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
+
+    const headerMap = useMemo(() => {
+      console.log("headers", headers);
+      const map = {};
+      headers.forEach(h => {
+        if (h.filename && h.filename.endsWith('.json')) {
+          const name = h.filename.replace('.json', '');
+          map[name] = h;
+        }
+      });
+      return map;
+    }, [headers]);
     
     const processed = useMemo(() => {
         const proc = {};
@@ -143,7 +155,7 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
                             baselinesRef={baselinesRef}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
-                            baselines={baselines}
+                            metadata={headerMap[field]}
                         />
                     );
                 })}

@@ -180,7 +180,7 @@ const MRDMD = ({ data }) => {
                 lines.transition()
                     .duration(150)
                     .style("stroke-width", 1)
-                    .style("opacity", 1)
+                    .style("opacity", 0.8)
 
                 setTooltip(prev => ({
                     ...prev,

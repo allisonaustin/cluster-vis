@@ -16,7 +16,9 @@ function App() {
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
   const [selectedPoints, setSelectedPoints] = useState(["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"]);
-  const [selectedDims, setSelectedDims] = useState(['bytes_out']);
+  // const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'load_fifteen']);
+  const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'cpu_nice', 'cpu_system', 'proc_run']);
+  const [headers, setHeaders] = useState(null);
   const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
   const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
   const [recompute, setRecompute] = useState(1)
@@ -27,7 +29,8 @@ function App() {
   useEffect(() => {
     Promise.all([ 
         getNodeData(selectedDims),
-        getDRTimeData()
+        getDRTimeData(),
+        getHeaders()
       ])
       .then(() => {
         console.log("Data fetched successfully");
@@ -98,7 +101,24 @@ function App() {
       console.error(error);     
     }
   };
-  
+
+  const getHeaders = async () => {
+    try {
+      const response = await fetch(`http://127.0.0.1:5010/headers`);
+      const data = await response.json();
+      if (response.ok) { 
+        setHeaders(data);
+      } else {
+        setHeaders([]);
+        setError("Failed to fetch headers. Please check that the server is running.");
+      }
+    } catch (error) {
+      setHeaders([]);
+      setError("Failed to fetch headers. Please check that the server is running.");
+      console.error(error);
+    }
+  };
+
   return (
     <Layout style={{ height: "100vh", padding: "10px" }}>
       <Content style={{ marginTop: "10px" }}>
@@ -118,7 +138,7 @@ function App() {
                     nodeClusterMap={nodeClusterMap}
                   />
                   )}
-                {((!nodeData) || (!baselines) || (!DRTData) || (!zScores)) ? (
+                {((!nodeData) || (!baselines) || (!DRTData) || (!zScores) || (!headers)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
@@ -136,6 +156,7 @@ function App() {
                     setzScores={setzScores}
                     setBaselines={setBaselines}
                     nodeClusterMap={nodeClusterMap}
+                    headers={headers}
                   />
               )}
             </Col>

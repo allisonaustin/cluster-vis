@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getColor, colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClusterMap, baselines }) => {
+const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClusterMap, metadata }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
     const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
@@ -21,6 +21,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
 
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
+      console.log(field, metadata);
       d3.select(svgContainerRef.current).selectAll("*").remove();
 
       const svg = d3.select(svgContainerRef.current)
@@ -97,16 +98,19 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
               .attr("x2", size.width - margin.left - margin.right)
               .attr("stroke-opacity", 0.1))
           .call(g => g.append("text")
+              .attr("class", "y-axis-label")
               .attr("x", -margin.left + 5)
               .attr("y", 40)
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
-              .style('font-size', '18px')
-              .text("Value")); // Y label   
+              .text(`${metadata ? ` ${metadata.units}` : 'Value'}`)); // Y label
 
       focus.select('.y-axis')
           .selectAll("text")
           .style("font-size", "18px")
+
+      focus.select('.y-axis .y-axis-label')
+        .style('font-size', '22px')
 
       const line = d3.line()
         .x(d => xScale(d.timestamp))
