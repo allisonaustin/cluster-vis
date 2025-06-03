@@ -120,7 +120,6 @@ export default function FeatureSelect({ data, processed, selectedPoints, selecte
                   </span>
               </div>
               <FeatureContributionBarGraph graphId={`${key.replace(/\s/g, "_")}-feat-graph`} feature={key}
-                //TODO: fix issue with less FCs than available data features
                 fcData={!fcs || data.features.indexOf(key) === -1 || data.features.indexOf(key) >= fcs.agg_feat_contrib_mat.length ? []
                             : fcs.order_col.map(clusterId => ({
                                 cluster: clusterId,

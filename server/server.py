@@ -1,13 +1,19 @@
 import json
 import os
+from datetime import datetime
+
 import pandas as pd
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify
 from flask_cors import CORS
+
 from datetime import datetime
 from timeit import default_timer as timer
 from scripts.dr_time import get_dr_time
 from scripts.dr_time import get_feat_contributions
+
 from mrdmd import get_mrdmd, get_mrdmd_with_new_base
+from scripts.dr_time import (get_dr_time, get_feat_contributions,
+                             recompute_clusters)
 
 app = Flask(__name__)
 CORS(app)
@@ -18,6 +24,7 @@ headers = pd.DataFrame()
 filepath = './data/farm/'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/dune_node_data.parquet'
+DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
 
 def get_timeseries_data(file='far_data_2024-02-21.csv'):
     # TODO: convert to parquet instead of global
@@ -25,6 +32,12 @@ def get_timeseries_data(file='far_data_2024-02-21.csv'):
     global filepath
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
     return ts_data
+
+
+def clear_DR2_cache():
+    print('Clearing DR2 cache on startup.')
+    if os.path.exists(DR2_CACHE_NAME):
+        os.remove(DR2_CACHE_NAME)
 
 @app.route('/headers', methods=['GET'])
 def get_headers():
@@ -73,6 +86,17 @@ def get_dr_time_data():
         },
     }
     return jsonify(response)
+
+@app.route('/recomputeClusters/<numClusters>')
+def get_new_cluster_ids(numClusters):
+    recomputed = recompute_clusters(int(numClusters))
+    if recomputed is None:
+        # DR2 is wiped on startup so recompute_clusters always pulls from fresh DR2 data.
+        # recompute_clusters() returns None if DR2 is not found in cache.
+        # This error state can happen if you query /recomputeClusters on server startup before /drTimeData,
+        # e.g. if the server restarted and # clusters is changed on the frontend without a page refresh.
+        abort(404, description="No cached DR2 was found.")
+    return jsonify(recomputed)
 
 @app.route('/mrdmd/<nodes>/<selectedCols>/<recompute_base>/<new_base>/<bmin>/<bmax>/<sob>/<eob>', methods=['GET'])
 def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=None, bmax=None, sob=None, eob=None):
@@ -159,4 +183,5 @@ def list_json_files():
 
 if __name__ == '__main__':
     ts_data = get_timeseries_data()
+    clear_DR2_cache()
     app.run(debug=True, port=5010)

@@ -1,7 +1,7 @@
 import { Card } from "antd";
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
-import { generateColor, colorScale } from '../utils/colors.js';
+import { colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
 const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
@@ -358,7 +358,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
           .call(brush.move, defaultWindow)
 
       
-      }, []);
+      }, [nodeClusterMap]);
 
     const updateCharts = (newDomain) => {
         const chart = d3.select(`#focus-line-1`);
