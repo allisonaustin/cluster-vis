@@ -21,7 +21,7 @@ DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
-    df = pd.read_csv('./data/farm/far_data_2024-02-21.csv').fillna(0.0)
+    df = pd.read_csv('./data/farm/far_data_2024-02-22.csv').fillna(0.0)
     return df
 
 def preprocess(df, value_column):
@@ -181,7 +181,8 @@ def apply_pca(df, n_components=2):
     
 def apply_umap(df):
     print('Applying DR2 UMAP')
-    umap = UMAP(n_components=2, random_state=42)
+    # umap = UMAP(n_components=2, random_state=42)
+    umap = UMAP(n_components=2, min_dist=0.5, n_neighbors=50, random_state=42)
     embedding = umap.fit_transform(df)
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
@@ -258,7 +259,7 @@ def get_cached_or_compute_dr1(df, force_recompute=False):
     if force_recompute:
         print('Forcing fresh compute of DR1')
     
-    DR1_d, _, _ = process_columns(df)
+    DR1_d, _, _= process_columns(df)
     os.makedirs(CACHE_DIR, exist_ok=True)
     DR1_d.to_parquet(DR1_CACHE_NAME)
     print(f'Cached DR1 results to parquet {DR1_CACHE_NAME}.')

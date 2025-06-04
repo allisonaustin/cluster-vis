@@ -21,8 +21,10 @@ function App() {
   const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'cpu_nice', 'cpu_system', 'proc_run']);
   const [dataOptions, setDataOptions] = useState([]);
   const [headers, setHeaders] = useState(null);
-  const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
-  const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
+  // const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
+  // const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
+  const [bStart, setBStart] = useState('2024-02-22 14:47:30Z')
+  const [bEnd, setBEnd] = useState('2024-02-22 22:00:00Z')
   const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
@@ -146,12 +148,6 @@ function App() {
       <Content style={{ marginTop: "10px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
-              <Dropdown 
-                menu={{ items: dataOptions }}>
-                <Button>
-                  Data select <DownOutlined />
-                </Button>
-              </Dropdown>
               {((!nodeData) || (!DRTData)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />

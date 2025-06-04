@@ -26,7 +26,7 @@ CACHE_DIR = './cache'
 NODE_CACHE = './cache/dune_node_data.parquet'
 DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
 
-def get_timeseries_data(file='far_data_2024-02-21.csv'):
+def get_timeseries_data(file='far_data_2024-02-22.csv'):
     # TODO: convert to parquet instead of global
     global ts_data
     global filepath

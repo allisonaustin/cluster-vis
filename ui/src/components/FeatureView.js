@@ -8,7 +8,6 @@ const FeatureView = ({ data, timeRange, selectedDims, selectedPoints, setSelecte
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
 
     const headerMap = useMemo(() => {
-      console.log("headers", headers);
       const map = {};
       headers.forEach(h => {
         if (h.filename && h.filename.endsWith('.json')) {
