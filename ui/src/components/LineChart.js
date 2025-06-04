@@ -21,7 +21,6 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
 
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
-      console.log(field, metadata);
       d3.select(svgContainerRef.current).selectAll("*").remove();
 
       const svg = d3.select(svgContainerRef.current)
@@ -242,7 +241,6 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
             baselineX: [newX0, newX1],
             baselineY: [newY0, newY1]
           };
-          console.log('updating baseline...', field)
           baselinesRef.current[field] = newBaseline
           updateBaseline(field, newBaseline);
         }

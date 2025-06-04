@@ -1,8 +1,9 @@
-import { Col, Layout, Row, Spin } from "antd";
+import { Col, Layout, Row, Spin, Menu, Dropdown, Button, MenuProps } from "antd";
+import { DownOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import DR from './components/DRPlot.js';
-import FeatureView from './components/FeatureView.js';
+import MetricView from './components/MetricView.js';
 import MRDMD from './components/MrDMDView.js';
 import NodeStatusView from './components/NodeStatusView.js';
 
@@ -18,6 +19,7 @@ function App() {
   const [selectedPoints, setSelectedPoints] = useState(["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"]);
   // const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'load_fifteen']);
   const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'cpu_nice', 'cpu_system', 'proc_run']);
+  const [dataOptions, setDataOptions] = useState([]);
   const [headers, setHeaders] = useState(null);
   const [bStart, setBStart] = useState('2024-02-21 14:47:30Z')
   const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z')
@@ -144,6 +146,12 @@ function App() {
       <Content style={{ marginTop: "10px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
+              <Dropdown 
+                menu={{ items: dataOptions }}>
+                <Button>
+                  Data select <DownOutlined />
+                </Button>
+              </Dropdown>
               {((!nodeData) || (!DRTData)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
@@ -163,7 +171,7 @@ function App() {
                     <Spin size="large" />
                   </div>
                 ) : (
-                  <FeatureView 
+                  <MetricView 
                     data={nodeData} 
                     timeRange={[new Date(bStart), new Date(bEnd)]}
                     selectedDims={selectedDims}

@@ -284,7 +284,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
 
                     <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
                         <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
-                            <Form.Item name="numClusters" label="# Clusters">
+                            <Form.Item name="numClusters" label="Num Clusters">
                                 <Select
                                 style={{ width: 60 }}
                                 onChange={(value) => {
