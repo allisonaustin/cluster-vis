@@ -99,7 +99,7 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
           .call(g => g.append("text")
               .attr("class", "y-axis-label")
               .attr("x", -margin.left + 5)
-              .attr("y", 40)
+              .attr("y", 30)
               .attr("fill", "currentColor")
               .attr("text-anchor", "start")
               .text(`${metadata ? ` ${metadata.units}` : 'Value'}`)); // Y label

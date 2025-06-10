@@ -4,7 +4,7 @@ import { Card, List, Checkbox } from "antd";
 import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
-const MRDMD = ({ data }) => {
+const MRDMDView = ({ data }) => {
     // const svgContainerRef = useRef();
     const yAxisRef = useRef();
     const heatmapRef = useRef();
@@ -265,4 +265,4 @@ return (
     );
 };
 
-export default MRDMD;
+export default MRDMDView;

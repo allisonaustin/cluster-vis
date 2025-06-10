@@ -179,10 +179,9 @@ def apply_pca(df, n_components=2):
         print(f"Error processing PCA across features: {e}")
         return None
     
-def apply_umap(df):
+def apply_umap(df, min_dist=0.5, n_neighbors=50):
     print('Applying DR2 UMAP')
-    # umap = UMAP(n_components=2, random_state=42)
-    umap = UMAP(n_components=2, min_dist=0.5, n_neighbors=50, random_state=42)
+    umap = UMAP(n_components=2, min_dist=min_dist, n_neighbors=n_neighbors, random_state=42)
     embedding = umap.fit_transform(df)
     return embedding[:, 0], embedding[:, 1] # columns 'UMAP1', 'UMAP2'
 
@@ -193,11 +192,11 @@ def apply_tsne(df):
     embedding = tsne.fit_transform(df_tsne)
     return embedding[:, 0], embedding[:, 1] # columns 'tSNE1', 'tSNE2'
 
-def apply_second_dr(df):
+def apply_second_dr(df, n_neighbors, min_dist):
     print('Applying DR2')
     df_pivot = df.pivot(index="Measurement", columns="Col", values="DR1")
     # df_pca = apply_pca(df_pivot)
-    umap1, umap2 = apply_umap(df_pivot)
+    umap1, umap2 = apply_umap(df_pivot, n_neighbors=n_neighbors, min_dist=min_dist)
     # tsne1, tsne2 = apply_tsne(df_pivot)
 
     # append DR results to df
@@ -273,7 +272,7 @@ def get_dr_time(df, components_only=False):
 
     # Second pass DR across Features
     dr2start = timer()
-    DR2_d = apply_second_dr(DR1_d)
+    DR2_d = apply_second_dr(DR1_d, n_neighbors=50, min_dist=0.5)
     dr2end = timer()
     DR2_d.to_parquet(DR2_CACHE_NAME)
     print(f'Cached DR2 results to parquet {DR2_CACHE_NAME}.')
@@ -291,24 +290,32 @@ def get_dr_time(df, components_only=False):
 
     return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
 
-def recompute_clusters(numClusters):
+def recompute_clusters(df, numClusters, n_neighbors=50, min_dist=0.5, force_recompute=0):
+    if (force_recompute == 1):
+        DR1_d = get_cached_or_compute_dr1(df)
+        DR2_d = apply_second_dr(DR1_d, n_neighbors, min_dist)
+        DR2_d.to_parquet(DR2_CACHE_NAME)
+    else:
+        DR2_d = pd.read_parquet(DR2_CACHE_NAME)
+
     kmeans_start = timer()
     if not os.path.exists(DR2_CACHE_NAME):
         print("No cached DR2 results. Make sure /drTimeData was called before /recomputeClusters.")
         return None
-    cached_dr2_df = pd.read_parquet(DR2_CACHE_NAME)
-    id_clusters_w_kmeans(cached_dr2_df, numClusters)
+    
+    id_clusters_w_kmeans(DR2_d, numClusters)
     kmeans_end = timer()
     print(f'Recomputed cluster IDs for new k={numClusters} with cached DR2 results in {kmeans_end - kmeans_start}')
 
     print(f'Recomputing feature contributions for new k={numClusters} clusters.')
     fc_start = timer()
-    agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(cached_dr2_df)
+    agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(DR2_d)
     fc_end = timer()
     print(f'Recomputed feature contributions for new k={numClusters} clusters with cached DR2 results in {fc_end - fc_start}')
 
     return {
-        "node_cluster_map": cached_dr2_df[['Cluster', 'nodeId']].to_dict(orient='records'),
+        "dr_features": DR2_d.to_dict(orient='records'),
+        "node_cluster_map": DR2_d[['Cluster', 'nodeId']].to_dict(orient='records'),
         "feat_contributions": {
             "agg_feat_contrib_mat": agg_feat_contrib_mat.tolist(),
             "label_to_rows": [list(rows) for rows in label_to_rows],

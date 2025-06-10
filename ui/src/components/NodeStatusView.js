@@ -21,7 +21,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
     useEffect(() => {
       if (!svgContainerRef.current || !nodeData || !nodeDataStart || !nodeDataEnd ) return;
       
-      const margin = { top: 10, right: 30, bottom: 20, left: 50 };
+      const margin = { top: 5, right: 30, bottom: 20, left: 50 };
 
       d3.select(svgContainerRef.current).selectAll("*").remove();
 

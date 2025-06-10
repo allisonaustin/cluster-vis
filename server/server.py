@@ -87,9 +87,10 @@ def get_dr_time_data():
     }
     return jsonify(response)
 
-@app.route('/recomputeClusters/<numClusters>')
-def get_new_cluster_ids(numClusters):
-    recomputed = recompute_clusters(int(numClusters))
+@app.route('/recomputeClusters/<numClusters>/<n_neighbors>/<min_dist>/<force_recompute>')
+def get_new_cluster_ids(numClusters, n_neighbors=50, min_dist=0.5, force_recompute=0):
+    global ts_data
+    recomputed = recompute_clusters(ts_data, int(numClusters), int(n_neighbors), float(min_dist), int(force_recompute))
     if recomputed is None:
         # DR2 is wiped on startup so recompute_clusters always pulls from fresh DR2 data.
         # recompute_clusters() returns None if DR2 is not found in cache.

@@ -131,7 +131,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
     };
 
     return (
-      <Card title="METRIC READING VIEW" size="small" style={{ height: "auto"}}> 
+      <Card title="METRIC READING VIEW" size="small" style={{ height: "auto" }}> 
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
           <div style={{
             width: '16px',

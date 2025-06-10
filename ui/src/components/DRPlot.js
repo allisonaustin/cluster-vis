@@ -1,4 +1,4 @@
-import { Card, Col, Form, Row, Select } from "antd";
+import { Card, Col, Form, Row, Select, Slider } from "antd";
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { colorScale } from '../utils/colors.js';
@@ -7,12 +7,14 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScores, setzScores, baselines, setBaselines, nodeClusterMap, updateClustersCallback }) => {
+const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback }) => {
     const svgContainerRef = useRef();
-    const [chartData, setChartData] = useState([]);
-    const [size, setSize] = useState({ width: 400, height: 340 });
+    const [size, setSize] = useState({ width: 300, height: 300});
+    const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
+    const [nNeighbors, setNNeighbors] = useState(50);
+    const [minDist, setMinDist] = useState(0.5);
     const [numClusters, setNumClusters] = useState(4);
     const [highlight, setHighlight] = useState(1);
     const [nonHighlight, setNonHighlight] = useState(0.2);
@@ -29,18 +31,12 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
 
     useEffect(() => {
         if (!svgContainerRef.current || !data ) return;
-        
-        d3.select(svgContainerRef.current).selectAll("*").remove();
-        setChartData(data);
-
 
         // NOTE: this currently does nothing as 1) setSize() runs after this useEffect() runs,
-        //       and 2) this useEffect() does not depend on Size. All logic will be run with the default
-        //       size of 400 x 300.
-        const { w, h } = svgContainerRef.current.getBoundingClientRect();
-        setSize({ w, h });
+        //       and 2) this useEffect() does not depend on Size. 
+        // const { w, h } = svgContainerRef.current.getBoundingClientRect();
+        // setSize({ w, h });
         
-        const margin = { top: 10, right: 30, bottom: 50, left: 50 };
         const width = size.width;
         const height = size.height;
 
@@ -179,7 +175,45 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             svg.remove();
         };
         
-    }, [data, type]);
+    }, [type]);
+
+    // scatter plot update
+    useEffect(() => {
+        if (!data || data.length === 0 || !svgContainerRef.current) return;
+
+        const svg = d3.select(svgContainerRef.current).select("svg");
+        const xKey = method2 + '1';
+        const yKey = method2 + '2';
+
+        // const xScale = svg.node()?.xScale;
+        // const yScale = svg.node()?.yScale;
+        // if (!xScale || !yScale) return;
+
+        // recalculating bounds with padding
+        const xExtent = d3.extent(data, d => +d[xKey]);
+        const yExtent = d3.extent(data, d => +d[yKey]);
+
+        const xScale = d3.scaleLinear()
+            .domain([xExtent[0], xExtent[1]])
+            .range([0, size.width - margin.right]);
+
+        const yScale = d3.scaleLinear()
+            .domain([yExtent[0], yExtent[1]])
+            .range([size.height - margin.bottom, margin.top]);
+
+        // Store updated scales on SVG
+        svg.node().xScale = xScale;
+        svg.node().yScale = yScale;
+
+        // animating existing points to new positions
+        svg.selectAll(".dr-circle")
+            .data(data, d => getIdVal(d))  
+            .transition()
+            .duration(1000)
+            .attr("cx", d => xScale(+d[xKey]))
+            .attr("cy", d => yScale(+d[yKey]));
+
+    }, [data]);
 
     useEffect(() => {
         d3.select(".zoom-layer").selectAll(".dr-circle")
@@ -201,6 +235,7 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
             });
     }, [selectedPoints]);
 
+    // updates values of points based on new DR method
     const updateChart = (method1, method2) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
         setMethod1(method1)
@@ -264,8 +299,14 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         }
     };
 
+    const handleUMAPUpdate = (n_neighbors, min_dist) => {
+        setNNeighbors(n_neighbors);
+        setMinDist(min_dist);
+        updateClustersCallback(numClusters, n_neighbors, min_dist, true);
+    }
+
     const handleSubmitNKMeans = values => {
-        updateClustersCallback(values.numClusters)
+        updateClustersCallback(values.numClusters, nNeighbors, minDist)
     };
     const clusterOptions = Array.from({ length: 19 }, (_, i) => i + 2); // [2..20]
 
@@ -278,27 +319,56 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
         >
             <Row>
                 <Col span={20}>
-                    <div ref={svgContainerRef} style={{ width: 'auto', height: '340px' }}></div>
+                    <div ref={svgContainerRef} style={{ height: '290px' }}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
                     <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                        <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
-                            <Form.Item name="numClusters" label="Num Clusters">
-                                <Select
-                                style={{ width: 60 }}
-                                onChange={(value) => {
-                                    handleSubmitNKMeans({ numClusters: value });
-                                }}
-                                >
-                                    {clusterOptions.map((num) => (
-                                        <Option key={num} value={num}>
-                                        {num}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </Form.Item>
-                        </Form>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                            <p style={{ margin: 0, fontWeight: "bold" }}>UMAP Parameters:</p>
+                            <Form layout='inline'>
+                                <Form.Item label="n_neighbors">
+                                    <Slider
+                                        min={3}
+                                        max={100}
+                                        step={1}
+                                        defaultValue={50}
+                                        style={{ width: 150 }}
+                                        onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
+                                    />
+                                </Form.Item>
+                                <Form.Item 
+                                    label="min_dist">
+                                    <Slider
+                                        min={0.0}
+                                        max={1.0}
+                                        step={0.05}
+                                        defaultValue={0.5}
+                                        style={{ width: 150 }}
+                                        onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
+                                    />
+                                </Form.Item>
+                            </Form>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                            <p style={{ margin: 0, fontWeight: "bold" }}>K-Means:</p>
+                            <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
+                                <Form.Item name="numClusters" label="Num clusters">
+                                    <Select
+                                    style={{ width: 60 }}
+                                    onChange={(value) => {
+                                        handleSubmitNKMeans({ numClusters: value });
+                                    }}
+                                    >
+                                        {clusterOptions.map((num) => (
+                                            <Option key={num} value={num}>
+                                            {num}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </Form.Item>
+                            </Form>
+                        </div>
                     </div>
                 </Col>
             </Row>
@@ -315,4 +385,4 @@ const DR = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, zScor
 
 }
 
-export default DR;
+export default DRView;

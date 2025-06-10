@@ -2,9 +2,9 @@ import { Col, Layout, Row, Spin, Menu, Dropdown, Button, MenuProps } from "antd"
 import { DownOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
-import DR from './components/DRPlot.js';
+import DRView from './components/DRPlot.js';
 import MetricView from './components/MetricView.js';
-import MRDMD from './components/MrDMDView.js';
+import MRDMDView from './components/MrDMDView.js';
 import NodeStatusView from './components/NodeStatusView.js';
 
 const { Header, Content } = Layout;
@@ -43,10 +43,14 @@ function App() {
       .catch((err) => console.error("Error fetching data:", err));
   }, []); // TODO: dependency on [selectedDims]
 
-  const updateClustersCallback = useCallback(async (numClusters) => {
-    console.log(`Recomputing clusters with numClusters=${numClusters}`)
+  const updateClustersCallback = useCallback(async (numClusters, nNeighbors, minDist, forceRecompute) => {
+    const params = new URLSearchParams();
+    params.append('numClusters', numClusters);
+    if (nNeighbors !== null) params.append('n_neighbors', nNeighbors);
+    if (minDist !== null) params.append('min_dist', minDist);
+    
     try {
-      const response = await fetch(`http://127.0.0.1:5010/recomputeClusters/${numClusters}`);
+      const response = await fetch(`http://127.0.0.1:5010/recomputeClusters/${numClusters}/${nNeighbors || 0}/${minDist || 0}/${forceRecompute ? 1 : 0}`);
       if (response.ok) {
         const data = await response.json();
         const clusters = new Map();
@@ -54,6 +58,7 @@ function App() {
             clusters.set(d.nodeId, d.Cluster);
         });
         setNodeClusterMap(clusters);
+        setDRTData(data.dr_features); // TODO: update scatter plot with new points
         setFCs(data.feat_contributions);
       } else {
         console.error("Failed to fetch new cluster IDs -", response.status, response.statusText);
@@ -61,7 +66,7 @@ function App() {
     } catch (e) {
       console.error("Failed to fetch new cluster IDs -", e);
     }
-  }, []);
+  }, []);    
 
   const getNodeData = async (selectedCols) => {
     try {
@@ -144,8 +149,8 @@ function App() {
   };
 
   return (
-    <Layout style={{ height: "100vh", padding: "10px" }}>
-      <Content style={{ marginTop: "10px" }}>
+    <Layout style={{ height: "100vh", padding: "5px" }}>
+      <Content style={{ marginTop: "5px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
               {((!nodeData) || (!DRTData)) ? (
@@ -191,7 +196,7 @@ function App() {
                   </div>
                 ) : (
                   <div>
-                      <DR 
+                      <DRView 
                         data={DRTData} 
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
@@ -208,7 +213,7 @@ function App() {
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                       <Spin size="large" />
                     </div> ) : (
-                    <MRDMD 
+                    <MRDMDView 
                       data={zScores} 
                   />
                   )}
