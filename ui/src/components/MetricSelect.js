@@ -49,10 +49,12 @@ export default function MetricSelect({ data, processed, selectedPoints, selected
                             timestamp: new Date(row.timestamp), 
                             nodeId: row.nodeId
                         }));    
-                        setFeatureData(featureData => ({
-                            [key]: processedColumn, // new column
+                        const updatedFeatureData = {
+                            [key]: processedColumn,
                             ...featureData
-                        }));
+                        };
+
+                        setFeatureData(updatedFeatureData);
                     } else {
                         console.error(`Data length mismatch: expected ${processed[Object.keys(processed)[0]].length}, got ${newData.data.length}`);
                     }
@@ -65,8 +67,8 @@ export default function MetricSelect({ data, processed, selectedPoints, selected
             .then(dmdData => {
                 const newzScores = mergeZScores(zScores, dmdData.zscores, key)
                 setzScores(newzScores) // updating zscores
-                console.log(dmdData.baselines)
-                console.log(dmdData)
+                // console.log(dmdData.baselines)
+                // console.log(dmdData)
                 setBaselines([...dmdData.baselines, ...baselines])
                 const newBaselines = dmdData.baselines;
 
