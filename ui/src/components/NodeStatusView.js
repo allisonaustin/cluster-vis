@@ -6,7 +6,7 @@ import Tooltip from '../utils/tooltip.js';
 
 const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 150 });
+    const [size, setSize] = useState({ width: 700, height: 120 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(new Date(bStart));
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
@@ -185,7 +185,8 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
             .enter()
             .append("g")
             .attr("class", "down-stack")
-            .attr("fill", d => colorScale(+d.key))
+            //.attr("fill", d => colorScale(+d.key))
+            .attr("fill", d => d3.schemeObservable10[1])
             .selectAll("rect")
             .data(d => d)
             .enter()

@@ -122,10 +122,11 @@ const LineChart = ({ data, field, index, baselinesRef, updateBaseline, nodeClust
         .attr('class', (d) => `line line-${chartId}`)
         .attr('nodeId', d => d[0])
         .attr('fill', 'none')
-        .attr('stroke', (d) => { 
-          const cluster = nodeClusterMap.get(d[0]);
-          return colorScale(+cluster);
-        })
+        // .attr('stroke', (d) => { 
+        //   const cluster = nodeClusterMap.get(d[0]);
+        //   return colorScale(+cluster);
+        // })
+        .attr('stroke', d3.schemeObservable10[0])
         .attr('stroke-width', 1)
         .attr('opacity', 0.8)
         .attr('d', d => line(d[1]))

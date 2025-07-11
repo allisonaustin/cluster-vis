@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import MetricSelect from "./MetricSelect.js";
 import LineChart from './LineChart.js';
 
-const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
+const MetricReadingView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
 
@@ -175,4 +175,4 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
     );
 };
 
-export default MetricView;
+export default MetricReadingView;

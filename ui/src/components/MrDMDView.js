@@ -11,7 +11,7 @@ const MRDMDView = ({ data }) => {
     const legendRef = useRef();
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
-    const [size, setSize] = useState({ width: 700, height: 130 });
+    const [size, setSize] = useState({ width: 700, height: 100 });
     const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 });
     const [tooltip, setTooltip] = useState({
             visible: false,

@@ -1,9 +1,9 @@
-import { Col, Layout, Row, Spin, Menu, Dropdown, Button, MenuProps } from "antd";
-import { DownOutlined } from '@ant-design/icons';
+import { Col, Layout, Row, Spin, Button } from "antd";
+import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
-import DRView from './components/DRPlot.js';
-import MetricView from './components/MetricView.js';
+import NodeSimilarityView from './components/NodeSimilarityView.js';
+import MetricReadingView from './components/MetricReadingView.js';
 import MRDMDView from './components/MrDMDView.js';
 import NodeStatusView from './components/NodeStatusView.js';
 
@@ -22,11 +22,12 @@ function App() {
   const [headers, setHeaders] = useState(null);
   const [bStart, setBStart] = useState('2024-02-22 14:47:30Z')
   const [bEnd, setBEnd] = useState('2024-02-22 22:00:00Z')
+  const [streaming, setStreaming] = useState(false);
   const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
   
-  
+  // initial data fetch
   useEffect(() => {
     Promise.all([ 
         getNodeData(selectedDims),
@@ -39,6 +40,20 @@ function App() {
       })
       .catch((err) => console.error("Error fetching data:", err));
   }, []); // TODO: dependency on [selectedDims]
+
+// streaming data every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (streaming) {
+        // getNodeData(selectedDims);
+        getDRTimeData();
+        getMrDMD();
+        getHeaders(); 
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [streaming]);
 
   const updateClustersCallback = useCallback(async (numClusters, nNeighbors, minDist, forceRecompute) => {
     const params = new URLSearchParams();
@@ -128,6 +143,7 @@ function App() {
     }
   };
 
+  // getting metadata for each metric
   const getHeaders = async () => {
     try {
       const response = await fetch(`http://127.0.0.1:5010/headers`);
@@ -147,6 +163,30 @@ function App() {
 
   return (
     <Layout style={{ height: "100vh", padding: "5px" }}>
+      <Header
+        style={{
+          background: '#fff',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: '1px solid #f0f0f0',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ margin: 0, fontSize: '20px' }}>Streaming HPC Monitoring</h1>
+          <Button
+            type="text"
+            icon={
+              streaming ? (
+                <PauseCircleOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
+              ) : (
+                <PlayCircleOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+              )
+            }
+            onClick={() => setStreaming((prev) => !prev)}
+          />
+        </div>
+      </Header>
       <Content style={{ marginTop: "5px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
@@ -169,7 +209,7 @@ function App() {
                     <Spin size="large" />
                   </div>
                 ) : (
-                  <MetricView 
+                  <MetricReadingView 
                     data={nodeData} 
                     timeRange={[new Date(bStart), new Date(bEnd)]}
                     selectedDims={selectedDims}
@@ -193,7 +233,7 @@ function App() {
                   </div>
                 ) : (
                   <div>
-                      <DRView 
+                      <NodeSimilarityView 
                         data={DRTData} 
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 

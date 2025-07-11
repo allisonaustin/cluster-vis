@@ -7,7 +7,7 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback }) => {
+const NodeSimilarityView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 300, height: 300});
     const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
@@ -73,7 +73,8 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
             .attr('stroke','black')
             .attr('stroke-width', '1px')
             .attr("r", 4)
-            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
+            // .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
+            .style('fill', d3.schemeObservable10[0])
             .style("opacity", d => {
                 return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
             })
@@ -217,7 +218,8 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
 
     useEffect(() => {
         d3.select(".zoom-layer").selectAll(".dr-circle")
-            .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
+            // .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
+            .style('fill', d3.schemeObservable10[0])
     }, [nodeClusterMap]);
 
     useEffect(() => {
@@ -318,56 +320,60 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
             style={{ height:'auto' }}
         >
             <Row>
-                <Col span={20}>
-                    <div ref={svgContainerRef} style={{ height: '290px' }}></div>
+                <Col span={24}>
+                    <div style={{ display: "flex", height: '300px', flexDirection: "row", gap: "20px" }}>
+                        <div ref={svgContainerRef} style={{ width: '380px' }}></div>
 
-                    <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
+                        <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
-                    <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                            <p style={{ margin: 0, fontWeight: "bold" }}>UMAP Parameters:</p>
-                            <Form layout='inline'>
-                                <Form.Item label="n_neighbors">
-                                    <Slider
-                                        min={3}
-                                        max={100}
-                                        step={1}
-                                        defaultValue={50}
-                                        style={{ width: 150 }}
-                                        onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
-                                    />
-                                </Form.Item>
-                                <Form.Item 
-                                    label="min_dist">
-                                    <Slider
-                                        min={0.0}
-                                        max={1.0}
-                                        step={0.05}
-                                        defaultValue={0.5}
-                                        style={{ width: 150 }}
-                                        onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
-                                    />
-                                </Form.Item>
-                            </Form>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                            <p style={{ margin: 0, fontWeight: "bold" }}>K-Means:</p>
-                            <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
-                                <Form.Item name="numClusters" label="Num clusters">
-                                    <Select
-                                    style={{ width: 60 }}
-                                    onChange={(value) => {
-                                        handleSubmitNKMeans({ numClusters: value });
-                                    }}
-                                    >
-                                        {clusterOptions.map((num) => (
-                                            <Option key={num} value={num}>
-                                            {num}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </Form.Item>
-                            </Form>
+                        <div id="form-container" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                             {/* UMAP Settings */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: '5px'}}>
+                                <p style={{ margin: 0, fontWeight: "bold" }}>UMAP Parameters:</p>
+                                <Form layout="horizontal">
+                                    <Form.Item label="n_neighbors" style={{ marginBottom: 0 }}>
+                                        <Slider
+                                            min={3}
+                                            max={100}
+                                            step={1}
+                                            defaultValue={50}
+                                            style={{ width: 100 }}
+                                            onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
+                                        />
+                                    </Form.Item>
+                                    <Form.Item 
+                                        label="min_dist">
+                                        <Slider
+                                            min={0.0}
+                                            max={1.0}
+                                            step={0.05}
+                                            defaultValue={0.5}
+                                            style={{ width: 100 }}
+                                            onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
+                                        />
+                                    </Form.Item>
+                                </Form>
+                            </div>
+                             {/* k-means Settings */}
+                            {/* <div style={{ display: "flex", flexDirection: "column" }}>
+                                <p style={{ margin: 0, fontWeight: "bold" }}>K-Means:</p>
+                                <Form onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
+                                    <Form.Item name="numClusters" label="Num clusters">
+                                        <Select
+                                        style={{ width: 60 }}
+                                        onChange={(value) => {
+                                            handleSubmitNKMeans({ numClusters: value });
+                                        }}
+                                        >
+                                            {clusterOptions.map((num) => (
+                                                <Option key={num} value={num}>
+                                                {num}
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Form>
+                            </div> */}
                         </div>
                     </div>
                 </Col>
@@ -385,4 +391,4 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
 
 }
 
-export default DRView;
+export default NodeSimilarityView;
