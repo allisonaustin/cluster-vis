@@ -94,7 +94,7 @@ export default function MetricSelect({ data, processed, selectedPoints, selected
 
   return (
     <List
-      style={{ width: "100%", maxWidth: 500, overflowY: "scroll", maxHeight: 450, marginRight: "10px" }}
+      style={{ width: "100%", maxWidth: 500, overflowY: "scroll", maxHeight: 390, marginRight: "10px" }}
       bordered
       dataSource={[...data.features].sort((a, b) => {
         const getMaxAbsContribution = (feature) => {

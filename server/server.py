@@ -25,8 +25,10 @@ filepath = './data/farm/'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/dune_node_data.parquet'
 DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
+min_dist = 0.1
+n_neighbors = 15
 
-def get_timeseries_data(file='far_data_2024-02-22.csv'):
+def get_timeseries_data(file='far_data_2024-02-21.csv'):
     # TODO: convert to parquet instead of global
     global ts_data
     global filepath
@@ -88,7 +90,7 @@ def get_dr_time_data():
     return jsonify(response)
 
 @app.route('/recomputeClusters/<numClusters>/<n_neighbors>/<min_dist>/<force_recompute>')
-def get_new_cluster_ids(numClusters, n_neighbors=50, min_dist=0.5, force_recompute=0):
+def get_new_cluster_ids(numClusters, n_neighbors=n_neighbors, min_dist=min_dist, force_recompute=0):
     global ts_data
     recomputed = recompute_clusters(ts_data, int(numClusters), int(n_neighbors), float(min_dist), int(force_recompute))
     if recomputed is None:

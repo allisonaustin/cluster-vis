@@ -1,5 +1,4 @@
-import { Col, Layout, Row, Spin, Menu, Dropdown, Button, MenuProps } from "antd";
-import { DownOutlined } from '@ant-design/icons';
+import { Col, Layout, Row, Spin, Select, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import DRView from './components/DRPlot.js';
@@ -8,8 +7,12 @@ import MRDMDView from './components/MrDMDView.js';
 import NodeStatusView from './components/NodeStatusView.js';
 
 const { Header, Content } = Layout;
+const { Option } = Select;
+const { Text } = Typography;
 
 function App() {
+  const [files, setFiles] = useState(['far_data_2016-02-06.csv', 'far_data_2024-02-21.csv', 'far_data_2024-02-22.csv']);
+  const [selectedFile, setSelectedFile] = useState('far_data_2024-02-21.csv');
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [nodeData, setNodeData] = useState(null);
@@ -20,12 +23,14 @@ function App() {
   const [selectedDims, setSelectedDims] = useState(['bytes_out', 'cpu_idle', 'cpu_nice', 'cpu_system', 'proc_run']);
   const [dataOptions, setDataOptions] = useState([]);
   const [headers, setHeaders] = useState(null);
-  const [bStart, setBStart] = useState('2024-02-22 14:47:30Z')
-  const [bEnd, setBEnd] = useState('2024-02-22 22:00:00Z')
+  const [bStart, setBStart] = useState('2024-02-21 14:47:30Z');
+  const [bEnd, setBEnd] = useState('2024-02-21 22:00:00Z');
   const [recompute, setRecompute] = useState(1)
   const [baselineEdit, setBaselineEdit] = useState(false);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
-  
+
+  const totalNodes = DRTData?.length || 0;
+  const totalMeasures = nodeData?.features.length || 0;
   
   useEffect(() => {
     Promise.all([ 
@@ -89,6 +94,7 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setDRTData(data.dr_features);
+        
         setFCs(data.feat_contributions);
         const clusters = new Map();
         data.dr_features.forEach(d => {
@@ -147,6 +153,51 @@ function App() {
 
   return (
     <Layout style={{ height: "100vh", padding: "5px" }}>
+      <Header style={{ background: "#fff", padding: "0 10px", marginBottom: "2px" }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Row align="middle" gutter={8}>
+              <Col>
+                <Typography.Title level={1} style={{ margin: 0, fontSize: "30px", paddingRight: '20px' }}>
+                  Node Cluster Analysis
+                </Typography.Title>
+              </Col>
+              <Col>
+                File: 
+              </Col>
+              <Col>
+                <Select
+                  style={{ width: 220 }}
+                  value={selectedFile}
+                  onChange={setSelectedFile}
+                  placeholder="Select file"
+                >
+                  {files.map((f) => (
+                    <Option key={f} value={f}>
+                      {f}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+            </Row>
+          </Col>
+
+          <Col>
+            <Row gutter={24}>
+              <Col>
+                <Text strong italic style={{ fontSize: "18px" }}>
+                  Nodes: {totalNodes}
+                </Text>
+              </Col>
+              <Col>
+                <Text strong italic style={{ fontSize: "18px" }}>
+                  Metrics: {totalMeasures}
+                </Text>
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+      </Header>
       <Content style={{ marginTop: "5px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>

@@ -13,8 +13,8 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
     const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
-    const [nNeighbors, setNNeighbors] = useState(50);
-    const [minDist, setMinDist] = useState(0.5);
+    const [nNeighbors, setNNeighbors] = useState(15);
+    const [minDist, setMinDist] = useState(0.1);
     const [numClusters, setNumClusters] = useState(4);
     const [highlight, setHighlight] = useState(1);
     const [nonHighlight, setNonHighlight] = useState(0.2);
@@ -319,7 +319,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
         >
             <Row>
                 <Col span={20}>
-                    <div ref={svgContainerRef} style={{ height: '290px' }}></div>
+                    <div ref={svgContainerRef} style={{ height: '250px' }}></div>
 
                     <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
 
@@ -332,8 +332,8 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                                         min={3}
                                         max={100}
                                         step={1}
-                                        defaultValue={50}
-                                        style={{ width: 150 }}
+                                        defaultValue={nNeighbors}
+                                        style={{ width: 100 }}
                                         onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
                                     />
                                 </Form.Item>
@@ -342,9 +342,9 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                                     <Slider
                                         min={0.0}
                                         max={1.0}
-                                        step={0.05}
-                                        defaultValue={0.5}
-                                        style={{ width: 150 }}
+                                        step={0.1}
+                                        defaultValue={minDist}
+                                        style={{ width: 100 }}
                                         onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
                                     />
                                 </Form.Item>

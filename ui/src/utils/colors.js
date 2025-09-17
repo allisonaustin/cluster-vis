@@ -6,7 +6,7 @@ export const COLORS = {
     highlight: '#4EA5D9'
 }
 
-export const colorScheme = d3.schemeObservable10;
+export const colorScheme = d3.schemeDark2;
 export const colorScale = d3.scaleOrdinal(colorScheme);
 
 export const getColor = (field) => {

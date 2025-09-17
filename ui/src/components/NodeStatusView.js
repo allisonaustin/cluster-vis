@@ -21,7 +21,6 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
       });
 
     const drawChart = (data) => {
-      console.log(data);
       d3.select(svgContainerRef.current).selectAll("*").remove();
       const svg = d3.select(svgContainerRef.current)
                 .append("svg")
@@ -173,7 +172,7 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
             .attr("class", "y-label")
             .attr("text-anchor", "middle")
             .attr("transform", `translate(${margin.left / 3},${size.height * 0.4}) rotate(-90)`)
-            .text("Inactive Nodes");
+            .text("Null Readings");
 
           const stackGeneratorDown = d3.stack()
             .keys(clusterKeysDown)

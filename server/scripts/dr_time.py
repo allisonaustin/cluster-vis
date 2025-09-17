@@ -18,6 +18,8 @@ from umap import UMAP
 CACHE_DIR = './cache'
 DR1_CACHE_NAME = './cache/drTimeDataDR1.parquet'
 DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
+min_dist = 0.1
+n_neighbors = 15
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
@@ -179,7 +181,7 @@ def apply_pca(df, n_components=2):
         print(f"Error processing PCA across features: {e}")
         return None
     
-def apply_umap(df, min_dist=0.5, n_neighbors=50):
+def apply_umap(df, min_dist=min_dist, n_neighbors=n_neighbors): 
     print('Applying DR2 UMAP')
     umap = UMAP(n_components=2, min_dist=min_dist, n_neighbors=n_neighbors, random_state=42)
     embedding = umap.fit_transform(df)
@@ -272,7 +274,7 @@ def get_dr_time(df, components_only=False):
 
     # Second pass DR across Features
     dr2start = timer()
-    DR2_d = apply_second_dr(DR1_d, n_neighbors=50, min_dist=0.5)
+    DR2_d = apply_second_dr(DR1_d, n_neighbors=n_neighbors, min_dist=min_dist)
     dr2end = timer()
     DR2_d.to_parquet(DR2_CACHE_NAME)
     print(f'Cached DR2 results to parquet {DR2_CACHE_NAME}.')
@@ -290,7 +292,7 @@ def get_dr_time(df, components_only=False):
 
     return DR2_d[['PC1', 'PC2', 'UMAP1', 'UMAP2', 'tSNE1', 'tSNE2', 'Cluster', 'nodeId']] if components_only else DR2_d
 
-def recompute_clusters(df, numClusters, n_neighbors=50, min_dist=0.5, force_recompute=0):
+def recompute_clusters(df, numClusters, n_neighbors=n_neighbors, min_dist=min_dist, force_recompute=0):
     if (force_recompute == 1):
         DR1_d = get_cached_or_compute_dr1(df)
         DR2_d = apply_second_dr(DR1_d, n_neighbors, min_dist)
