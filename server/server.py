@@ -28,7 +28,7 @@ DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
 min_dist = 0.1
 n_neighbors = 15
 
-def get_timeseries_data(file='far_data_2024-02-21.csv'):
+def get_timeseries_data(file='2024-02-21.csv'):
     # TODO: convert to parquet instead of global
     global ts_data
     global filepath
@@ -144,12 +144,12 @@ def get_node_data(selectedCols):
     excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE', 'Cluster']
     all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
     
-    check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
-    df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
+    # check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
+    #  df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
 
-    downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
-    downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
-    df = df.merge(downtime_counts, on='timestamp', how='left')
+    # downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
+    # downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
+    # df = df.merge(downtime_counts, on='timestamp', how='left')
 
     return jsonify({
         "data": df.to_dict(orient='records'),
@@ -157,7 +157,7 @@ def get_node_data(selectedCols):
     })
 
 def get_csv_data():
-    file_path = os.path.join(data_dir, 'farm/far_data_2024-02-21.csv')
+    file_path = os.path.join(data_dir, 'farm/2024-02-21.csv')
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
     

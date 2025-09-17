@@ -23,7 +23,7 @@ n_neighbors = 15
 
 def getData():
     # TODO: cache this on server startup - shared by dr_features and dr_time
-    df = pd.read_csv('./data/farm/far_data_2024-02-22.csv').fillna(0.0)
+    df = pd.read_csv('./data/farm/2024-02-22.csv').fillna(0.0)
     return df
 
 def preprocess(df, value_column):

@@ -1,6 +1,6 @@
 import { Card, Col, Row, Switch} from "antd";
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import MetricSelect from "./MetricSelect.js";
+import MemoMetricSelect from "./MetricSelect.js";
 import LineChart from './LineChart.js';
 
 const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
@@ -130,6 +130,68 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
         .catch(error => console.error('Error fetching data:', error));
     };
 
+    function mergeZScores(oldZScores, newZScores, newFeature) {
+      let zscoreMap = Object.fromEntries(
+          oldZScores.map(entry => [entry.nodeId, { ...entry }])
+      );
+
+      newZScores.forEach(entry => {
+          const { nodeId, ...newValues } = entry;
+          if (zscoreMap[nodeId]) {
+              zscoreMap[nodeId] = { 
+                  nodeId, 
+                  [newFeature]: newValues[newFeature],  
+                  ...zscoreMap[nodeId] 
+              };
+          } else {
+              zscoreMap[nodeId] = { nodeId, [newFeature]: newValues[newFeature] };
+          }
+      });
+
+      return Object.values(zscoreMap);
+    }
+
+    const handleMetricSelectChange = (key) => {
+      if (selectedDims.includes(key)) {
+        setSelectedDims(prev => prev.filter(dim => dim !== key));
+        setzScores(prevZ => prevZ.map(z => {
+          const { [key]: _, ...rest } = z;
+          return rest;
+        }));
+        return;
+      }
+
+      if (!featureData[key]) {
+        fetch(`http://127.0.0.1:5010/nodeData/${key}`)
+          .then(res => res.json())
+          .then(newData => {
+            const processedColumn = newData.data.map(row => ({
+              value: row[key],
+              timestamp: new Date(row.timestamp),
+              nodeId: row.nodeId
+            }));
+            setFeatureData(prev => ({ ...prev, [key]: processedColumn }));
+          });
+      }
+
+      fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
+        .then(res => res.json())
+        .then(dmdData => {
+          setzScores(prev => mergeZScores(prev, dmdData.zscores, key));
+          setBaselines(prev => [...dmdData.baselines, ...prev]);
+          dmdData.baselines.forEach(baseline => {
+            baselinesRef.current[baseline.feature] = {
+              baselineX: [
+                new Date(baseline.b_start.replace("GMT", "")),
+                new Date(baseline.b_end.replace("GMT", ""))
+              ],
+              baselineY: [baseline.v_min, baseline.v_max]
+            };
+          });
+          setSelectedDims(prev => prev.includes(key) ? prev.filter(dim => dim !== key) : [key, ...prev]);
+        });
+    };
+
     return (
       <Card title="METRIC READING VIEW" size="small" style={{ height: "auto" }}> 
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
@@ -164,11 +226,13 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
             {/* Right column: List */}
             <Col span={8}>
                 {/* TODO: move this to sidebar at the app level */}
-                <MetricSelect 
-                    data={data} processed={processed} selectedDims={selectedDims}
-                    selectedPoints={selectedPoints} setSelectedDims={setSelectedDims}
-                    featureData={featureData} setFeatureData={setFeatureData} fcs={fcs} zScores={zScores} 
-                    setzScores={setzScores} baselines={baselines} setBaselines={setBaselines} baselinesRef={baselinesRef} />
+                <MemoMetricSelect 
+                    data={data} 
+                    selectedDims={selectedDims}
+                    featureData={featureData} 
+                    nodeClusterMap={nodeClusterMap} 
+                    fcs={fcs} 
+                    onMetricSelectChange={handleMetricSelectChange} />
             </Col>
         </Row>
       </Card>

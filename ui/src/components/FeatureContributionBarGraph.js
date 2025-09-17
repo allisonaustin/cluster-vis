@@ -112,7 +112,7 @@ export default function FeatureContributionBarGraph({ feature, fcData, graphId }
       }, [fcData]);
     
       return (
-        <svg id={graphId} ref={featureSvgRef} style={{width: '100%', height: 100}}></svg>
+        <svg id={graphId} ref={featureSvgRef} style={{width: '60%', height: 100}}></svg>
         );
 
 };

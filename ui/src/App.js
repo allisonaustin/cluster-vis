@@ -11,8 +11,8 @@ const { Option } = Select;
 const { Text } = Typography;
 
 function App() {
-  const [files, setFiles] = useState(['far_data_2016-02-06.csv', 'far_data_2024-02-21.csv', 'far_data_2024-02-22.csv']);
-  const [selectedFile, setSelectedFile] = useState('far_data_2024-02-21.csv');
+  const [files, setFiles] = useState(['2016-02-06.csv', '2024-02-21.csv', '2024-02-22.csv']);
+  const [selectedFile, setSelectedFile] = useState('2024-02-21.csv');
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [nodeData, setNodeData] = useState(null);
@@ -167,7 +167,7 @@ function App() {
               </Col>
               <Col>
                 <Select
-                  style={{ width: 220 }}
+                  style={{ width: 200 }}
                   value={selectedFile}
                   onChange={setSelectedFile}
                   placeholder="Select file"
