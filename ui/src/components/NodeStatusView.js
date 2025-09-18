@@ -204,7 +204,10 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
           const earliestNodeDataTime = xScale2(new Date(nodeDataStart)) || 0;
 
           const brush = d3.brushX(xScale2)
-            .extent([[Math.max(margin.left, earliestNodeDataTime), 20 ], [size.width - margin.right - 20, size.height * 0.87]])
+            .extent([
+              [Math.max(margin.left, earliestNodeDataTime), margin.top],
+              [size.width - margin.right - 20, size.height - margin.bottom - 5]
+            ])
             .on('end', (event) => {
                 const selection = event.selection;
                 if (selection) {

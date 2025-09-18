@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import MemoMetricSelect from "./MetricSelect.js";
 import LineChart from './LineChart.js';
 
-const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
+const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers, selectedFile }) => {
     const baselinesRef = useRef({});
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
 
@@ -162,7 +162,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
       }
 
       if (!featureData[key]) {
-        fetch(`http://127.0.0.1:5010/nodeData/${key}`)
+        fetch(`http://127.0.0.1:5010/nodeData/${key}/${selectedFile}`)
           .then(res => res.json())
           .then(newData => {
             const processedColumn = newData.data.map(row => ({

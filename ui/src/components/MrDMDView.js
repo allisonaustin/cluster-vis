@@ -4,7 +4,7 @@ import { Card, List, Checkbox } from "antd";
 import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
-const MRDMDView = ({ data }) => {
+const MRDMDView = ({ data, nodeClusterMap }) => {
     // const svgContainerRef = useRef();
     const yAxisRef = useRef();
     const heatmapRef = useRef();
@@ -12,7 +12,7 @@ const MRDMDView = ({ data }) => {
     const firstRenderRef = useRef(true);
     const [plotData, setPlotData] = useState([]);
     const [size, setSize] = useState({ width: 700, height: 130 });
-    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 });
+    const [margin, setMargin] = useState({ top: 50, right: 40, bottom: 90, left: 100 }); // left:100 for ganglia logs, left:160 for environment logs
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -60,6 +60,11 @@ const MRDMDView = ({ data }) => {
             return na - nb;
           });
 
+        const numberToNodeId = {};
+        sortedNodeIds.forEach(nodeId => {
+            numberToNodeId[extractNumber(nodeId)] = nodeId;
+        });
+
         const cellWidth = 20;
         const cellHeight = 30;
         const totalWidth = nodeIds.length * cellWidth;
@@ -81,27 +86,68 @@ const MRDMDView = ({ data }) => {
             .attr("transform", `translate(${margin.left-2},0)`)
             .call(d3.axisLeft(yScale))
 
+        yAxis.selectAll("text")
+            .style("cursor", "pointer")
+            .on("mouseover", function(event, d) {
+                d3.select("body")
+                .append("div")
+                .attr("id", "yaxis-tooltip")
+                .style("position", "absolute")
+                .style("background", "white")
+                .style("border", "1px solid #ccc")
+                .style("padding", "4px 8px")
+                .style("border-radius", "4px")
+                .style("pointer-events", "none")
+                .style("font-size", "12px")
+                .style("box-shadow", "0px 2px 4px rgba(0,0,0,0.2)")
+                .html(d)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 20) + "px");
+            })
+            .on("mousemove", function(event) {
+                d3.select("#yaxis-tooltip")
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 20) + "px");
+            })
+            .on("mouseout", function() {
+                d3.select("#yaxis-tooltip").remove();
+            });
+
 
         const hSvg = d3.select(heatmapRef.current)
             .append('svg')
             .attr('width', totalWidth + margin.right)
-            .attr('height', totalHeight + 40);
+            .attr('height', totalHeight + 40); // 40 for ganglia logs, 90 for environment logs
 
-            const xScale = d3.scaleBand()
-            .domain(sortedNodeIds.map(d => extractNumber(d)))
+        // ganglia logs
+        // const xScale = d3.scaleBand()
+        //     .domain(sortedNodeIds.map(d => extractNumber(d)))
+        //     .range([0, totalWidth])
+        //     .padding(0.05);
+
+        // environment logs
+        const xScale = d3.scaleBand()
+            .domain(nodeIds)
             .range([0, totalWidth])
             .padding(0.05);
 
         // x axis
         hSvg.append('g')
-            .style('font-size', 13)
-            .attr('transform', "translate(" + 5 + "," + totalHeight + ")")
+            .style('font-size', 12)
+            .attr('transform', "translate(" + 5 + "," + totalHeight + ")") // 5 for ganglia logs, 25 for environment logs
             .call(d3.axisBottom(xScale).tickSize(0))
             .selectAll("text")  
             .style("text-anchor", "end")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
             .attr("transform", "rotate(-65)")
+            .style("fill", d => {
+                const fullNodeId = numberToNodeId[d];
+                const clusterId = nodeClusterMap.get(fullNodeId); // ganglia logs
+                // const clusterId = nodeClusterMap.get(d); // environment logs
+                return clusterId !== undefined ? colorScale(clusterId) : "black";
+            })
+            .style("font-weight", "bold")
             .select('.domain').remove()
 
         var myColor = d3.scaleDiverging()
@@ -113,7 +159,8 @@ const MRDMDView = ({ data }) => {
             .enter()
             .append("rect")
                 .attr('class', (d) => `heatmap-cell node-${d.nodeId}`)
-                .attr("x", function(d) { return xScale(extractNumber(d.nodeId)) })
+                //.attr("x", function(d) { return xScale(d.nodeId) }) // environment logs
+                .attr("x", function(d) { return xScale(extractNumber(d.nodeId)) }) // ganglia logs
                 .attr("y", function(d) { return yScale(d.feature) })
                 .attr("rx", 4)
                 .attr("ry", 4)
@@ -123,7 +170,7 @@ const MRDMDView = ({ data }) => {
                 .style("stroke-width", 4)
                 .style("stroke", "none")
                 .style("opacity", 0.8)
-            // .attr('transform', "translate(" + margin.left + ",0)")
+            //.attr('transform', "translate(20" + ",0)") // remove for ganglia logs
             .on("mouseover", function(event, d) {
                 d3.select(this)
                     .style("stroke", "black")
@@ -158,7 +205,7 @@ const MRDMDView = ({ data }) => {
 
                 setTooltip({
                     visible: true,
-                    content: `${d.nodeId}, ${d.value.toFixed(3)}`,
+                    content: `${d.nodeId}, ${d.value !== null && d.value !== undefined ? d.value.toFixed(3) : 'N/A'}`,
                     x: event.clientX,
                     y: event.clientY,
                 });

@@ -13,8 +13,8 @@ ml = 9
 step = 10000
 std_baselines_dict = {}
 CACHE_DIR = './cache'
-ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscoresDUNE.parquet'
-ZSC_CACHE_NAME = './cache/mrDMDbaselineDataDUNE.parquet'
+ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscores.parquet'
+ZSC_CACHE_NAME = './cache/mrDMDbaselineData.parquet'
 
 def preprocess(df, col):
     return df.pivot(index="nodeId", columns="timestamp", values=col) \
@@ -360,6 +360,8 @@ def get_mrdmd(df, force_recompute):
     mr_dmdend = timer()
 
     print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
+    zsc_d = zsc_d.replace({np.nan: None, np.inf: None, -np.inf: None})
+    Z_b = Z_b.replace({np.nan: None, np.inf: None, -np.inf: None})
     return zsc_d, Z_b
 
 def get_mrdmd_with_new_base(df, col, bmin, bmax, sob, eob):
@@ -375,4 +377,6 @@ def get_mrdmd_with_new_base(df, col, bmin, bmax, sob, eob):
 
     print(f'baseline in {(bs_end - bs_start)}s')
     print(f'mrDMD in {(mr_dmdend - mr_dmdstart)}s')
+    zsc_d = zsc_d.replace({np.nan: None, np.inf: None, -np.inf: None})
+    Z_b = Z_b.replace({np.nan: None, np.inf: None, -np.inf: None})
     return zsc_d, Z_b

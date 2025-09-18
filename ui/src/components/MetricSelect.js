@@ -47,6 +47,7 @@ export default function MetricSelect({ data, selectedDims, featureData, nodeClus
         return bFC - aFC;
     })}
       renderItem={(key, index) => {
+        if (key === "cname_processed" || key === "cname_id") return null;
         const clusterSeries = fcs
             ? fcs.order_col.map(clusterId => {
                 const clusterNodes = Array.from(nodeClusterMap.entries())

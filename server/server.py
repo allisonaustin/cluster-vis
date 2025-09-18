@@ -21,25 +21,36 @@ CORS(app)
 data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
 headers = pd.DataFrame()
-filepath = './data/farm/'
+filepath = './data/'
 CACHE_DIR = './cache'
-NODE_CACHE = './cache/dune_node_data.parquet'
+NODE_CACHE = './cache/node_data.parquet'
+DR1_CACHE_NAME = './cache/drTimeDataDR1.parquet'
 DR2_CACHE_NAME = './cache/drTimeDataDR2.parquet'
-min_dist = 0.1
-n_neighbors = 15
+ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscores.parquet'
 
-def get_timeseries_data(file='2024-02-21.csv'):
+@app.route('/loadData', methods=['GET'])
+def get_timeseries_data(file):
     # TODO: convert to parquet instead of global
     global ts_data
     global filepath
     ts_data = pd.read_csv(filepath+file).fillna(0.0)
+    # use below for env logs
+    if ('time_secs' in ts_data.columns):
+        ts_data['timestamp'] = ts_data['time_secs']
+        ts_data.drop(columns=['time_secs'], inplace=True)
+    if ('cname_processed' in ts_data.columns):
+        ts_data['nodeId'] = ts_data['cname_processed']
+        ts_data.drop(columns=['cname_id', 'cname_processed'], inplace=True)
     return ts_data
 
-
-def clear_DR2_cache():
-    print('Clearing DR2 cache on startup.')
+def clear_caches():
+    print('Clearing DR/MrDMD caches on startup.')
+    if os.path.exists(DR1_CACHE_NAME):
+        os.remove(DR1_CACHE_NAME)
     if os.path.exists(DR2_CACHE_NAME):
         os.remove(DR2_CACHE_NAME)
+    if os.path.exists(ZSC_B_CACHE_NAME):
+        os.remove(ZSC_B_CACHE_NAME)
 
 @app.route('/headers', methods=['GET'])
 def get_headers():
@@ -56,22 +67,12 @@ def get_headers():
     except Exception as e:
         return jsonify({"error": "Could not read headers", "details": str(e)}), 500
 
-@app.route('/mgrData', methods=['GET'])
-def get_json_data():
-    filename = 'mgr/novadaq-far-mgr-01-full.json'
-    file_path = os.path.join(data_dir, filename)
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": "Error reading file", "details": str(e)}), 500
-
 # PC across time points
-@app.route('/drTimeData', methods=['GET'])
-def get_dr_time_data():
+@app.route('/drTimeData/<n_neighbors>/<min_dist>/<num_clusters>', methods=['GET'])
+def get_dr_time_data(n_neighbors, min_dist, num_clusters):
     global ts_data
-    df = get_dr_time(ts_data)
+
+    df = get_dr_time(ts_data, int(n_neighbors), float(min_dist), int(num_clusters))
     fc_start = timer()
     agg_feat_contrib_mat, label_to_rows, label_to_rep_row, order_col, = get_feat_contributions(df)
     fc_end = timer()
@@ -90,7 +91,7 @@ def get_dr_time_data():
     return jsonify(response)
 
 @app.route('/recomputeClusters/<numClusters>/<n_neighbors>/<min_dist>/<force_recompute>')
-def get_new_cluster_ids(numClusters, n_neighbors=n_neighbors, min_dist=min_dist, force_recompute=0):
+def get_new_cluster_ids(numClusters, n_neighbors, min_dist, force_recompute=0):
     global ts_data
     recomputed = recompute_clusters(ts_data, int(numClusters), int(n_neighbors), float(min_dist), int(force_recompute))
     if recomputed is None:
@@ -111,15 +112,17 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
 
     filtered_data = ts_data[ts_data['nodeId'].isin(nodeList)]
 
-    print('mrdmd:', filtered_data[cols].shape)
+    # print('mrdmd:', filtered_data[cols].shape)
+    avail_cols = [col for col in cols if col in filtered_data.columns]
+    print('mrdmd:', filtered_data[avail_cols].shape)
 
     if (filtered_data.shape[0] > 0):
         if (int(new_base) == 0):
-            zscores, baselines = get_mrdmd(filtered_data[cols], int(recompute_base))
+            zscores, baselines = get_mrdmd(filtered_data[avail_cols], int(recompute_base))
         else:
             start_time = pd.to_datetime(sob)
             end_time = pd.to_datetime(eob)
-            zscores, baselines = get_mrdmd_with_new_base(filtered_data[cols], selectedCols, float(bmin), float(bmax), start_time, end_time)
+            zscores, baselines = get_mrdmd_with_new_base(filtered_data[avail_cols], selectedCols, float(bmin), float(bmax), start_time, end_time)
     else: 
         zscores = pd.DataFrame()
         baselines = pd.DataFrame()
@@ -130,12 +133,12 @@ def get_mrdmd_results(nodes, selectedCols, recompute_base=0, new_base=0, bmin=No
     }
     return jsonify(response)
 
-@app.route('/nodeData/<selectedCols>', methods=['GET'])
-def get_node_data(selectedCols):
+@app.route('/nodeData/<selectedCols>/<file>', methods=['GET'])
+def get_node_data(selectedCols, file):
     global ts_data
 
     if ts_data is None or ts_data.empty:
-        return jsonify({"error": "No data available"}), 400
+        ts_data = get_timeseries_data(file)
     
     colsList = list([col.replace('%', ' ') for col in selectedCols.split(',') if col.strip()] )
     cols = ['timestamp', 'nodeId'] + colsList
@@ -144,31 +147,17 @@ def get_node_data(selectedCols):
     excluded = ['nodeId', 'timestamp', 'Retrans', 'PCA', 'UMAP', 't-SNE', 'Cluster']
     all_features = [col for col in ts_data.columns if not any(exclude in col for exclude in excluded)]
     
-    # check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
-    #  df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
+    check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
+    df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
 
-    # downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
-    # downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
-    # df = df.merge(downtime_counts, on='timestamp', how='left')
+    downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
+    downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
+    df = df.merge(downtime_counts, on='timestamp', how='left')
 
     return jsonify({
         "data": df.to_dict(orient='records'),
         "features": all_features
     })
-
-def get_csv_data():
-    file_path = os.path.join(data_dir, 'farm/2024-02-21.csv')
-    if not os.path.exists(file_path):
-        return jsonify({"error": "File not found"}), 404
-    
-    try:
-        df = pd.read_csv(file_path)
-        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-        if 'timestamp' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
-        return jsonify(df.to_dict(orient='records'))
-    except Exception as e:
-        return jsonify({"error": "Error reading CSV file", "details": str(e)}), 500
 
 @app.route('/files', methods=['GET'])
 def list_json_files():
@@ -176,7 +165,7 @@ def list_json_files():
         json_files = []
         for folder in os.listdir(data_dir):
             folder_path = os.path.join(data_dir, folder)
-            if os.path.isdir(folder_path) and 'farm' not in folder:
+            if os.path.isdir(folder_path):
                 for file in os.listdir(folder_path):
                     if file.endswith('.json'):
                         json_files.append(os.path.join(folder, file))
@@ -185,6 +174,6 @@ def list_json_files():
         return jsonify({"error": "Error reading folder", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    ts_data = get_timeseries_data()
-    clear_DR2_cache()
+    # ts_data = get_timeseries_data()
+    clear_caches()
     app.run(debug=True, port=5010)

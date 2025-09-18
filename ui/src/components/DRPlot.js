@@ -7,15 +7,12 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback }) => {
+const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback, nNeighbors, setNNeighbors, minDist, setMinDist, numClusters, setNumClusters }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 300, height: 300});
     const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
-    const [nNeighbors, setNNeighbors] = useState(15);
-    const [minDist, setMinDist] = useState(0.1);
-    const [numClusters, setNumClusters] = useState(4);
     const [highlight, setHighlight] = useState(1);
     const [nonHighlight, setNonHighlight] = useState(0.2);
     const [tooltip, setTooltip] = useState({
@@ -352,7 +349,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                             <p style={{ margin: 0, fontWeight: "bold" }}>K-Means:</p>
-                            <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: 4 }}>
+                            <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: numClusters }}>
                                 <Form.Item name="numClusters" label="Num clusters">
                                     <Select
                                     style={{ width: 60 }}
