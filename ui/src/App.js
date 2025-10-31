@@ -4,7 +4,7 @@ import './App.css';
 import { dataConfigs } from './config.js';
 import DRView from './components/DRPlot.js';
 import MetricView from './components/MetricView.js';
-import MRDMDView from './components/MrDMDView.js';
+import HeatmapView from './components/HeatmapView.js';
 import NodeStatusView from './components/NodeStatusView.js';
 
 const { Header, Content } = Layout;
@@ -189,7 +189,7 @@ function App() {
                 <Select
                   style={{ width: 230 }}
                   value={selectedFile}
-                  onChange={(e) => handleFileChange(e.target.value)}
+                  onChange={(value) => handleFileChange(value)}                  
                   placeholder="Select file"
                 >
                   {files.map((f) => (
@@ -288,7 +288,7 @@ function App() {
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                       <Spin size="large" />
                     </div> ) : (
-                    <MRDMDView 
+                    <HeatmapView 
                       data={zScores} 
                       nodeClusterMap={nodeClusterMap}
                   />

@@ -14,7 +14,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
     const [highlight, setHighlight] = useState(1);
-    const [nonHighlight, setNonHighlight] = useState(0.2);
+    const [nonHighlight, setNonHighlight] = useState(0.4);
     const [tooltip, setTooltip] = useState({
               visible: false,
               content: '',

@@ -206,7 +206,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
         </div>
         <Row gutter={[16, 16]}>
             <Col span={16}>
-              <div style={{ overflow: 'auto', maxHeight: '395px' }}>
+              <div style={{ overflow: 'auto', maxHeight: '480px' }}>
                 {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
                     return (
                         <LineChart 
