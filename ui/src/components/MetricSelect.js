@@ -26,7 +26,7 @@ export default function MetricSelect({ data, selectedDims, featureData, nodeClus
 
   return (
     <List
-      style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 390 }}
+      style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 470 }}
       bordered
       dataSource={[...data.features].sort((a, b) => {
         const getMaxAbsContribution = (feature) => {

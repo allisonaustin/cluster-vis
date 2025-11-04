@@ -179,7 +179,7 @@ function App() {
             <Row align="middle" gutter={8}>
               <Col>
                 <Typography.Title level={1} style={{ margin: 0, fontSize: "30px", paddingRight: '20px' }}>
-                  Node Cluster Analysis
+                  Cluster-Based MVTS Analysis
                 </Typography.Title>
               </Col>
               <Col>

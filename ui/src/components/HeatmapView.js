@@ -8,6 +8,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
     const heatmapRef = useRef();
     const legendRef = useRef();
     const [margin, setMargin] = useState({ top: 10, right: 50, bottom: 150, left: 100 });
+    const [size, setSize] = useState({ width: 800, height: 100 });
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -37,111 +38,129 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
     }, [data]);
 
     const drawHeatmap = (matrix, featureNames, nodeIds) => {
-
-        function extractNumber(nodeId) {
-            return nodeId.match(/\d+$/)[0]; 
-        }
-
-        const sortedNodeIds = nodeIds.slice().sort((a, b) => {
-            const na = +extractNumber(a);
-            const nb = +extractNumber(b);
-            return na - nb;
-          });
-
-        const numberToNodeId = {};
-        sortedNodeIds.forEach(nodeId => {
-            numberToNodeId[extractNumber(nodeId)] = nodeId;
-        });
-
         const cellWidth = 20;
         const cellHeight = 20;
-        const totalWidth = nodeIds.length * cellWidth;
-        const totalHeight = featureNames.length * cellHeight;
-        const yScale = d3.scaleBand().domain(featureNames).range([0, totalHeight]).padding(0.05);
-        const xScale = d3.scaleBand().domain(nodeIds).range([0, totalWidth]).padding(0.05);
-        // const xScale = d3.scaleBand()
-        //     .domain(sortedNodeIds.map(d => extractNumber(d)))
-        //     .range([0, totalWidth])
-        //     .padding(0.05);
-        const myColor = d3.scaleDiverging().interpolator(d3.interpolateRdBu).domain([5,0,-5]);
 
-        // main svg (fixed)
-        let svg = d3.select(heatmapRef.current).select('svg');
+        const mapWidth = nodeIds.length * cellWidth;
+        const mapHeight = featureNames.length * cellHeight;
 
-        if (svg.empty()) {
-            svg = d3.select(heatmapRef.current)
-                .append('svg')
-                .attr('width', totalWidth + margin.right + margin.left)
-                .attr('height', margin.top + totalHeight + margin.bottom);
+        const yScale = d3.scaleBand()
+            .domain(featureNames)
+            .range([0, mapHeight])
+            .padding(0.05);
 
-            const scrollContainer = svg.append("foreignObject")
-                .attr("x", margin.left)
-                .attr("y", margin.top)
-                .attr("width", 800)
-                .attr("height", 500)
-                .append("xhtml:div")
-                .attr("id", "scrollable-div")
+        const xScale = d3.scaleBand()
+            .domain(nodeIds)
+            .range([0, mapWidth])
+            .padding(0.05);
+
+        const myColor = d3.scaleDiverging()
+            .interpolator(d3.interpolateRdBu)
+            .domain([5,0,-5]);
+
+        const container = d3.select(heatmapRef.current);
+        let parent = container.select("#heatmap-parent");
+
+        if (parent.empty()) {
+            parent = container.append("div")
+                        .attr("id", "heatmap-parent");
+            
+            const axisSvg = parent.append("svg")
+                .attr("id", "axis-svg")
+                .attr("width", size.width + margin.left + margin.right)
+                .attr('height', size.height + margin.top + margin.bottom)
+                .style("position", "absolute")
+                .style("pointer-events", "none")
+                .style("z-index", 2)
+            
+            axisSvg.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", margin.left)
+                .attr("height", size.height + margin.top + margin.bottom)
+                .style("fill", "white")
+                .style("stroke", "none")
+                .lower()
+            
+            axisSvg.append("g")
+                .attr("class", "y-axis")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`)
+
+            axisSvg.append("rect")
+                .attr("x", 0)
+                .attr("y", size.height + margin.top)
+                .attr("width", size.width)
+                .attr("height", margin.bottom)
+                .style("fill", "white")
+                .style("stroke", "none")
+            
+            axisSvg.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(${margin.left}, ${size.height + margin.top})`)
+
+            // scrollable container (viewport)
+            const scrollDiv = parent.append("div")
+                .attr("id", "heatmap-scroll")
                 .style("overflow", "auto")
-                .style("width", "800px")
-                .style("height", "500px");
+                .style("width", `${size.width}px`)                   
+                .style("height", `${size.height + margin.top + margin.bottom}px`)
+                .style("-webkit-overflow-scrolling", "touch");
 
-            // inner svg for heatmap (scrollable)
-            const hSvg = d3.select(scrollContainer.node())
-                .append("svg")
-                .attr('class', 'heatmap-svg')
-                .attr("width", 800)
-                .attr("height", 500);
+            const svg = scrollDiv.append("svg")
+                .attr("id", "heatmap-svg")
+                .attr("width", size.width + margin.left + margin.right)
+                .attr("height", size.height + margin.top + margin.bottom + 10)
+                .style("display", "block");
 
-            // add group for heatmap cells
-            hSvg.append('g').attr('class', 'heatmap-group');
-            svg.append("g").attr("class", "x-axis");
-            svg.append("g").attr("class", "y-axis");
-
-            const scrollDiv = document.getElementById("scrollable-div");
-
-            function updateAxisPosition() {
-                const scrollLeft = scrollDiv.scrollLeft;
-                const scrollTop = scrollDiv.scrollTop;
-
-                svg.select(".x-axis")
-                    .attr("transform", `translate(${margin.left - scrollLeft}, ${margin.top + totalHeight})`);
-
-                svg.select(".y-axis")
-                    .attr("transform", `translate(${margin.left - 5}, ${margin.top - scrollTop})`);
-            }
-
-            // Initial positioning
-            updateAxisPosition();
-
-            // Listen for scroll
-            scrollDiv.addEventListener("scroll", updateAxisPosition);
+            svg.append("g")
+                .attr("class", "heatmap-group")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
         }
 
-        svg.select(".y-axis")
+        let svg = container.select("#heatmap-svg");
+        let axisSvg = container.select("#axis-svg");
+        const scrollDiv = d3.select("#heatmap-scroll");
+
+        axisSvg.select(".y-axis")
             .style('font-size', 14)
             .transition().duration(200)
             .call(d3.axisLeft(yScale))
-            .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-        svg.select(".x-axis")
+        axisSvg.select(".x-axis")
             .transition().duration(200)
-            .call(d3.axisBottom(xScale).tickSize(0))
+            .call(d3.axisBottom(xScale))
             .selectAll("text")
             .attr("transform", "rotate(-65)")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
             .style("text-anchor", "end")
-            .style("fill", d => {
-                // const fullNodeId = numberToNodeId[d];
-                // const clusterId = nodeClusterMap.get(fullNodeId); 
+            .style("fill", d => { 
                 const clusterId = nodeClusterMap.get(d); 
                 return clusterId !== undefined ? colorScale(clusterId) : "black";
             })
             .style("font-weight", "bold");
-        
-        svg.select(".x-axis")
-            .attr("transform", `translate(${margin.left}, ${margin.top + totalHeight})`);
 
+        function syncAxesToScroll() {
+            const node = scrollDiv.node();
+            const scrollLeft = node.scrollLeft;
+            const scrollTop = node.scrollTop;
+
+            // Move x-axis horizontally to match heatmap scroll
+            axisSvg.select(".x-axis")
+                .attr("transform", `translate(${margin.left - scrollLeft}, ${margin.top + size.height})`);
+
+            // Move y-axis vertically to match heatmap scroll
+            axisSvg.select(".y-axis")
+                .attr("transform", `translate(${margin.left}, ${margin.top - scrollTop})`);
+        }
+
+        // attach handler
+        scrollDiv.on("scroll", syncAxesToScroll);
+
+        // initialize positions
+        syncAxesToScroll();
+
+        // --------- Heatmap cells rendering --------------
         const hGroup = svg.select('.heatmap-group');
         const cells = hGroup.selectAll('.heatmap-cell')
             .data(matrix, function(d) {return d.nodeId+':'+d.feature;});
@@ -149,7 +168,6 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         cells.transition().duration(500)
             .style("fill", function(d) { return myColor(d.value)} )
             .attr("x", function(d) { return xScale(d.nodeId) }) 
-            // .attr("x", function(d) { return xScale(extractNumber(d.nodeId)) }) 
             .attr("y", function(d) { return yScale(d.feature) })
             .attr("width", xScale.bandwidth() )
             .attr("height", yScale.bandwidth() );
@@ -231,8 +249,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
 
         cells.exit().remove();
 
-        // legend
-
+        // ----- Legend rendering -----
         const lSvg = d3.select(legendRef.current).select('svg');
 
         if (lSvg.empty()){
