@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import { Card, Col, Row, Switch} from "antd";
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import MemoMetricSelect from "./MetricSelect.js";
@@ -5,6 +6,7 @@ import LineChart from './LineChart.js';
 
 const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers, selectedFile }) => {
     const baselinesRef = useRef({});
+    const chartsRef = useRef([]);
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
 
     const headerMap = useMemo(() => {
@@ -50,24 +52,50 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
       baselinesRef.current = initialBaselines;
 
     const [featureData, setFeatureData] = useState(processed);
+    
     const filteredData = useMemo(() => {
-        const selectedNodes = new Set(selectedPoints);
-        const start = new Date(selectedTimeRange[0]);
-        const end = new Date(selectedTimeRange[1]);
-        const newFilteredData = new Map(Object.entries(featureData)
-            .map(([feature, data]) => ([feature, data.filter(d => selectedNodes.has(d.nodeId) && new Date(d.timestamp) >= start && new Date(d.timestamp) <= end)])));
-        return newFilteredData;
-    }, [selectedTimeRange, selectedPoints, featureData])
+      const selectedNodes = new Set(selectedPoints);
+
+      const newFilteredData = new Map(
+          Object.entries(featureData).map(([feature, data]) => [
+              feature,
+              data.filter(d => selectedNodes.has(d.nodeId))
+          ])
+      );
+
+      return newFilteredData;
+    }, [selectedPoints, featureData]);
+
 
     useEffect(() => {
-        const handleUpdateEvent = (event) => {
-          setSelectedTimeRange(event.detail);
-        };
-        window.addEventListener("batch-update-charts", handleUpdateEvent);
-        return () => {
-          window.removeEventListener("batch-update-charts", handleUpdateEvent);
-        };
-      }, []);
+      const handleTimeDomainUpdate = (event) => {
+        const newDomain = event.detail;
+        const [start, end] = newDomain;
+
+        chartsRef.current.forEach(({ chartEl, xScale, yScale, lines }) => {
+            xScale.domain(newDomain);
+            chartEl.select('.x-axis')
+              .call(d3.axisBottom(xScale)
+              .ticks(6)
+              .tickFormat(d3.timeFormat("%H:%M")))
+              .selectAll("text")       
+              .style("font-size", "20px");
+
+            lines.each(function(d) {
+              const filteredPoints = d[1].filter(p => p.timestamp >= start && p.timestamp <= end);
+
+              const lineGenerator = d3.line()
+                  .x(p => xScale(p.timestamp))
+                  .y(p => yScale(p.value));
+
+              d3.select(this).attr('d', lineGenerator(filteredPoints));
+            });
+          });
+      };
+
+      window.addEventListener('time-domain-updated', handleTimeDomainUpdate);
+      return () => window.removeEventListener('time-domain-updated', handleTimeDomainUpdate);
+    }, []);
 
     if (!data || !baselines) return;
 
@@ -210,14 +238,17 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
                 {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
                     return (
                         <LineChart 
-                            key={`chart-${index}`}
+                            key={`chart-${field}`}
                             data={filteredData.get(field)}
                             field={field} 
-                            index={index}
                             baselinesRef={baselinesRef}
+                            selectedTimeRange={selectedTimeRange}
                             updateBaseline={updateBaseline}
                             nodeClusterMap={nodeClusterMap}
                             metadata={headerMap[field]}
+                            registerChart={(chartObj) => {
+                                chartsRef.current.push(chartObj);
+                            }}
                         />
                     );
                 })}

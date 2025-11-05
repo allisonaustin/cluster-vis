@@ -5,7 +5,7 @@ import { dataConfigs } from './config.js';
 import DRView from './components/DRPlot.js';
 import MetricView from './components/MetricView.js';
 import HeatmapView from './components/HeatmapView.js';
-import NodeStatusView from './components/NodeStatusView.js';
+import TimelineView from './components/TimelineView.js';
 
 const { Header, Content } = Layout;
 const { Option } = Select;
@@ -226,7 +226,7 @@ function App() {
                     <Spin size="large" />
                   </div>
                 ) : (
-                <NodeStatusView 
+                <TimelineView 
                     bStart={bStart}
                     bEnd={bEnd}
                     nodeData={nodeData}

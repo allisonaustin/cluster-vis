@@ -44,6 +44,9 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         const mapWidth = nodeIds.length * cellWidth;
         const mapHeight = featureNames.length * cellHeight;
 
+        const visibleWidth = 800;
+        const visibleHeight = 220; 
+
         const yScale = d3.scaleBand()
             .domain(featureNames)
             .range([0, mapHeight])
@@ -109,7 +112,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
             const svg = scrollDiv.append("svg")
                 .attr("id", "heatmap-svg")
                 .attr("width", size.width + margin.left + margin.right)
-                .attr("height", size.height + margin.top + margin.bottom + 10)
+                .attr("height", mapHeight + margin.top + margin.bottom + 10)
                 .style("display", "block");
 
             svg.append("g")

@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { colorScale } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 
-const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
+const TimelineView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
     const svgContainerRef = useRef();
+    const chartsRef = useRef([]);
     const [size, setSize] = useState({ width: 700, height: 150 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(new Date(bStart));
@@ -214,7 +215,9 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
                     const [start, end] = selection.map(xScale2.invert);
                     setBrushStart(start);
                     setBrushEnd(end);
-                    updateCharts([start, end]);
+                    window.dispatchEvent(
+                      new CustomEvent('time-domain-updated', { detail: [start, end] })
+                    );
                 }
             })
         
@@ -231,69 +234,21 @@ const NodeStatusView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, no
       drawChart(nodeData);
     }, [nodeData, nodeClusterMap]);
 
-    const updateCharts = (newDomain) => {
-        const chart = d3.select(`#focus-line-1`);
-        const xScale = chart.node()?.xScale;
-        const utcFormat = d3.utcFormat('%H:%M');
-        const dateFormat = d3.utcFormat('%Y-%m-%d');
-
-        if (!xScale) {
-            return
-        }
-
-        const newStartDate = dateFormat(newDomain[0]);
-        // updating the displayed date only if it's different
-        if (newStartDate !== currentDate) {
-            setCurrentDate(newStartDate);
-
-            d3.select('.date-text')
-                .text(`Date: ${newStartDate}`);
-        }
-        
-        const t = d3.transition()
-            .duration(400) 
-            .ease(d3.easeCubicInOut);
-            
-        // updating x axes
-        xScale.domain(newDomain)
-
-        const steps = 6;
-        const [minDate, maxDate] = xScale.domain();
-        const stepMs = (maxDate - minDate) / (steps - 1);
-        const tickVals = [];
-        for (let i = 0; i < steps; i++) {
-          tickVals.push(new Date(minDate.getTime() + i * stepMs));
-        }
-
-        d3.selectAll('.focus .x-axis')
-            .transition(t)
-            .call(d3.axisBottom(xScale).tickValues(tickVals).tickFormat(d3.timeFormat('%H:%M')).tickSizeOuter(0))
-            .selectAll('text')
-            .style('font-size', '16px');
-
-        // updating charts
-        setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('batch-update-charts', { detail: newDomain }));
-            // console.log("Batch update triggered asynchronously. Selecting new time range: ", newDomain);
-        }, 0);
-
-      };
-
-      return  (
-        <>
-          <Card title="NODE STATUS VIEW" size="small" style={{ height: 'auto' }}>
-              <div ref={svgContainerRef}></div>
-          </Card>
-          <Tooltip
-            visible={tooltip.visible}
-            content={tooltip.content}
-            x={tooltip.x}
-            y={tooltip.y}
-            tooltipId={'tl-tooltip'}
-        />
-      </>
-      );
-    };
+    return  (
+      <>
+        <Card title="TIME DOMAIN VIEW" size="small" style={{ height: 'auto' }}>
+            <div ref={svgContainerRef}></div>
+        </Card>
+        <Tooltip
+          visible={tooltip.visible}
+          content={tooltip.content}
+          x={tooltip.x}
+          y={tooltip.y}
+          tooltipId={'tl-tooltip'}
+      />
+    </>
+    );
+  };
     
     
-export default NodeStatusView;
+export default TimelineView;
