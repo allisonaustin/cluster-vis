@@ -6,7 +6,7 @@ import Tooltip from '../utils/tooltip.js';
 const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaseline, nodeClusterMap, metadata, registerChart }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
-    const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 30 });
+    const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 50 });
     const prevX = useRef([]); // for storing window values, might be clamped versions of baseline values 
     const prevY = useRef([]); 
     const [tooltip, setTooltip] = useState({
@@ -19,7 +19,7 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
 
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;
-
+      
       // Select or create SVG
       let svg = d3.select(svgContainerRef.current).select("svg");
       if (svg.empty()) {

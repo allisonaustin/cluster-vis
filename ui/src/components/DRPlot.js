@@ -69,7 +69,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
             .attr("cy", d => yScale(d[yKey]))
             .attr('stroke','black')
             .attr('stroke-width', '1px')
-            .attr("r", 4)
+            .attr("r", 5)
             .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
             .style("opacity", d => {
                 return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
@@ -124,7 +124,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                 let prevOpacity = circle.attr("_prevOpacity") || nonHighlight; 
                 circle.transition()
                     .duration(150)
-                    .attr("r", 4)
+                    .attr("r", 5)
                     .style("opacity", prevOpacity);
 
                 d3.selectAll(`.node-${d.nodeId}`)
@@ -308,77 +308,121 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
     const clusterOptions = Array.from({ length: 19 }, (_, i) => i + 2); // [2..20]
 
     return (
-    <>
-        <Card 
-            title="NODE SIMILARITY VIEW" 
-            size="small" 
-            style={{ height:'auto' }}
-        >
-            <Row>
-                <Col span={20}>
+        <>
+            <Card
+            title="NODE SIMILARITY VIEW"
+            size="small"
+            style={{ height: 'auto' }}
+            >
+            <Row gutter={12} align="top">
+                {/* Scatterplot */}
+                <Col span={16}>
                     <div ref={svgContainerRef} style={{ height: '250px' }}></div>
+                    <LassoSelection
+                        svgRef={svgContainerRef}
+                        targetItems={'.dr-circle'}
+                        onSelect={handleSelection}
+                    />
+                </Col>
 
-                    <LassoSelection svgRef={svgContainerRef} targetItems={".dr-circle"} onSelect={handleSelection} />
+                {/* Config forms stacked vertically */}
+                <Col span={7}>
+                    <div
+                        id="form-container"
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px', // less space between sections
+                            alignItems: 'stretch',
+                        }}
+                        >
+                        {/* UMAP Parameters */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <p style={{ margin: 0, fontWeight: 'bold' }}>UMAP Parameters:</p>
+                            <Form
+                                layout="horizontal"
+                                colon={false}
+                                style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
+                            >
+                            <Form.Item
+                                label="n_neighbors"
+                                labelCol={{ span: 16 }}
+                                wrapperCol={{ span: 10 }}
+                                style={{ marginBottom: '4px' }}
+                            >
+                                <Slider
+                                    min={3}
+                                    max={50}
+                                    step={1}
+                                    defaultValue={nNeighbors}
+                                    onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
+                                    style={{ width: '100%' }}
+                                />
+                            </Form.Item>
 
-                    <div id="form-container" style={{ display: "flex", flexDirection: "row", gap: "5px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                            <p style={{ margin: 0, fontWeight: "bold" }}>UMAP Parameters:</p>
-                            <Form layout='inline'>
-                                <Form.Item label="n_neighbors">
-                                    <Slider
-                                        min={3}
-                                        max={100}
-                                        step={1}
-                                        defaultValue={nNeighbors}
-                                        style={{ width: 100 }}
-                                        onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
-                                    />
-                                </Form.Item>
-                                <Form.Item 
-                                    label="min_dist">
-                                    <Slider
-                                        min={0.0}
-                                        max={1.0}
-                                        step={0.1}
-                                        defaultValue={minDist}
-                                        style={{ width: 100 }}
-                                        onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
-                                    />
-                                </Form.Item>
+                            <Form.Item
+                                label="min_dist"
+                                labelCol={{ span: 16 }}
+                                wrapperCol={{ span: 10 }}
+                                style={{ marginBottom: '4px' }}
+                            >
+                                <Slider
+                                    min={0.0}
+                                    max={1.0}
+                                    step={0.1}
+                                    defaultValue={minDist}
+                                    onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
+                                    style={{ width: '100%' }}
+                                />
+                            </Form.Item>
                             </Form>
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                            <p style={{ margin: 0, fontWeight: "bold" }}>K-Means:</p>
-                            <Form layout="inline" onFinish={handleSubmitNKMeans} initialValues={{ numClusters: numClusters }}>
-                                <Form.Item name="numClusters" label="Num clusters">
-                                    <Select
-                                    style={{ width: 60 }}
-                                    onChange={(value) => {
-                                        handleSubmitNKMeans({ numClusters: value });
-                                    }}
-                                    >
-                                        {clusterOptions.map((num) => (
-                                            <Option key={num} value={num}>
-                                            {num}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </Form.Item>
+
+                        {/* K-Means */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <p style={{ margin: 0, fontWeight: 'bold' }}>K-Means:</p>
+                            <Form
+                                layout="horizontal"
+                                colon={false}
+                                onFinish={handleSubmitNKMeans}
+                                initialValues={{ numClusters: numClusters }}
+                                style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
+                            >
+                            <Form.Item
+                                name="numClusters"
+                                label="Num clusters"
+                                labelCol={{ span: 15 }}
+                                wrapperCol={{ span: 14 }}
+                                style={{ marginBottom: 0 }}
+                            >
+                                <Select
+                                    style={{ width: '100%' }}
+                                    onChange={(value) => handleSubmitNKMeans({ numClusters: value })}
+                                >
+                                {clusterOptions.map((num) => (
+                                    <Option key={num} value={num}>
+                                    {num}
+                                    </Option>
+                                ))}
+                                </Select>
+                            </Form.Item>
                             </Form>
                         </div>
                     </div>
                 </Col>
             </Row>
-        </Card>
-        <Tooltip
+            </Card>
+
+            <Tooltip
             visible={tooltip.visible}
             content={tooltip.content}
             x={tooltip.x}
             y={tooltip.y}
             tooltipId={'dr-tooltip'}
-        />
-    </>
-    );
+            />
+        </>
+        );
+
 
 }
 

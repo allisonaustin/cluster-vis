@@ -32,7 +32,7 @@ const TimelineView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, node
                 .attr("viewBox", `0 0 ${size.width} ${size.height}`)
                 .attr("preserveAspectRatio", "xMidYMid meet");
 
-        let chartdata = Array.from(d3.group(data.data, d => d.timestamp), ([key, value]) => ({
+        let chartdata = Array.from(d3.group(data, d => d.timestamp), ([key, value]) => ({
               timestamp: key,
               values: value
           }));
@@ -168,12 +168,6 @@ const TimelineView = ({ nodeData, bStart, bEnd, nodeDataStart, nodeDataEnd, node
           .attr("class", "y-axis2")
             .attr("transform", `translate(${margin.left},0)`)
             .call(yAxis2)
-          
-          svg.append("text")
-            .attr("class", "y-label")
-            .attr("text-anchor", "middle")
-            .attr("transform", `translate(${margin.left / 3},${size.height * 0.4}) rotate(-90)`)
-            .text("Null Readings");
 
           const stackGeneratorDown = d3.stack()
             .keys(clusterKeysDown)

@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
-import { Card, Col, Row, Switch} from "antd";
+import { Card, Col, Row } from "antd";
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import MemoMetricSelect from "./MetricSelect.js";
 import LineChart from './LineChart.js';
+import { colorScale } from '../utils/colors.js';
 
-const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers, selectedFile }) => {
+const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelectedDims, zScores, setzScores, setBaselines, fcs, baselines, nodeClusterMap, headers }) => {
     const baselinesRef = useRef({});
     const chartsRef = useRef([]);
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
@@ -19,25 +20,6 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
       });
       return map;
     }, [headers]);
-    
-    const processed = useMemo(() => {
-        const proc = {};
-        data.data.forEach(row => {
-          Object.keys(row).forEach(key => {
-            if (key !== "timestamp" && key !== "nodeId") { 
-              if (!proc[key]) {
-                proc[key] = [];
-              }
-              proc[key].push({
-                value: row[key],
-                timestamp: new Date(row.timestamp),
-                nodeId: row.nodeId
-              });
-            }
-          });
-        });
-        return proc;
-      }, [data]); 
 
       const initialBaselines = baselines.reduce((acc, baseline) => {
         acc[baseline.feature] = {
@@ -50,22 +32,6 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
           return acc;  
       }, {});
       baselinesRef.current = initialBaselines;
-
-    const [featureData, setFeatureData] = useState(processed);
-    
-    const filteredData = useMemo(() => {
-      const selectedNodes = new Set(selectedPoints);
-
-      const newFilteredData = new Map(
-          Object.entries(featureData).map(([feature, data]) => [
-              feature,
-              data.filter(d => selectedNodes.has(d.nodeId))
-          ])
-      );
-
-      return newFilteredData;
-    }, [selectedPoints, featureData]);
-
 
     useEffect(() => {
       const handleTimeDomainUpdate = (event) => {
@@ -96,6 +62,22 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
       window.addEventListener('time-domain-updated', handleTimeDomainUpdate);
       return () => window.removeEventListener('time-domain-updated', handleTimeDomainUpdate);
     }, []);
+
+    // Updating line chart colors on cluster config
+    useEffect(() => {
+      if (!nodeClusterMap || chartsRef.current.length === 0) return;
+
+      chartsRef.current.forEach(({ chartEl }) => {
+        chartEl.selectAll('.line')
+          .transition()
+          .duration(300)
+          .attr('stroke', function() {
+            const nodeId = d3.select(this).attr('nodeId');
+            const clusterId = nodeClusterMap.get(nodeId);
+            return colorScale(clusterId); 
+          });
+      });
+    }, [nodeClusterMap]);
 
     if (!data || !baselines) return;
 
@@ -189,19 +171,6 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
         return;
       }
 
-      if (!featureData[key]) {
-        fetch(`http://127.0.0.1:5010/nodeData/${key}/${selectedFile}`)
-          .then(res => res.json())
-          .then(newData => {
-            const processedColumn = newData.data.map(row => ({
-              value: row[key],
-              timestamp: new Date(row.timestamp),
-              nodeId: row.nodeId
-            }));
-            setFeatureData(prev => ({ ...prev, [key]: processedColumn }));
-          });
-      }
-
       fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
         .then(res => res.json())
         .then(dmdData => {
@@ -222,49 +191,53 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, setSelected
 
     return (
       <Card title="METRIC READING VIEW" size="small" style={{ height: "auto" }}> 
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', marginLeft: '8px' }}>
-          <div style={{
-            width: '16px',
-            height: '16px',
-            backgroundColor: 'grey',
-            marginRight: '8px',
-            border: '1px solid #999'
-          }} />
-          <span style={{ fontSize: '14px' }}>Baseline Region</span>
-        </div>
         <Row gutter={[16, 16]}>
-            <Col span={16}>
-              <div style={{ overflow: 'auto', maxHeight: '470px' }}>
-                {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
-                    return (
-                        <LineChart 
-                            key={`chart-${field}`}
-                            data={filteredData.get(field)}
-                            field={field} 
-                            baselinesRef={baselinesRef}
-                            selectedTimeRange={selectedTimeRange}
-                            updateBaseline={updateBaseline}
-                            nodeClusterMap={nodeClusterMap}
-                            metadata={headerMap[field]}
-                            registerChart={(chartObj) => {
-                                chartsRef.current.push(chartObj);
-                            }}
-                        />
-                    );
-                })}
+          <Col span={8}>
+            <MemoMetricSelect 
+                selectedDims={selectedDims}
+                metricData={data} 
+                nodeClusterMap={nodeClusterMap} 
+                features={Object.keys(headerMap)}
+                fcs={fcs} 
+                onMetricSelectChange={handleMetricSelectChange} />
+        </Col>
+          <Col span={16}>
+            <div style={{ overflow: 'auto', maxHeight: '470px' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'flex-end', 
+                marginBottom: '8px', 
+                marginLeft: '8px' 
+              }}>
+              <div style={{
+                width: '16px',
+                height: '16px',
+                backgroundColor: 'grey',
+                marginRight: '8px',
+                border: '1px solid #999'
+              }} />
+              <span style={{ fontSize: '14px' }}>Baseline Region</span>
               </div>
-            </Col>
-            {/* Right column: List */}
-            <Col span={8}>
-                {/* TODO: move this to sidebar at the app level */}
-                <MemoMetricSelect 
-                    data={data} 
-                    selectedDims={selectedDims}
-                    featureData={featureData} 
-                    nodeClusterMap={nodeClusterMap} 
-                    fcs={fcs} 
-                    onMetricSelectChange={handleMetricSelectChange} />
-            </Col>
+              {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
+                  return (
+                      <LineChart 
+                          key={`chart-${field}`}
+                          data={data[field]}
+                          field={field} 
+                          baselinesRef={baselinesRef}
+                          selectedTimeRange={selectedTimeRange}
+                          updateBaseline={updateBaseline}
+                          nodeClusterMap={nodeClusterMap}
+                          metadata={headerMap[field]}
+                          registerChart={(chartObj) => {
+                              chartsRef.current.push(chartObj);
+                          }}
+                      />
+                  );
+              })}
+            </div>
+          </Col>
         </Row>
       </Card>
     );

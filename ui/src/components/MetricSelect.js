@@ -22,15 +22,15 @@ function smoothSeries(series, windowSize = 5, maxPoints = 40) {
   return smoothed;
 }
 
-export default function MetricSelect({ data, selectedDims, featureData, nodeClusterMap, fcs, onMetricSelectChange }) {
+export default function MetricSelect({ selectedDims, metricData, nodeClusterMap, features, fcs, onMetricSelectChange }) {
 
   return (
     <List
       style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 470 }}
       bordered
-      dataSource={[...data.features].sort((a, b) => {
+      dataSource={[...features].sort((a, b) => {
         const getMaxAbsContribution = (feature) => {
-            const i = data.features.indexOf(feature);
+            const i = features.indexOf(feature);
             if (!fcs || i === -1 || i >= fcs.agg_feat_contrib_mat.length) return -Infinity;
             return Math.max(...fcs.agg_feat_contrib_mat[i].map(v => Math.abs(v)));
         };
@@ -54,7 +54,7 @@ export default function MetricSelect({ data, selectedDims, featureData, nodeClus
                 .filter(([_, cid]) => cid === clusterId)
                 .map(([nid]) => nid);
 
-                const series = featureData[key] || [];
+                const series = metricData[key] || [];
 
                 const tsMap = new Map();
                 series.forEach(d => {
@@ -100,10 +100,10 @@ export default function MetricSelect({ data, selectedDims, featureData, nodeClus
                 <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
                     <FeatureContributionBarGraph graphId={`${key.replace(/\s/g, "_")}-feat-graph`} feature={key}
                         //TODO: fix issue with less FCs than available data features
-                        fcData={!fcs || data.features.indexOf(key) === -1 || data.features.indexOf(key) >= fcs.agg_feat_contrib_mat.length ? []
+                        fcData={!fcs || features.indexOf(key) === -1 || features.indexOf(key) >= fcs.agg_feat_contrib_mat.length ? []
                                     : fcs.order_col.map(clusterId => ({
                                         cluster: clusterId,
-                                        value: fcs.agg_feat_contrib_mat[data.features.indexOf(key)][clusterId]
+                                        value: fcs.agg_feat_contrib_mat[features.indexOf(key)][clusterId]
                                     }))}
                     />
                     <div

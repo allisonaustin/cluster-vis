@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import { Col, Layout, Row, Spin, Select, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
@@ -13,8 +14,8 @@ const { Text } = Typography;
 
 function App() {
   const [files, setFiles] = useState(Object.keys(dataConfigs));
-  const [selectedFile, setSelectedFile] = useState('ganglia_2024-02-21.csv'); // env_logs_2018-06-09.csv, ganglia_2024-02-21.csv
-
+  const [selectedFile, setSelectedFile] = useState(dataConfigs.file);
+  const [headerFile, setHeaderFile] = useState(dataConfigs.headerFile);
   const defaults = dataConfigs[selectedFile] || {};
   const [selectedPoints, setSelectedPoints] = useState(defaults.selectedPoints || []);
   const [selectedDims, setSelectedDims] = useState(defaults.selectedDims || []);
@@ -27,34 +28,18 @@ function App() {
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [nodeData, setNodeData] = useState(null);
+  const [metricData, setMetricData] = useState(null);
   const [zScores, setzScores] = useState(null);
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
-  const [dataOptions, setDataOptions] = useState([]);
   const [headers, setHeaders] = useState(null);
   const [recompute, setRecompute] = useState(0);
-  const [baselineEdit, setBaselineEdit] = useState(false);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
 
   const totalNodes = DRTData?.length || 0;
-  const totalMeasures = nodeData?.features.length || 0;
+  const totalMeasures = nodeData?.columns.length || 0;
 
-  useEffect(() => {
-    getNodeData(selectedDims)
-      .then(() => {
-        return Promise.all([
-          getDRTimeData(),
-          getHeaders()
-        ]);
-      })
-      .then(() => {
-        console.log("Data fetched successfully");
-        getMrDMD();
-      })
-      .catch((err) => console.error("Error fetching data:", err));
-  }, []);
-
-   const handleFileChange = (newFile) => {
+  const handleFileChange = (newFile) => {
     setSelectedFile(newFile);
     const defaults = dataConfigs[newFile] || {};
     setSelectedPoints(defaults.selectedPoints || []);
@@ -90,21 +75,32 @@ function App() {
     }
   }, []);    
 
-  const getNodeData = async (selectedCols) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/nodeData/${selectedCols}/${selectedFile}`);
-      if (response.ok) { 
-        const data = await response.json();
-        setNodeData(data)
-      } else {
-        setNodeData(null);
-        setError("Failed to fetch data. Please check that the server is running.");
+  const getCsvData = async () => {
+    const [data, headers] = await Promise.all([
+      d3.csv(process.env.PUBLIC_URL + "/data/" + selectedFile, d3.autoType),
+      fetch(process.env.PUBLIC_URL + "/data/" + headerFile).then(r => r.json())
+    ]);
+    const proc = {};
+    const selectedNodes = new Set(selectedPoints);
+    for (const key of selectedDims) proc[key] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const node = row.nodeId;
+      if (selectedNodes.has(node)) {
+        for (const key of selectedDims) {
+          proc[key].push({
+            timestamp: new Date(row.timestamp),
+            nodeId: row.nodeId,
+            value: row[key],
+          });
+        }
       }
-    } catch (error) {
-      setNodeData(null);
-      setError("Failed to fetch data. Please check that the server is running.");
-      console.error(error);
     }
+
+    setMetricData(proc);
+    setNodeData(data);
+    setHeaders(headers);
   };
 
   const getDRTimeData = async () => {
@@ -154,22 +150,19 @@ function App() {
     }
   };
 
-  const getHeaders = async () => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5010/headers`);
-      const data = await response.json();
-      if (response.ok) { 
-        setHeaders(data);
-      } else {
-        setHeaders([]);
-        setError("Failed to fetch headers. Please check that the server is running.");
+  useEffect(() => {
+    async function init() {
+      try {
+        await getCsvData();
+        await getDRTimeData();
+        await getMrDMD();
+      } catch (err) {
+        console.error("Error fetching data:", err);
       }
-    } catch (error) {
-      setHeaders([]);
-      setError("Failed to fetch headers. Please check that the server is running.");
-      console.error(error);
     }
-  };
+
+    init();
+  }, []);
 
   return (
     <Layout style={{ height: "100vh", padding: "5px" }}>
@@ -178,7 +171,7 @@ function App() {
           <Col>
             <Row align="middle" gutter={8}>
               <Col>
-                <Typography.Title level={1} style={{ margin: 0, fontSize: "30px", paddingRight: '20px' }}>
+                <Typography.Title level={1} style={{ margin: 0, fontSize: "25px", paddingRight: '20px' }}>
                   Cluster-Based MVTS Analysis
                 </Typography.Title>
               </Col>
@@ -230,25 +223,24 @@ function App() {
                     bStart={bStart}
                     bEnd={bEnd}
                     nodeData={nodeData}
-                    nodeDataStart={new Date(nodeData?.data[0]?.timestamp)}
-                    nodeDataEnd={new Date(nodeData?.data[nodeData?.data.length - 1]?.timestamp)}
+                    nodeDataStart={new Date(nodeData[0]?.timestamp)}
+                    nodeDataEnd={new Date(nodeData[nodeData?.length - 1]?.timestamp)}
                     nodeClusterMap={nodeClusterMap}
                   />
                   )}
-                {((!nodeData) || (!baselines) || (!DRTData) || (!zScores) || (!headers)) ? (
+                {((!metricData) || (!baselines) || (!zScores) || (!headers)) ? (
                   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
                     <Spin size="large" />
                   </div>
                 ) : (
                   <MetricView 
-                    data={nodeData} 
+                    data={metricData} 
                     timeRange={[new Date(bStart), new Date(bEnd)]}
                     selectedDims={selectedDims}
                     selectedPoints={selectedPoints}
                     fcs={FCs}
                     setSelectedDims={setSelectedDims}
                     baselines={baselines}
-                    setBaselineEdit={setBaselineEdit}
                     zScores={zScores}
                     setzScores={setzScores}
                     setBaselines={setBaselines}

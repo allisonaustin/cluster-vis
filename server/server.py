@@ -22,6 +22,7 @@ data_dir = os.path.join(os.path.dirname(__file__), 'data')
 ts_data = pd.DataFrame()
 headers = pd.DataFrame()
 filepath = './data/'
+file = 'ganglia_2024-02-21.csv'
 CACHE_DIR = './cache'
 NODE_CACHE = './cache/node_data.parquet'
 DR1_CACHE_NAME = './cache/drTimeDataDR1.parquet'
@@ -174,6 +175,6 @@ def list_json_files():
         return jsonify({"error": "Error reading folder", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    # ts_data = get_timeseries_data()
+    ts_data = get_timeseries_data(file)
     clear_caches()
     app.run(debug=True, port=5010)

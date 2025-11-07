@@ -1,4 +1,7 @@
 export const dataConfigs = {
+  "file": "ganglia_2024-02-21.csv",
+  "headerFile": "headers.json",
+
   "ganglia_2016-02-06.csv": {
     selectedPoints: ["novadaq-far-farm-06", "novadaq-far-farm-07","novadaq-far-farm-08", "novadaq-far-farm-09","novadaq-far-farm-10","novadaq-far-farm-12","novadaq-far-farm-130","novadaq-far-farm-131", "novadaq-far-farm-133","novadaq-far-farm-142","novadaq-far-farm-150", "novadaq-far-farm-16","novadaq-far-farm-164", "novadaq-far-farm-170","novadaq-far-farm-180","novadaq-far-farm-181","novadaq-far-farm-184", "novadaq-far-farm-189", "novadaq-far-farm-20","novadaq-far-farm-28", "novadaq-far-farm-35","novadaq-far-farm-59","novadaq-far-farm-61","novadaq-far-farm-78","novadaq-far-farm-92"],
     selectedDims: ["bytes_out", "cpu_idle", "cpu_nice", "cpu_system", "proc_run"],
