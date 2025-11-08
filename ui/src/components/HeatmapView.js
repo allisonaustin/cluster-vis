@@ -8,7 +8,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
     const heatmapRef = useRef();
     const legendRef = useRef();
     const [margin, setMargin] = useState({ top: 10, right: 50, bottom: 150, left: 100 });
-    const [size, setSize] = useState({ width: 800, height: 100 });
+    const [size, setSize] = useState({ width: 800, height: 140 });
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',

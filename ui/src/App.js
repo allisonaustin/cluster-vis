@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
-import { Col, Layout, Row, Spin, Select, Typography } from "antd";
-import React, { useCallback, useEffect, useState } from 'react';
+import { Card, Col, Layout, Row, Spin, Select, Typography } from "antd";
+import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { dataConfigs } from './config.js';
 import DRView from './components/DRPlot.js';
+import MemoMetricSelect from "./components/MetricSelect.js";
 import MetricView from './components/MetricView.js';
 import HeatmapView from './components/HeatmapView.js';
 import TimelineView from './components/TimelineView.js';
@@ -35,6 +36,7 @@ function App() {
   const [headers, setHeaders] = useState(null);
   const [recompute, setRecompute] = useState(0);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
+  const baselinesRef = useRef({});
 
   const totalNodes = DRTData?.length || 0;
   const totalMeasures = nodeData?.columns.length || 0;
@@ -49,6 +51,41 @@ function App() {
     setNNeighbors(defaults.nNeighbors || 50);
     setMinDist(defaults.minDist || 0.3);
   };
+
+  const headerMap = useMemo(() => {
+    const map = {};
+    if (headers) {
+      headers.forEach(h => {
+        if (h.filename && h.filename.endsWith('.json')) {
+          const name = h.filename.replace('.json', '');
+          map[name] = h;
+        }
+      });
+    }
+    return map;
+  }, [headers]);
+
+
+  function mergeZScores(oldZScores, newZScores, newFeature) {
+      let zscoreMap = Object.fromEntries(
+          oldZScores.map(entry => [entry.nodeId, { ...entry }])
+      );
+
+      newZScores.forEach(entry => {
+          const { nodeId, ...newValues } = entry;
+          if (zscoreMap[nodeId]) {
+              zscoreMap[nodeId] = { 
+                  nodeId, 
+                  [newFeature]: newValues[newFeature],  
+                  ...zscoreMap[nodeId] 
+              };
+          } else {
+              zscoreMap[nodeId] = { nodeId, [newFeature]: newValues[newFeature] };
+          }
+      });
+
+      return Object.values(zscoreMap);
+    }
 
   const updateClustersCallback = useCallback(async (numClusters, nNeighbors, minDist, forceRecompute) => {
     const params = new URLSearchParams();
@@ -137,6 +174,17 @@ function App() {
         const data = await response.json();
         setzScores(data.zscores)
         setBaselines(data.baselines)
+        const initialBaselines = data.baselines.reduce((acc, baseline) => {
+        acc[baseline.feature] = {
+            baselineX: [
+                new Date(baseline.b_start.replace("GMT", "")), 
+                new Date(baseline.b_end.replace("GMT", ""))
+              ],
+              baselineY: [baseline.v_min, baseline.v_max]
+            };
+            return acc;  
+        }, {});
+      baselinesRef.current = initialBaselines;
       } else {
         setzScores(null);   
         setBaselines(null)
@@ -149,6 +197,105 @@ function App() {
       console.error(error);     
     }
   };
+
+  const handleMetricSelectChange = (key) => {
+    if (selectedDims.includes(key)) {
+      setSelectedDims(prev => prev.filter(dim => dim !== key));
+
+      setMetricData(prev => {
+        const newData = { ...prev };
+        delete newData[key]; 
+        return newData;
+      });
+
+      setzScores(prevZ => prevZ.map(z => {
+        const { [key]: _, ...rest } = z;
+        return rest;
+      }));
+      return;
+    }
+
+    setSelectedDims(prev => [key, ...prev]);
+
+    const selectedNodesSet = new Set(selectedPoints);
+
+    setMetricData(prev => {
+      const newData = { ...prev };
+      newData[key] = nodeData
+        .filter(row => selectedNodesSet.has(row.nodeId))  
+        .map(row => ({
+          timestamp: new Date(row.timestamp),
+          nodeId: row.nodeId,
+          value: row[key]
+        }));
+      return newData;
+    });
+
+    // Fetch updated zScores/baselines
+    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
+      .then(res => res.json())
+      .then(dmdData => {
+        setzScores(prev => mergeZScores(prev, dmdData.zscores, key));
+        setBaselines(prev => [...dmdData.baselines, ...prev]);
+        dmdData.baselines.forEach(baseline => {
+          baselinesRef.current[baseline.feature] = {
+            baselineX: [
+              new Date(baseline.b_start.replace("GMT", "")),
+              new Date(baseline.b_end.replace("GMT", ""))
+            ],
+            baselineY: [baseline.v_min, baseline.v_max]
+          };
+        });
+      });
+  };
+
+  // timeBinSize in milliseconds (e.g., 60_000 = 1 min)
+  const timeBinSize = 60_000;
+
+  const avgSeriesData = useMemo(() => {
+    if (!nodeData?.length || !nodeClusterMap || !headerMap) return {};
+
+    const result = {};
+    const clusterSums = {}; // clusterId -> metric -> timestamp -> {sum, count}
+
+    for (const d of nodeData) {
+      const clusterId = nodeClusterMap.get(d.nodeId);
+      if (clusterId == null) continue;
+
+      for (const metric of Object.keys(headerMap)) {
+        const v = d[metric];
+        if (v == null || Number.isNaN(v)) continue;
+
+        const t = Math.floor(+new Date(d.timestamp) / timeBinSize) * timeBinSize;
+
+        if (!clusterSums[clusterId]) clusterSums[clusterId] = {};
+        if (!clusterSums[clusterId][metric]) clusterSums[clusterId][metric] = {};
+        if (!clusterSums[clusterId][metric][t])
+          clusterSums[clusterId][metric][t] = { sum: 0, count: 0 };
+
+        const entry = clusterSums[clusterId][metric][t];
+        entry.sum += v;
+        entry.count += 1;
+      }
+    }
+
+    // convert to compact arrays
+    for (const [clusterId, metrics] of Object.entries(clusterSums)) {
+      for (const [metric, tsData] of Object.entries(metrics)) {
+        const avgSeries = Object.entries(tsData)
+          .map(([t, { sum, count }]) => ({
+            timestamp: new Date(+t),
+            value: sum / count,
+          }))
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        if (!result[metric]) result[metric] = {};
+        result[metric][+clusterId] = avgSeries;
+      }
+    }
+    console.log(result)
+    return result;
+  }, [nodeData, nodeClusterMap, headerMap]);
 
   useEffect(() => {
     async function init() {
@@ -233,21 +380,36 @@ function App() {
                     <Spin size="large" />
                   </div>
                 ) : (
-                  <MetricView 
-                    data={metricData} 
-                    timeRange={[new Date(bStart), new Date(bEnd)]}
-                    selectedDims={selectedDims}
-                    selectedPoints={selectedPoints}
-                    fcs={FCs}
-                    setSelectedDims={setSelectedDims}
-                    baselines={baselines}
-                    zScores={zScores}
-                    setzScores={setzScores}
-                    setBaselines={setBaselines}
-                    nodeClusterMap={nodeClusterMap}
-                    headers={headers}
-                    selectedFile={selectedFile}
-                  />
+                  <Card title="METRIC READING VIEW" size="small" style={{ height: "auto" }}> 
+                    <Row gutter={[16, 16]}>
+                        <Col span={8}>
+                          <MemoMetricSelect 
+                            selectedDims={selectedDims}
+                            headerMap={headerMap}
+                            fcs={FCs} 
+                            avgSeriesData={avgSeriesData}
+                            onMetricSelectChange={handleMetricSelectChange} />
+                      </Col>
+                      <Col span={16}>
+                        <MetricView 
+                            data={metricData} 
+                            timeRange={[new Date(bStart), new Date(bEnd)]}
+                            selectedDims={selectedDims}
+                            selectedPoints={selectedPoints}
+                            fcs={FCs}
+                            setSelectedDims={setSelectedDims}
+                            baselines={baselines}
+                            baselinesRef={baselinesRef}
+                            zScores={zScores}
+                            setzScores={setzScores}
+                            setBaselines={setBaselines}
+                            nodeClusterMap={nodeClusterMap}
+                            headerMap={headerMap}
+                            selectedFile={selectedFile}
+                          />
+                      </Col>
+                    </Row>
+                  </Card>
               )}
             </Col>
               <Col span={10}>
