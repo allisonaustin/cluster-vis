@@ -1,12 +1,12 @@
 import * as d3 from 'd3';
 
 export const COLORS = {
-    default: '#828080',
+    default: '#cececeff',
     select: '#F6828C',
-    highlight: '#4EA5D9'
+    highlight: '#a4c8ddff'
 }
 
-export const colorScheme = d3.schemeDark2;
+export const colorScheme = d3.schemeSet2;
 export const colorScale = d3.scaleOrdinal(colorScheme);
 
 export const getColor = (field) => {

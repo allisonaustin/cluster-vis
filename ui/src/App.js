@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Card, Col, Layout, Row, Spin, Select, Typography } from "antd";
 import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import './App.css';
-import { dataConfigs } from './config.js';
+import { dataConfigs, fileName, headerFileName } from './config.js';
 import DRView from './components/DRPlot.js';
 import MemoMetricSelect from "./components/MetricSelect.js";
 import MetricView from './components/MetricView.js';
@@ -15,8 +15,8 @@ const { Text } = Typography;
 
 function App() {
   const [files, setFiles] = useState(Object.keys(dataConfigs));
-  const [selectedFile, setSelectedFile] = useState(dataConfigs.file);
-  const [headerFile, setHeaderFile] = useState(dataConfigs.headerFile);
+  const [selectedFile, setSelectedFile] = useState(fileName);
+  const [headerFile, setHeaderFile] = useState(headerFileName);
   const defaults = dataConfigs[selectedFile] || {};
   const [selectedPoints, setSelectedPoints] = useState(defaults.selectedPoints || []);
   const [selectedDims, setSelectedDims] = useState(defaults.selectedDims || []);
@@ -29,6 +29,7 @@ function App() {
   const [FCs, setFCs] = useState(null);
   const [DRTData, setDRTData] = useState(null);
   const [nodeData, setNodeData] = useState(null);
+  const [timelineData, setTimelineData] = useState(null);
   const [metricData, setMetricData] = useState(null);
   const [zScores, setzScores] = useState(null);
   const [baselines, setBaselines] = useState(null);
@@ -87,30 +88,57 @@ function App() {
       return Object.values(zscoreMap);
     }
 
-  const updateClustersCallback = useCallback(async (numClusters, nNeighbors, minDist, forceRecompute) => {
+  const handleRecompute = useCallback(async (numClusters, nNeighbors, minDist, forceRecompute, forceDefault) => {
     const params = new URLSearchParams();
     params.append('numClusters', numClusters);
     if (nNeighbors !== null) params.append('n_neighbors', nNeighbors);
     if (minDist !== null) params.append('min_dist', minDist);
-    
+
+    if (forceDefault) {
+      setNNeighbors(defaults.nNeighbors || 50);
+      setMinDist(defaults.minDist || 0.4);
+      setNumClusters(defaults.numClusters || 4);
+    }
+
     try {
-      const response = await fetch(`http://127.0.0.1:5010/recomputeClusters/${numClusters}/${nNeighbors || 0}/${minDist || 0}/${forceRecompute ? 1 : 0}`);
-      if (response.ok) {
-        const data = await response.json();
-        const clusters = new Map();
-        data.node_cluster_map.forEach(d => {
-            clusters.set(d.nodeId, d.Cluster);
-        });
-        setNodeClusterMap(clusters);
-        setDRTData(data.dr_features); // TODO: update scatter plot with new points
+      const url = `http://127.0.0.1:5010/recomputeClusters/${numClusters}/${nNeighbors || 0}/${minDist || 0}/${forceRecompute ? 1 : 0}`;
+      console.log(`Fetching new cluster assignments: ${url}`);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error("Failed to fetch new cluster IDs -", response.status, response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      const newClusters = new Map(data.node_cluster_map.map(d => [d.nodeId, d.Cluster]));
+
+      // Compare new vs old cluster assignments
+      let isDifferent = false;
+      if (nodeClusterMap.size !== newClusters.size) {
+        isDifferent = true;
+      } else {
+        for (const [nodeId, cluster] of newClusters.entries()) {
+          if (nodeClusterMap.get(nodeId) !== cluster) {
+            isDifferent = true;
+            break;
+          }
+        }
+      }
+
+      if (isDifferent) {
+        console.log("Cluster assignments changed — updating state.");
+        setNodeClusterMap(newClusters);
+        setDRTData(data.dr_features);
         setFCs(data.feat_contributions);
       } else {
-        console.error("Failed to fetch new cluster IDs -", response.status, response.statusText);
+        console.log("Cluster assignments unchanged — skipping update.");
       }
+
     } catch (e) {
       console.error("Failed to fetch new cluster IDs -", e);
     }
-  }, []);    
+  }, [nodeClusterMap]);
 
   const getCsvData = async () => {
     const [data, headers] = await Promise.all([
@@ -134,7 +162,6 @@ function App() {
         }
       }
     }
-
     setMetricData(proc);
     setNodeData(data);
     setHeaders(headers);
@@ -293,9 +320,83 @@ function App() {
         result[metric][+clusterId] = avgSeries;
       }
     }
-    console.log(result)
     return result;
   }, [nodeData, nodeClusterMap, headerMap]);
+
+  function getClusterSegments(nodeData, nodeClusterMap, binWidth = 15*60*1000) {
+    if (!nodeData?.length || !nodeClusterMap) return [];
+
+    const clusters = d3.group(nodeData, d => nodeClusterMap.get(d.nodeId));
+    const clusterSegments = [];
+
+    for (const [clusterId, records] of clusters.entries()) {
+      let segmentStart = null;
+      let prevTimestamp = null;
+
+      for (const r of records) {
+        if (r.downtime === 1) {
+          if (!segmentStart) segmentStart = new Date(r.timestamp);
+          prevTimestamp = new Date(r.timestamp);
+        } else {
+          if (segmentStart) {
+            clusterSegments.push({
+              cluster: clusterId,
+              start: segmentStart,
+              end: prevTimestamp
+            });
+            segmentStart = null;
+            prevTimestamp = null;
+          }
+        }
+      }
+
+      // flush last segment
+      if (segmentStart) {
+        clusterSegments.push({
+          cluster: clusterId,
+          start: segmentStart,
+          end: prevTimestamp
+        });
+      }
+    }
+    return clusterSegments;
+  }
+
+  useEffect(() => {
+    if (!nodeData?.length || !nodeClusterMap) return;
+
+    const clusterSegments = getClusterSegments(nodeData, nodeClusterMap);
+    setTimelineData(clusterSegments);
+
+  }, [nodeData, nodeClusterMap]);
+
+  const updateSelectedNodes = (selectedNodeIds) => {
+    setSelectedPoints(selectedNodeIds);
+    
+    const selectedSet = new Set(selectedNodeIds);
+    const newData = [];
+    selectedDims.forEach(metric => {
+      newData[metric] = nodeData
+        .filter(row => selectedSet.has(row.nodeId))  
+        .map(row => ({
+          timestamp: new Date(row.timestamp),
+          nodeId: row.nodeId,
+          value: row[metric]
+        }));
+    });
+
+    setMetricData(newData);
+
+    // fetch updated zScores/baselines for these nodes
+    if (selectedNodeIds.length) {
+      fetch(`http://127.0.0.1:5010/mrdmd/${selectedNodeIds}/${selectedDims}/1/0/0/0/0/0`)
+        .then(res => res.json())
+        .then(dmdData => {
+          setzScores(dmdData.zscores);
+          setBaselines(dmdData.baselines);
+        });
+    }
+  };
 
   useEffect(() => {
     async function init() {
@@ -318,12 +419,9 @@ function App() {
           <Col>
             <Row align="middle" gutter={8}>
               <Col>
-                <Typography.Title level={1} style={{ margin: 0, fontSize: "25px", paddingRight: '20px' }}>
-                  Cluster-Based MVTS Analysis
+                <Typography.Title level={1} style={{ margin: 0, fontSize: "20px", paddingRight: '20px' }}>
+                  Cluster-Based Multivariate Time Series Analysis
                 </Typography.Title>
-              </Col>
-              <Col>
-                File: 
               </Col>
               <Col>
                 <Select
@@ -345,12 +443,12 @@ function App() {
           <Col>
             <Row gutter={24}>
               <Col>
-                <Text strong italic style={{ fontSize: "18px" }}>
+                <Text strong italic style={{ fontSize: "16px" }}>
                   Nodes: {totalNodes}
                 </Text>
               </Col>
               <Col>
-                <Text strong italic style={{ fontSize: "18px" }}>
+                <Text strong italic style={{ fontSize: "16px" }}>
                   Metrics: {totalMeasures}
                 </Text>
               </Col>
@@ -369,7 +467,7 @@ function App() {
                 <TimelineView 
                     bStart={bStart}
                     bEnd={bEnd}
-                    nodeData={nodeData}
+                    data={timelineData}
                     nodeDataStart={new Date(nodeData[0]?.timestamp)}
                     nodeDataEnd={new Date(nodeData[nodeData?.length - 1]?.timestamp)}
                     nodeClusterMap={nodeClusterMap}
@@ -424,11 +522,9 @@ function App() {
                         type="time" 
                         setSelectedPoints={setSelectedPoints} 
                         selectedPoints={selectedPoints} 
-                        selectedDims={selectedDims}
-                        setzScores={setzScores}
-                        setBaselines={setBaselines}
                         nodeClusterMap={nodeClusterMap}
-                        updateClustersCallback={updateClustersCallback}
+                        handleRecompute={handleRecompute}
+                        updateSelectedNodes={updateSelectedNodes}
                         nNeighbors={nNeighbors}
                         setNNeighbors={setNNeighbors}
                         minDist={minDist}

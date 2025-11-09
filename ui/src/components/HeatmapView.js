@@ -7,7 +7,7 @@ import * as d3 from 'd3';
 const HeatmapView = ({ data, nodeClusterMap }) => {
     const heatmapRef = useRef();
     const legendRef = useRef();
-    const [margin, setMargin] = useState({ top: 10, right: 50, bottom: 150, left: 100 });
+    const [margin, setMargin] = useState({ top: 10, right: 50, bottom: 130, left: 100 });
     const [size, setSize] = useState({ width: 800, height: 140 });
     const [tooltip, setTooltip] = useState({
             visible: false,
@@ -17,7 +17,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         });
 
     useEffect(() => {
-        if (!heatmapRef.current || !legendRef.current || !data || data.length == 0) return;        
+        if (!heatmapRef.current || !nodeClusterMap || !legendRef.current || !data || data.length == 0) return;        
 
         const nodeIds = data.map(d => d.nodeId);
         const features = Object.keys(data[0]).filter(key => key !== "nodeId")
@@ -35,7 +35,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         });
         drawHeatmap(matrix, features, nodeIds);
         
-    }, [data]);
+    }, [data, nodeClusterMap]);
 
     const drawHeatmap = (matrix, featureNames, nodeIds) => {
         const cellWidth = 20;
@@ -136,6 +136,7 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
             .attr("transform", "rotate(-65)")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
+            .style('font-size', '12px')
             .style("text-anchor", "end")
             .style("fill", d => { 
                 const clusterId = nodeClusterMap.get(d); 
@@ -253,50 +254,50 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         cells.exit().remove();
 
         // ----- Legend rendering -----
-        const lSvg = d3.select(legendRef.current).select('svg');
+        let lSvg = d3.select(legendRef.current).select('svg');
 
-        if (lSvg.empty()){
-            lSvg.append('svg')
-                .attr('width',  200 )
+        if (lSvg.empty()) {
+            lSvg = d3.select(legendRef.current)
+                .append('svg')
+                .attr('width', 200)
                 .attr('height', 50);
 
-            // legend
-            const legendWidth = 120; 
-            const legendHeight = 10;  
-            
-            const legendGroup = lSvg.append("g")
-                .attr("transform", `translate(20, 20)`);
-            
+            const legendWidth = 120;
+            const legendHeight = 10;
+
             const defs = lSvg.append("defs");
             const linearGradient = defs.append("linearGradient")
                 .attr("id", "legend-gradient")
                 .attr("x1", "0%").attr("x2", "100%")
                 .attr("y1", "0%").attr("y2", "0%");
-            
+
             linearGradient.selectAll("stop")
                 .data([
-                    { offset: "0%", color: myColor(-3) },  
-                    { offset: "50%", color: myColor(0) },  
-                    { offset: "100%", color: myColor(3) }  
+                    { offset: "0%", color: myColor(-3) },
+                    { offset: "50%", color: myColor(0) },
+                    { offset: "100%", color: myColor(3) }
                 ])
                 .enter().append("stop")
                 .attr("offset", d => d.offset)
                 .attr("stop-color", d => d.color);
-            
+
+            const legendGroup = lSvg.append("g")
+                .attr("transform", `translate(20, 20)`);
+
             legendGroup.append("rect")
                 .attr("width", legendWidth)
                 .attr("height", legendHeight)
                 .style("fill", "url(#legend-gradient)");
-            
+
             const legendScale = d3.scaleLinear()
-                .domain([-5, 5]) 
+                .domain([-5, 5])
                 .range([0, legendWidth]);
-            
+
             const legendAxis = d3.axisBottom(legendScale)
-                .tickValues([-5, -2.5, 0, 2.5, 5])  
-                .tickFormat(d3.format(".1f")) 
+                .tickValues([-5, -2.5, 0, 2.5, 5])
+                .tickFormat(d3.format(".1f"))
                 .tickSize(5);
-            
+
             legendGroup.append("g")
                 .attr("transform", `translate(0, ${legendHeight})`)
                 .call(legendAxis)

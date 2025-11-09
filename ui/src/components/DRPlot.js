@@ -1,4 +1,4 @@
-import { Card, Col, Form, Row, Select, Slider } from "antd";
+import { Card, Col, Form, Row, Select, Button, InputNumber } from "antd";
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
 import { colorScale } from '../utils/colors.js';
@@ -7,12 +7,15 @@ import Tooltip from '../utils/tooltip.js';
 
 const { Option } = Select;
 
-const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, setzScores, setBaselines, nodeClusterMap, updateClustersCallback, nNeighbors, setNNeighbors, minDist, setMinDist, numClusters, setNumClusters }) => {
+const DRView = ({ data, type, selectedPoints, nodeClusterMap, handleRecompute, updateSelectedNodes, nNeighbors, minDist, numClusters }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 300, height: 300});
     const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
     const [method1, setMethod1] = useState("PC");
     const [method2, setMethod2] = useState("UMAP");
+    const [localNNeighbors, setLocalNNeighbors] = useState(nNeighbors);
+    const [localMinDist, setLocalMinDist] = useState(minDist);
+    const [localNumClusters, setLocalNumClusters] = useState(numClusters);
     const [highlight, setHighlight] = useState(1);
     const [nonHighlight, setNonHighlight] = useState(0.4);
     const [tooltip, setTooltip] = useState({
@@ -54,7 +57,9 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
-          .attr("preserveAspectRatio", "xMidYMid meet");
+          .attr("preserveAspectRatio", "xMidYMid meet")
+          .style("border", "1px solid #dddddd")
+          .style("border-radius", "6px");
 
           const zoomLayer = svg.append("g")
           .attr("class", "zoom-layer");
@@ -69,7 +74,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
             .attr("cy", d => yScale(d[yKey]))
             .attr('stroke','black')
             .attr('stroke-width', '1px')
-            .attr("r", 5)
+            .attr("r", 4)
             .style('fill', d => colorScale(nodeClusterMap.get(d.nodeId)))
             .style("opacity", d => {
                 return selectedPoints.includes(d.nodeId) ? highlight : nonHighlight;
@@ -272,9 +277,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
     // Lasso selection
     const handleSelection = (selected) => {
         const chart = d3.select(svgContainerRef.current).select("svg");
-        
-        setSelectedPoints(selected)
-        
+                
         chart.selectAll('.dr-circle')
             .style("opacity", d => {
                 const idVal = getIdVal(d);
@@ -285,39 +288,22 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                 }
         });
 
-        if (selected.length) {
-             // running mrdmd on new nodes with recomputed baselines
-            fetch(`http://127.0.0.1:5010/mrdmd/${selected}/${selectedDims}/1/0/0/0/0/0`)
-                .then(response => response.json())
-                .then(dmdData => {
-                    setzScores(dmdData.zscores) // updating zscores
-                    setBaselines(dmdData.baselines) // updating baselines
-                })
-        }
+        updateSelectedNodes(selected);
     };
 
-    const handleUMAPUpdate = (n_neighbors, min_dist) => {
-        setNNeighbors(n_neighbors);
-        setMinDist(min_dist);
-        updateClustersCallback(numClusters, n_neighbors, min_dist, true);
-    }
-
-    const handleSubmitNKMeans = values => {
-        updateClustersCallback(values.numClusters, nNeighbors, minDist)
-    };
     const clusterOptions = Array.from({ length: 19 }, (_, i) => i + 2); // [2..20]
 
     return (
         <>
             <Card
-            title="NODE SIMILARITY VIEW"
-            size="small"
-            style={{ height: 'auto' }}
+                title="NODE SIMILARITY VIEW"
+                size="small"
+                style={{ height: 'auto' }}
             >
             <Row gutter={12} align="top">
                 {/* Scatterplot */}
                 <Col span={16}>
-                    <div ref={svgContainerRef} style={{ height: '250px' }}></div>
+                    <div ref={svgContainerRef} style={{ height: '300px' }}></div>
                     <LassoSelection
                         svgRef={svgContainerRef}
                         targetItems={'.dr-circle'}
@@ -342,6 +328,7 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                             <Form
                                 layout="horizontal"
                                 colon={false}
+                                initialValues={{numClusters: localNumClusters}}
                                 style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
                             >
                             <Form.Item
@@ -350,12 +337,12 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                                 wrapperCol={{ span: 10 }}
                                 style={{ marginBottom: '4px' }}
                             >
-                                <Slider
+                                <InputNumber
                                     min={3}
                                     max={50}
                                     step={1}
-                                    defaultValue={nNeighbors}
-                                    onChangeComplete={(val) => handleUMAPUpdate(val, minDist)}
+                                    defaultValue={localNNeighbors}
+                                    onChange={(val) => setLocalNNeighbors(val)}
                                     style={{ width: '100%' }}
                                 />
                             </Form.Item>
@@ -366,28 +353,17 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                                 wrapperCol={{ span: 10 }}
                                 style={{ marginBottom: '4px' }}
                             >
-                                <Slider
+                                <InputNumber
                                     min={0.0}
                                     max={1.0}
                                     step={0.1}
-                                    defaultValue={minDist}
-                                    onChangeComplete={(val) => handleUMAPUpdate(nNeighbors, val)}
+                                    defaultValue={localMinDist}
+                                    onChange={(val) => setLocalMinDist(val)}
                                     style={{ width: '100%' }}
                                 />
                             </Form.Item>
-                            </Form>
-                        </div>
-
-                        {/* K-Means */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {/* K-Means */}
                             <p style={{ margin: 0, fontWeight: 'bold' }}>K-Means:</p>
-                            <Form
-                                layout="horizontal"
-                                colon={false}
-                                onFinish={handleSubmitNKMeans}
-                                initialValues={{ numClusters: numClusters }}
-                                style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
-                            >
                             <Form.Item
                                 name="numClusters"
                                 label="Num clusters"
@@ -397,7 +373,8 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                             >
                                 <Select
                                     style={{ width: '100%' }}
-                                    onChange={(value) => handleSubmitNKMeans({ numClusters: value })}
+                                    value={localNumClusters}
+                                    onChange={(val) => setLocalNumClusters(val)}
                                 >
                                 {clusterOptions.map((num) => (
                                     <Option key={num} value={num}>
@@ -406,20 +383,50 @@ const DRView = ({ data, type, setSelectedPoints, selectedPoints, selectedDims, s
                                 ))}
                                 </Select>
                             </Form.Item>
-                            </Form>
+                            </Form>      
+                        </div>               
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column", // stack vertically
+                                gap: "6px",
+                                marginTop: "8px",
+                                alignItems: "stretch",
+                            }}
+                            >
+                            <Button
+                                size="small"
+                                onClick={() =>
+                                    handleRecompute(localNumClusters, localNNeighbors, localMinDist, true, false)
+                                }
+                                type="primary"
+                            >
+                            Recompute
+                            </Button>
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setLocalNNeighbors(15);
+                                    setLocalMinDist(0.3);
+                                    setLocalNumClusters(4);
+                                    handleRecompute?.(localNumClusters, localNNeighbors, localMinDist, true, true);
+                                }}
+                            >
+                            Reset Defaults
+                            </Button>
                         </div>
                     </div>
                 </Col>
             </Row>
-            </Card>
+        </Card>
 
-            <Tooltip
+        <Tooltip
             visible={tooltip.visible}
             content={tooltip.content}
             x={tooltip.x}
             y={tooltip.y}
             tooltipId={'dr-tooltip'}
-            />
+        />
         </>
         );
 

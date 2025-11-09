@@ -6,9 +6,12 @@ import Tooltip from '../utils/tooltip.js';
 const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaseline, nodeClusterMap, metadata, registerChart }) => {
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 800, height: 300 });
-    const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 50 });
+    const [margin, setMargin] = useState({ top: 40, right: 60, bottom: 60, left: 70 });
     const prevX = useRef([]); // for storing window values, might be clamped versions of baseline values 
     const prevY = useRef([]); 
+    const xScaleRef = useRef();
+    const yScaleRef = useRef();
+    const brushGroupRef = useRef();
     const [tooltip, setTooltip] = useState({
         visible: false,
         content: '',
@@ -30,7 +33,9 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
           .attr("width", "100%")
           .attr("height", "100%")
           .attr("viewBox", `0 0 ${size.width} ${size.height}`)
-          .attr("preserveAspectRatio", "xMidYMid meet");
+          .attr("preserveAspectRatio", "xMidYMid meet")
+          .style("border", "1px solid #dddddd")
+          .style('border-radius', '6px');
 
           svg.append("defs")
             .append("clipPath")
@@ -67,6 +72,9 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
       const yScale = d3.scaleLinear()
         .domain([0, d3.max(data.map(v => v.value))])
         .range([size.height - margin.bottom, margin.top]);
+
+      xScaleRef.current = xScale;
+      yScaleRef.current = yScale;
 
       gBaselines.node().xScale = xScale;
       gBaselines.node().yScale = yScale;
@@ -120,7 +128,7 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
       if (gLabels.select(".y-axis-label").empty()) {
         gLabels.append("text")
           .attr("class", "y-axis-label")
-          .attr("x", 0)
+          .attr("x", 15)
           .attr("y", 30)
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")
@@ -170,34 +178,21 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
       const allLines = linesEnter.merge(lines);
 
       if (registerChart) {
-        registerChart({ chartEl: svg, xScale, yScale, lines: allLines });
+        registerChart({ chartEl: svg, xScale, yScale, lines: allLines, field, brushGroup: brushGroupRef.current });
       }
 
     }, [data]);
 
-    useEffect(() => {
-      // baseline selection
-      const brush = d3.brush()
-        .extent([[margin.left, margin.top], 
-                  [size.width - margin.right, size.height - margin.bottom]]) 
-        .on("end", updateBaselineHandler);
-
-      const focus = d3.select(`#focus-line-${field}`)
-
-      if (!focus.node() || !focus.node().xScale || !focus.node().yScale) return;
-
-      focus.select(`.brush-${field}`).remove(); // removing existing brush instances
-
-      const xScale = focus.node()?.xScale;
-      const yScale = focus.node()?.yScale;
-
-      function updateBaselineHandler(event) {
+    function updateBaselineHandler(event) {
         if (skipBrush.current) {
           skipBrush.current = false; 
           return;
         }
         const s = event.selection;
         if (!s) return;
+
+        const xScale = xScaleRef.current;
+        const yScale = yScaleRef.current;
       
         const [x0, y0] = s[0];  
         const [x1, y1] = s[1];
@@ -263,81 +258,44 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
         updateBaseline(field, newBaseline);
       }
 
-      const brushSelection = focus.append('g')
-        .attr('class', `brush-${field}`)
-        .call(brush);
+    const brush = d3.brush()
+        .extent([[margin.left, margin.top], [size.width - margin.right, size.height - margin.bottom]])
+        .on("end", updateBaselineHandler);
 
-        const xDomain = xScale.domain();
-        const yDomain = yScale.domain();
+    useEffect(() => {
+      const focus = d3.select(`#focus-line-${field}`);
+      focus.select(`.brush-layer`).remove(); // remove any previous
+      const brushGroup = focus.append('g')
+          .attr('class', 'brush-layer')
+          .call(brush);
 
-        const baseline = baselinesRef.current[field];
-        const baselineX = baseline?.baselineX ?? null; 
-        const baselineY = baseline?.baselineY ?? null;
+      brushGroupRef.current = brushGroup;
+    }, []);
 
-        skipBrush.current = true;
+    // Update positions
+    useEffect(() => {
+      const baseline = baselinesRef.current[field];
+      if (!baseline) return;
 
-        if (
-          !baseline ||
-          !baseline.baselineX ||
-          !baseline.baselineY ||
-          baseline.baselineX.length !== 2 ||
-          baseline.baselineY.length !== 2 ||
-          baseline.baselineX.some(v => v === null || v === undefined || isNaN(v)) ||
-          baseline.baselineY.some(v => v === null || v === undefined || isNaN(v))
-        ) {
-          console.log(`Skipping brush for ${field}: invalid baseline`);
-          return;
-        }
+      const xScale = xScaleRef.current;
+      const yScale = yScaleRef.current;
+      const brushGroup = brushGroupRef.current;
+      
+      const x0 = d3.max([baseline.baselineX[0], xScale.domain()[0]]);
+      const x1 = d3.min([baseline.baselineX[1], xScale.domain()[1]]);
+      const y0 = d3.max([baseline.baselineY[0], yScale.domain()[0]]);
+      const y1 = d3.min([baseline.baselineY[1], yScale.domain()[1]]);
 
-        var x0;
-        var x1;
-        var y0;
-        var y1;
+      prevX.current = [x0, x1];
+      prevY.current = [y0, y1];
 
-        // checking X
-        if (baselineX[0] <= xDomain[0]) { // clamp
-          x0 = xDomain[0];
-        } else if (baselineX[0] > xDomain[0] && baselineX[0] <= xDomain[1]) { // baselineX update
-          x0 = baselineX[0];
-        } else {
-          prevX.current = [baselineX[0], baselineX[1]];
-          return
-        }; 
+      const xStart = Math.min(xScale(x0), xScale(x1));
+      const xEnd = Math.max(xScale(x0), xScale(x1));
+      const yStart = Math.min(yScale(y0), yScale(y1));
+      const yEnd = Math.max(yScale(y0), yScale(y1));
 
-        if (baselineX[1] < xDomain[1] && baselineX[1] >= xDomain[0]) {  // baselineX update
-          x1 = baselineX[1];
-        } else if (baselineX[1] >= xDomain[1] && baselineX[0] < xDomain[1]) { // clamp
-          x1 = xDomain[1];
-        } else {
-          prevX.current = [baselineX[0], baselineX[1]];
-          return
-        }; 
-
-        // checking Y
-        if (baselineY[0] <= yDomain[0]) { // clamp
-          y0 = yDomain[0];
-        } else if (baselineY[0] > yDomain[0] && baselineY[0] <= yDomain[1]) { // baselineY update
-          y0 = baselineY[0];
-        } else {
-          prevY.current = [baselineY[0], baselineY[1]];
-          return
-        }; 
-
-        if (baselineY[1] >= yDomain[1]) { // clamp
-          y1 = yDomain[1];
-        } else if (baselineY[1] < yDomain[1] && baselineY[1] >= yDomain[0]) {  // baselineY update
-          y1 = baselineY[1];
-        } else {
-          prevY.current = [baselineY[0], baselineY[1]];
-          return
-        }; 
-
-        prevX.current = [x0, x1];
-        prevY.current = [y0, y1];
-
-        brushSelection
-          .call(brush.move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
-      })
+      brushGroup.call(brush.move, [[xStart, yStart], [xEnd, yEnd]]);
+    }, [selectedTimeRange, baselinesRef.current[field]]);
   
       return (
         <div>

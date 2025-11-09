@@ -1,5 +1,6 @@
-import { Checkbox, List } from "antd";
-import React from 'react';
+import { Checkbox, List, Input } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import React, { useState, useMemo } from 'react';
 import FeatureContributionBarGraph from "./FeatureContributionBarGraph";
 import { colorScale } from '../utils/colors.js';
 
@@ -23,121 +24,128 @@ function smoothSeries(series, windowSize = 5, maxPoints = 40) {
 }
 
 export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesData, onMetricSelectChange }) {
+    const [searchTerm, setSearchTerm] = useState("");
     const features = Object.keys(headerMap);
 
+    const filteredFeatures = useMemo(() => {
+        return features
+            .filter(f => f.toLowerCase().includes(searchTerm.toLowerCase()))
+            .sort((a, b) => {
+                const getMaxAbsContribution = (feature) => {
+                    const i = features.indexOf(feature);
+                    if (!fcs || i === -1 || i >= fcs.agg_feat_contrib_mat.length) return -Infinity;
+                    return Math.max(...fcs.agg_feat_contrib_mat[i].map(v => Math.abs(v)));
+                };
+                const aFC = getMaxAbsContribution(a);
+                const bFC = getMaxAbsContribution(b);
+                return bFC - aFC; // descending
+            });
+    }, [features, fcs, searchTerm]);
+
+
     return (
-        <List
-        style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 470 }}
-        bordered
-        dataSource={[...features].sort((a, b) => {
-            const getMaxAbsContribution = (feature) => {
-                const i = features.indexOf(feature);
-                if (!fcs || i === -1 || i >= fcs.agg_feat_contrib_mat.length) return -Infinity;
-                return Math.max(...fcs.agg_feat_contrib_mat[i].map(v => Math.abs(v)));
-            };
+        <div> 
+            <Input
+                placeholder="Search features..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                prefix={<SearchOutlined />}
+                style={{ marginBottom: 8 }}
+            />
+            <List
+                style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 430 }}
+                bordered
+                dataSource={filteredFeatures}
+                renderItem={(key, index) => {
+                    if (key === "cname_processed" || key === "cname_id") return null;
+                    
+                    const clusterSeries = avgSeriesData?.[key] || {};
 
-            const aSelected = selectedDims.includes(a);
-            const bSelected = selectedDims.includes(b);
-
-            if (aSelected && !bSelected) return -1;
-            if (!aSelected && bSelected) return 1;
-
-            const aFC = getMaxAbsContribution(a);
-            const bFC = getMaxAbsContribution(b);
-
-            return bFC - aFC;
-        })}
-        renderItem={(key, index) => {
-            if (key === "cname_processed" || key === "cname_id") return null;
-            
-            const clusterSeries = avgSeriesData?.[key] || {};
-
-            return (
-                <List.Item key={key} style={{ display: "flex", alignItems: "flex-start", padding: "5px 10px" }}>
-                
-                <div style={{display: 'flex', flexDirection: 'column', flexGrow: 1}}>
-                    <div style={{display: 'flex', alignItems: "center" }}>
-                        <Checkbox
-                            // TODO: refactor checkbox state so FeatureContributionBarGraph doesn't rerender on checkbox change
-                            checked={selectedDims.includes(key)}
-                            onChange={() => onMetricSelectChange(key)}
-                            style={{ marginRight: "10px" }}
-                        />
-                        <span 
-                            style={{ 
-                                flexGrow: 1, 
-                                whiteSpace: "nowrap", 
-                                overflow: "hidden", 
-                                textOverflow: "ellipsis" 
-                            }}>
-                            {key}
-                        </span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
-                        <FeatureContributionBarGraph
-                            graphId={`${key.replace(/\s/g, "_")}-feat-graph`}
-                            feature={key}
-                            fcData={
-                                !fcs || features.indexOf(key) === -1 || features.indexOf(key) >= fcs.agg_feat_contrib_mat.length
-                                ? []
-                                : Object.keys(fcs.agg_feat_contrib_mat[features.indexOf(key)])
-                                    .sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))) // sort cluster IDs numerically
-                                    .map(clusterId => ({
-                                        cluster: +clusterId,
-                                        value: fcs.agg_feat_contrib_mat[features.indexOf(key)][+clusterId]
-                                    }))
-                            }
-                            />
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                marginLeft: "5px",
-                                gap: "4px",
-                            }}
-                        >
-                            {Object.entries(clusterSeries).map(([clusterId, avgData]) => {
-                                if (!avgData.length) return null;
-                                const smooth = smoothSeries(avgData, 5, 40);
-                                const minVal = Math.min(...smooth.map(d => d.value));
-                                const maxVal = Math.max(...smooth.map(d => d.value));
-
-                                return (
-                                    <svg
-                                        key={clusterId}
-                                        width={60}
-                                        height={20}
-                                        style={{
-                                        border: "1px solid #eee",
-                                        borderRadius: "2px",
-                                        background: "#fafafa",
-                                        }}
-                                    >
-                                    <polyline
-                                        fill="none"
-                                        stroke={colorScale(+clusterId)}
-                                        strokeWidth={1.5}
-                                        points={smooth
-                                            .map((d, i) => {
-                                            const x = (i / (smooth.length - 1)) * 60;
-                                            const y =
-                                                20 - ((d.value - minVal) / ((maxVal - minVal) || 1)) * 20;
-                                            return `${x},${y}`;
-                                            })
-                                            .join(" ")}
-                                    />
-                                </svg>
-                                );
-                            })}
+                    return (
+                        <List.Item key={key} style={{ display: "flex", alignItems: "flex-start", padding: "5px 10px" }}>
+                        
+                        <div style={{display: 'flex', flexDirection: 'column', flexGrow: 1}}>
+                            <div style={{display: 'flex', alignItems: "center" }}>
+                                <Checkbox
+                                    checked={selectedDims.includes(key)}
+                                    onChange={() => onMetricSelectChange(key)}
+                                    style={{ marginRight: "10px" }}
+                                />
+                                <span 
+                                    style={{ 
+                                        flexGrow: 1, 
+                                        whiteSpace: "nowrap", 
+                                        overflow: "hidden", 
+                                        textOverflow: "ellipsis" 
+                                    }}>
+                                    {key}
+                                </span>
                             </div>
-                        </div>
-                    </div>
-                </List.Item>
-            );
-        }}
-        />
-    )
-    }
+                            <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
+                                <FeatureContributionBarGraph
+                                    graphId={`${key.replace(/\s/g, "_")}-feat-graph`}
+                                    feature={key}
+                                    fcData={
+                                        !fcs || features.indexOf(key) === -1 || features.indexOf(key) >= fcs.agg_feat_contrib_mat.length
+                                        ? []
+                                        : Object.keys(fcs.agg_feat_contrib_mat[features.indexOf(key)])
+                                            .sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))) // sort cluster IDs numerically
+                                            .map(clusterId => ({
+                                                cluster: +clusterId,
+                                                value: fcs.agg_feat_contrib_mat[features.indexOf(key)][+clusterId]
+                                            }))
+                                    }
+                                    />
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        marginLeft: "5px",
+                                        gap: "4px",
+                                    }}
+                                >
+                                    {Object.entries(clusterSeries).map(([clusterId, avgData]) => {
+                                        if (!avgData.length) return null;
+                                        const smooth = smoothSeries(avgData, 5, 40);
+                                        const minVal = Math.min(...smooth.map(d => d.value));
+                                        const maxVal = Math.max(...smooth.map(d => d.value));
+
+                                        return (
+                                            <svg
+                                                key={clusterId}
+                                                width={60}
+                                                height={20}
+                                                style={{
+                                                border: "1px solid #eee",
+                                                borderRadius: "2px",
+                                                background: "#fafafa",
+                                                }}
+                                            >
+                                            <polyline
+                                                fill="none"
+                                                stroke={colorScale(+clusterId)}
+                                                strokeWidth={1.5}
+                                                points={smooth
+                                                    .map((d, i) => {
+                                                    const x = (i / (smooth.length - 1)) * 60;
+                                                    const y =
+                                                        20 - ((d.value - minVal) / ((maxVal - minVal) || 1)) * 20;
+                                                    return `${x},${y}`;
+                                                    })
+                                                    .join(" ")}
+                                            />
+                                        </svg>
+                                        );
+                                    })}
+                                    </div>
+                                </div>
+                            </div>
+                        </List.Item>
+                    );
+                }}
+            />
+        </div>
+    )}
 
 export const MemoMetricSelect = React.memo(MetricSelect, (prev, next) => {
     return prev.data === next.data &&

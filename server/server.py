@@ -151,10 +151,6 @@ def get_node_data(selectedCols, file):
     check_cols = [col for col in df.columns if col not in ['nodeId', 'timestamp']]
     df['downtime'] = (df[check_cols] == 0).all(axis=1).astype(int)
 
-    downtime_counts = df.groupby('timestamp')['downtime'].sum().reset_index()
-    downtime_counts.rename(columns={'downtime': 'num_nodes_downtime'}, inplace=True)
-    df = df.merge(downtime_counts, on='timestamp', how='left')
-
     return jsonify({
         "data": df.to_dict(orient='records'),
         "features": all_features

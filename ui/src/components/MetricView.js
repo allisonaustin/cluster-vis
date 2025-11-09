@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import LineChart from './LineChart.js';
-import { colorScale } from '../utils/colors.js';
+import { colorScale, COLORS } from '../utils/colors.js';
 
 const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, setzScores, setBaselines, baselines, baselinesRef, nodeClusterMap, headerMap }) => {
     const chartsRef = useRef([]);
@@ -11,7 +11,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
         const newDomain = event.detail;
         const [start, end] = newDomain;
 
-        chartsRef.current.forEach(({ chartEl, xScale, yScale, lines }) => {
+        chartsRef.current.forEach(({ chartEl, xScale, yScale, lines, field, brushGroup }) => {
             xScale.domain(newDomain);
             chartEl.select('.x-axis')
               .call(d3.axisBottom(xScale)
@@ -29,6 +29,16 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
 
               d3.select(this).attr('d', lineGenerator(filteredPoints));
             });
+
+            const baseline = baselinesRef.current[field];
+              if (baseline && brushGroup) {
+                  const x0 = d3.max([baseline.baselineX[0], xScale.domain()[0]]);
+                  const x1 = d3.min([baseline.baselineX[1], xScale.domain()[1]]);
+                  const y0 = d3.max([baseline.baselineY[0], yScale.domain()[0]]);
+                  const y1 = d3.min([baseline.baselineY[1], yScale.domain()[1]]);
+
+                  brushGroup.call(d3.brush().move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
+              }
           });
       };
 
@@ -113,51 +123,24 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
         .catch(error => console.error('Error fetching data:', error));
     };
 
-    // const handleMetricSelectChange = (key) => {
-    //   if (selectedDims.includes(key)) {
-    //     setSelectedDims(prev => prev.filter(dim => dim !== key));
-    //     setzScores(prevZ => prevZ.map(z => {
-    //       const { [key]: _, ...rest } = z;
-    //       return rest;
-    //     }));
-    //     return;
-    //   }
-
-    //   fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
-    //     .then(res => res.json())
-    //     .then(dmdData => {
-    //       setzScores(prev => mergeZScores(prev, dmdData.zscores, key));
-    //       setBaselines(prev => [...dmdData.baselines, ...prev]);
-    //       dmdData.baselines.forEach(baseline => {
-    //         baselinesRef.current[baseline.feature] = {
-    //           baselineX: [
-    //             new Date(baseline.b_start.replace("GMT", "")),
-    //             new Date(baseline.b_end.replace("GMT", ""))
-    //           ],
-    //           baselineY: [baseline.v_min, baseline.v_max]
-    //         };
-    //       });
-    //       setSelectedDims(prev => prev.includes(key) ? prev.filter(dim => dim !== key) : [key, ...prev]);
-    //     });
-    // };
-
     return (
-      <div style={{ overflow: 'auto', maxHeight: '470px' }}>
+      <div style={{ overflow: 'auto', maxHeight: '450px' }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'flex-end', 
           marginBottom: '8px', 
-          marginLeft: '8px' 
+          marginRight: '10px'
         }}>
-        <div style={{
-          width: '16px',
-          height: '16px',
-          backgroundColor: 'grey',
-          marginRight: '8px',
-          border: '1px solid #999'
-        }} />
-        <span style={{ fontSize: '14px' }}>Baseline Region</span>
+          <div style={{
+            width: '12px',
+            height: '12px',
+            backgroundColor: COLORS.default,
+            marginRight: '8px',
+            border: '1px solid '+COLORS.default,
+            borderRadius: '2px'
+          }} />
+          <span style={{ fontSize: '14px' }}>Baseline Region</span>
         </div>
         {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
             return (
