@@ -88,7 +88,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
     }
 
     const updateBaseline = (field, newBaseline) => {
-      console.log(field, newBaseline)
+      // console.log(field, newBaseline)
       baselinesRef.current[field] = newBaseline;
       const [start, end] = newBaseline.baselineX;
       const [v_min, v_max] = newBaseline.baselineY;

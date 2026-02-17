@@ -11,8 +11,6 @@ const DRView = ({ data, type, selectedPoints, nodeClusterMap, handleRecompute, u
     const svgContainerRef = useRef();
     const [size, setSize] = useState({ width: 300, height: 300});
     const [margin, setMargin] = useState({ top: 10, right: 20, bottom: 20, left: 20 });
-    const [method1, setMethod1] = useState("PC");
-    const [method2, setMethod2] = useState("UMAP");
     const [localNNeighbors, setLocalNNeighbors] = useState(nNeighbors);
     const [localMinDist, setLocalMinDist] = useState(minDist);
     const [localNumClusters, setLocalNumClusters] = useState(numClusters);
@@ -40,8 +38,8 @@ const DRView = ({ data, type, selectedPoints, nodeClusterMap, handleRecompute, u
         const width = size.width;
         const height = size.height;
 
-        const xKey = method2 + '1';
-        const yKey = method2 + '2';
+        const xKey = 'E1';
+        const yKey = 'E2';
 
         const xScale = d3.scaleLinear()
             .domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
@@ -184,8 +182,8 @@ const DRView = ({ data, type, selectedPoints, nodeClusterMap, handleRecompute, u
         if (!data || data.length === 0 || !svgContainerRef.current) return;
 
         const svg = d3.select(svgContainerRef.current).select("svg");
-        const xKey = method2 + '1';
-        const yKey = method2 + '2';
+        const xKey = 'E1';
+        const yKey = 'E2';
 
         // const xScale = svg.node()?.xScale;
         // const yScale = svg.node()?.yScale;
@@ -236,43 +234,6 @@ const DRView = ({ data, type, selectedPoints, nodeClusterMap, handleRecompute, u
                 }
             });
     }, [selectedPoints]);
-
-    // updates values of points based on new DR method
-    const updateChart = (method1, method2) => {
-        const chart = d3.select(svgContainerRef.current).select("svg");
-        setMethod1(method1)
-        setMethod2(method2)
-
-        const xKey = method2 + '1';
-        const yKey = method2 + '2';
-
-        const xScale = chart.node()?.xScale;
-        const yScale = chart.node()?.yScale;
-
-        xScale.domain([d3.min(data, d => +d[xKey]) - 1, d3.max(data, d => +d[xKey]) + 1])
-        yScale.domain([d3.min(data, d => +d[yKey]) - 1, d3.max(data, d => +d[yKey]) + 1])
-
-        chart.select("#x-axis-label-dr")
-            .text(xKey);
-
-        chart.select("#y-axis-label-dr")
-            .text(yKey);
-
-        const t = d3.transition()
-            .duration(400) 
-            .ease(d3.easeCubicInOut);
-        
-        chart.select('.x-axis').call(d3.axisBottom(xScale));
-        chart.select('.y-axis').transition(t).call(d3.axisLeft(yScale)).selectAll('text').style('font-size', '16px');
-
-        chart.selectAll(".dr-circle")
-            .data(data)
-            .join("circle")  
-            .transition()
-            .duration(1000)
-            .attr("cx", d => xScale(+d[xKey]))
-            .attr("cy", d => yScale(+d[yKey]))
-    }
 
     // Lasso selection
     const handleSelection = (selected) => {

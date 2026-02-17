@@ -19,7 +19,7 @@ const Contributions = ({ data, FCs }) => {
       const maxContrib = d3.max(agg_feat_contrib_mat.flatMap(row => row));
       const minContrib = d3.min(agg_feat_contrib_mat.flatMap(row => row));
       
-      const excludeFeatures = ["Cluster", "nodeId", "PC1", "PC2", "UMAP1", "UMAP2", "tSNE1", "tSNE2"]
+      const excludeFeatures = ["Cluster", "nodeId", "PC1", "PC2", "UMAP1", "UMAP2", "tSNE1", "tSNE2", "E1", "E2"]
       const xlabel_names = FCs.order_col;
       const ylabel_names = Object.keys(data[0]).filter(
           key => !excludeFeatures.includes(key)

@@ -18,7 +18,7 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
         x: 0,
         y: 0
     });
-    const skipBrush = useRef(false);
+    const skipBrush = useRef(true);
 
     useEffect(() => {
       if (!svgContainerRef.current || !data) return;

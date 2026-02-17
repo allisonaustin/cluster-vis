@@ -8,11 +8,10 @@ from flask_cors import CORS
 
 from datetime import datetime
 from timeit import default_timer as timer
-from scripts.dr_time import get_dr_time
-from scripts.dr_time import get_feat_contributions
+from scripts.pipeline import get_feat_contributions
 
 from mrdmd import get_mrdmd, get_mrdmd_with_new_base
-from scripts.dr_time import (get_dr_time, get_feat_contributions,
+from scripts.pipeline import (get_dr_time, get_feat_contributions,
                              recompute_clusters)
 
 app = Flask(__name__)

@@ -72,12 +72,17 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
         .text("Cluster");
 
       data.forEach(d => {
+        const rawWidth = xScale(d.end) - xScale(d.start);
+        const minWidth = 1;
+        const finalWidth = Math.max(rawWidth, minWidth);
+
         svg.append("rect")
           .attr("x", xScale(d.start))
           .attr("y", yScale(d.cluster))
-          .attr("width", xScale(d.end) - xScale(d.start))
+          .attr("width", finalWidth)
           .attr("height", yScale.bandwidth())
-          .attr("fill", COLORS.select); 
+          .attr("fill", COLORS.select)
+          .attr("opacity", 0.7); 
       });
 
       // adding brush
