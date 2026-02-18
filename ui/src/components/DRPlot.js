@@ -1,6 +1,6 @@
 import { Card, Col, Form, Row, Select, Button, InputNumber } from "antd";
 import * as d3 from 'd3';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { colorScale } from '../utils/colors.js';
 import LassoSelection from '../utils/lasso.js';
 import Tooltip from '../utils/tooltip.js';

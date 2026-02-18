@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { colorScale } from '../utils/colors.js';
 
 export default function FeatureContributionBarGraph({ feature, fcData, graphId }) {

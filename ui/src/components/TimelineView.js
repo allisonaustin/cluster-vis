@@ -1,6 +1,6 @@
 import { Card } from "antd";
 import * as d3 from 'd3';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { colorScale, COLORS } from '../utils/colors.js';
 import Tooltip from '../utils/tooltip.js';
 

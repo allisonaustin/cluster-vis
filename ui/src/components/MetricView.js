@@ -1,45 +1,60 @@
 import * as d3 from 'd3';
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Switch, Space } from 'antd';
 import LineChart from './LineChart.js';
 import { colorScale, COLORS } from '../utils/colors.js';
 
 const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, setzScores, setBaselines, baselines, baselinesRef, nodeClusterMap, headerMap }) => {
     const chartsRef = useRef([]);
     const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
+    const [showBaselines, setShowBaselines] = useState(true);
+    
     useEffect(() => {
       const handleTimeDomainUpdate = (event) => {
         const newDomain = event.detail;
         const [start, end] = newDomain;
 
         chartsRef.current.forEach(({ chartEl, xScale, yScale, lines, field, brushGroup }) => {
-            xScale.domain(newDomain);
-            chartEl.select('.x-axis')
-              .call(d3.axisBottom(xScale)
-              .ticks(6)
-              .tickFormat(d3.timeFormat("%H:%M")))
-              .selectAll("text")       
-              .style("font-size", "20px");
+          if (!chartEl || !lines) return;
 
-            lines.each(function(d) {
-              const filteredPoints = d[1].filter(p => p.timestamp >= start && p.timestamp <= end);
+          xScale.domain(newDomain);
+          
+          chartEl.select('.x-axis')
+            .call(d3.axisBottom(xScale)
+            .ticks(6)
+            .tickFormat(d3.timeFormat("%H:%M")))
+            .selectAll("text").style("font-size", "16px");
 
-              const lineGenerator = d3.line()
-                  .x(p => xScale(p.timestamp))
-                  .y(p => yScale(p.value));
+          const lineGenerator = d3.line()
+            .x(p => xScale(new Date(p.timestamp)))
+            .y(p => yScale(p.value));
 
-              d3.select(this).attr('d', lineGenerator(filteredPoints));
+          lines.attr('d', d => {
+            if (!d || !d[1]) return null;
+            
+            const filteredPoints = d[1].filter(p => {
+                const ts = new Date(p.timestamp);
+                return ts >= start && ts <= end;
             });
-
-            const baseline = baselinesRef.current[field];
-              if (baseline && brushGroup) {
-                  const x0 = d3.max([baseline.baselineX[0], xScale.domain()[0]]);
-                  const x1 = d3.min([baseline.baselineX[1], xScale.domain()[1]]);
-                  const y0 = d3.max([baseline.baselineY[0], yScale.domain()[0]]);
-                  const y1 = d3.min([baseline.baselineY[1], yScale.domain()[1]]);
-
-                  brushGroup.call(d3.brush().move, [[xScale(x0), yScale(y1)], [xScale(x1), yScale(y0)]]);
-              }
+            return lineGenerator(filteredPoints);
           });
+
+          const baseline = baselinesRef.current[field];
+          if (baseline && brushGroup) {
+              const x0 = xScale(new Date(baseline.baselineX[0]));
+              const x1 = xScale(new Date(baseline.baselineX[1]));
+              const yTop = yScale(baseline.baselineY[1]);
+              const yBottom = yScale(baseline.baselineY[0]);
+
+              // Only move if it's visible in the new range
+              const [rMin, rMax] = xScale.range();
+              if (x1 >= rMin && x0 <= rMax) {
+                  brushGroup.call(d3.brush().move, [[x0, yTop], [x1, yBottom]]);
+              } else {
+                  brushGroup.call(d3.brush().move, null);
+              }
+          }
+        });
       };
 
       window.addEventListener('time-domain-updated', handleTimeDomainUpdate);
@@ -130,8 +145,13 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
           alignItems: 'center', 
           justifyContent: 'flex-end', 
           marginBottom: '8px', 
-          marginRight: '10px'
+          marginRight: '10px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backgroundColor: 'white',
         }}>
+          {/* Legend */}
           <div style={{
             width: '12px',
             height: '12px',
@@ -140,7 +160,14 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
             border: '1px solid '+COLORS.default,
             borderRadius: '2px'
           }} />
-          <span style={{ fontSize: '14px' }}>Baseline Region</span>
+          <span style={{ fontSize: '14px', paddingRight: '10px' }}>Baseline Region</span>
+          <Space>
+            <Switch 
+                size="small" 
+                checked={showBaselines} 
+                onChange={(checked) => setShowBaselines(checked)} 
+            />
+          </Space>
         </div>
         {nodeClusterMap.size > 0 && selectedDims.map((field, index) => {
             return (
@@ -156,6 +183,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
                     registerChart={(chartObj) => {
                         chartsRef.current.push(chartObj);
                     }}
+                    showBaselines={showBaselines}
                 />
             );
         })}

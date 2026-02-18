@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getColor, colorScale, colorScheme } from '../utils/colors.js';
-import { Card, List, Checkbox } from "antd";
+import { useState, useEffect, useRef } from 'react';
+import { colorScale } from '../utils/colors.js';
+import { Card } from "antd";
 import Tooltip from '../utils/tooltip.js';
 import * as d3 from 'd3';
 
