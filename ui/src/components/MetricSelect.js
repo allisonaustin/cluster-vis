@@ -1,4 +1,4 @@
-import { Checkbox, List, Input } from "antd";
+import { Checkbox, List, Input, Tooltip } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import React, { useState, useMemo } from 'react';
 import FeatureContributionBarGraph from "./FeatureContributionBarGraph";
@@ -58,7 +58,9 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                 dataSource={filteredFeatures}
                 renderItem={(key, index) => {
                     if (key === "cname_processed" || key === "cname_id") return null;
-                    
+                    const headerInfo = headerMap[key] || {};
+                    const description = headerInfo.desc || "No description available";
+                    const formalTitle = headerInfo.title || key;
                     const clusterSeries = avgSeriesData?.[key] || {};
 
                     return (
@@ -71,15 +73,30 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                     onChange={() => onMetricSelectChange(key)}
                                     style={{ marginRight: "10px" }}
                                 />
+                                <Tooltip 
+                                    title={
+                                        <div>
+                                            <strong>{formalTitle}</strong>
+                                            <br />
+                                            {description}
+                                            {headerInfo.units && <div><small>Units: {headerInfo.units}</small></div>}
+                                        </div>
+                                    }
+                                    placement="right"
+                                    mouseEnterDelay={0.2} 
+                                >
                                 <span 
                                     style={{ 
                                         flexGrow: 1, 
                                         whiteSpace: "nowrap", 
                                         overflow: "hidden", 
-                                        textOverflow: "ellipsis" 
+                                        textOverflow: "ellipsis", 
+                                        cursor: 'pointer',
+                                        textDecoration: 'none'
                                     }}>
                                     {key}
                                 </span>
+                                </Tooltip>
                             </div>
                             <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
                                 <FeatureContributionBarGraph
