@@ -69,8 +69,10 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
       }
       
       svg.select(".lines").selectAll(".line").data(Array.from(grouped), d => d[0])
-          .join("path").attr("class", "line").attr("fill", "none")
-          .attr("stroke", d => colorScale(nodeClusterMap.get(d[0])))
+          .join("path")
+          .attr("class", d => `line line-${d[0]}`)
+          .attr("fill", "none")
+          .style("stroke", d => colorScale(nodeClusterMap.get(d[0])))
           .attr("d", d => line(d[1]));
 
       svg.selectAll(".chart-title").data([field]).join("text")

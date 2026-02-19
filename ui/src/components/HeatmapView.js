@@ -44,9 +44,6 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
         const mapWidth = nodeIds.length * cellWidth;
         const mapHeight = featureNames.length * cellHeight;
 
-        const visibleWidth = 800;
-        const visibleHeight = 220; 
-
         const yScale = d3.scaleBand()
             .domain(featureNames)
             .range([0, mapHeight])
@@ -203,22 +200,15 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
                         .style("opacity", 1)
 
 
-                    // highlighting time series
-                    let lines = d3.selectAll(".line-svg").selectAll("path.line");
-                    lines.each(function(lineData) {
-                        if (lineData[0] === d.nodeId) {
-                            d3.select(this)
-                                .transition()
-                                .duration(150)
-                                .style("opacity", 1)
-                                .style("stroke-width", "2px")
-                        } else {
-                            d3.select(this)
-                                .transition()
-                                .duration(150)
-                                .style("opacity", 0.1); 
-                        }
-                    });
+                    const allLines = d3.selectAll("path.line");
+                    allLines.transition()
+                        .duration(150)
+                        .style("opacity", function() {
+                            return d3.select(this).classed(`line-${d.nodeId}`) ? 1 : 0.1;
+                        })
+                        .style("stroke-width", function() {
+                            return d3.select(this).classed(`line-${d.nodeId}`) ? "3px" : "1px";
+                        });
                     setTooltip({
                         visible: true,
                         content: `${d.nodeId}, ${d.value !== null && d.value !== undefined ? d.value.toFixed(3) : 'N/A'}`,
@@ -237,12 +227,12 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
                     .duration(150)
                     .attr("r", 4)
 
-                let lines = d3.selectAll(".line-svg").selectAll("path.line");
-                // Resetting all line styles
-                lines.transition()
+                d3.selectAll("path.line")
+                    .interrupt()
+                    .transition()
                     .duration(150)
-                    .style("stroke-width", 1)
-                    .style("opacity", 0.8)
+                    .style("opacity", 0.8)     
+                    .style("stroke-width", "1.5px");
 
                 setTooltip(prev => ({
                     ...prev,

@@ -93,7 +93,9 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                         textOverflow: "ellipsis", 
                                         cursor: 'pointer',
                                         textDecoration: 'none'
-                                    }}>
+                                    }}
+                                    onClick={() => onMetricSelectChange(key)}
+                                    >
                                     {key}
                                 </span>
                                 </Tooltip>

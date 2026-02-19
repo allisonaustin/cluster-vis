@@ -83,25 +83,6 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
       return date.toString().replace(/ GMT[^\)]+(\))/g, ' GMT');
     }
 
-    function updateZScores(oldZscores, newZscores) {
-      const updatesMap = new Map(
-        newZscores.map(d => {
-            const { nodeId, ...rest } = d;
-            return [nodeId, rest];
-          })
-      );
-
-      return oldZscores.map(d => {
-          if (updatesMap.has(d.nodeId)) {
-              return {
-                  ...d,
-                  ...updatesMap.get(d.nodeId)
-              };
-          }
-          return d;
-      });
-    }
-
     const updateBaseline = (field, newBaseline) => {
       // console.log(field, newBaseline)
       baselinesRef.current[field] = newBaseline;
@@ -131,9 +112,28 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
       fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${field}/0/1/${v_min}/${v_max}/${b_start}/${b_end}`)
         .then(response => response.json())
         .then(data => {
-            // updating baselines and z-scores
-            const updatedZScores = updateZScores(zScores, data.zscores);
-            setzScores(updatedZScores)
+            if (data.zscores) {
+              setzScores(prevZScores => {
+                const updatesMap = new Map(
+                    data.zscores.map(d => {
+                        return [d.nodeId, d[field]]; 
+                    })
+                );
+
+                return prevZScores.map(d => {
+                    if (updatesMap.has(d.nodeId)) {
+                        const newValue = updatesMap.get(d.nodeId);
+                        const isValid = newValue !== null && newValue !== undefined && newValue !== "";
+
+                        return {
+                            ...d,
+                            [field]: isValid ? parseFloat(newValue) : d[field]
+                        };
+                    }
+                    return d;
+                });
+              });
+            }
         })
         .catch(error => console.error('Error fetching data:', error));
     };
