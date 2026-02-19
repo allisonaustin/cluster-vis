@@ -12,9 +12,9 @@ import mrdmd_zscore
 ml = 9
 step = 10000
 std_baselines_dict = {}
-CACHE_DIR = './cache'
-ZSC_B_CACHE_NAME = './cache/mrDMDbaselineZscores.parquet'
-ZSC_CACHE_NAME = './cache/mrDMDbaselineData.parquet'
+CACHE_DIR = './scripts/cache'
+ZSC_B_CACHE_NAME = CACHE_DIR + 'mrDMDbaselineZscores.parquet'
+ZSC_CACHE_NAME = CACHE_DIR + 'mrDMDbaselineData.parquet'
 
 def preprocess(df, col):
     return df.pivot(index="nodeId", columns="timestamp", values=col) \
@@ -326,7 +326,7 @@ def get_cached_or_compute_baselines(df, force_recompute):
     missing_features = df_features - cached_features
 
     if missing_features:
-        print(f'Computing baselines for missing features: {missing_features}')
+        # print(f'Computing baselines for missing features: {missing_features}')
         missing_df = df[['nodeId', 'timestamp'] + list(missing_features)]
         bs_start = timer()
         new_baselines = process_columns_baseline(missing_df)
@@ -344,9 +344,7 @@ def get_cached_or_compute_baselines(df, force_recompute):
         # Save updated baselines
         os.makedirs(CACHE_DIR, exist_ok=True)
         ZSC_d.to_parquet(ZSC_B_CACHE_NAME)
-        print(f'Updated cached baseline results to parquet {ZSC_B_CACHE_NAME}.')
-    else:
-        print("All features already exist in the cached baseline.")
+        print(f'Updated cached baseline results to parquet {ZSC_B_CACHE_NAME} (missing features).')
 
     return ZSC_d
 

@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { Card, Col, Layout, Row, Spin, Select, Typography } from "antd";
-import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react';
+import { Card, Col, Layout, Row, Spin, Select, Typography, Switch } from "antd";
+import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { dataConfigs, fileName, headerFileName } from './config.js';
 import DRView from './components/DRPlot.js';
@@ -35,9 +35,11 @@ function App() {
   const [baselines, setBaselines] = useState(null);
   const [error, setError] = useState(null);
   const [headers, setHeaders] = useState(null);
-  const [recompute, setRecompute] = useState(0);
   const [nodeClusterMap, setNodeClusterMap] = useState(new Map());
   const baselinesRef = useRef({});
+  const initializedRef = useRef(false);
+
+  const [streamingMode, setStreamingMode] = useState(false);
 
   const totalNodes = DRTData?.length || 0;
   const totalMeasures = nodeData?.columns.length || 0;
@@ -107,6 +109,7 @@ function App() {
       const response = await fetch(url);
       if (!response.ok) {
         console.error("Failed to fetch new cluster IDs -", response.status, response.statusText);
+        setError("Clusters");
         return;
       }
 
@@ -137,6 +140,7 @@ function App() {
 
     } catch (e) {
       console.error("Failed to fetch new cluster IDs -", e);
+      setError("Clusters"); 
     }
   }, [nodeClusterMap]);
 
@@ -184,19 +188,19 @@ function App() {
         setError(null); 
       } else {
         setDRTData(null);  
-        setError("Failed to fetch DR data. Please check that the server is running.");
+        setError("DR");
       }
 
     } catch (error) {
       setDRTData(null);    
-      setError("Failed to fetch DR data. Please check that the server is running.");
+      setError("DR");
       console.error(error);     
     }
   };
 
   const getMrDMD = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/${recompute}/0/0/0/0/0`);
+      const response = await fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${selectedDims}/1/0/0/0/0/0`);
       if (response.ok) { 
         const data = await response.json();
         setzScores(data.zscores)
@@ -215,12 +219,12 @@ function App() {
       } else {
         setzScores(null);   
         setBaselines(null)
-        setError("Failed to fetch data. Please check that the server is running.");
+        setError("MrDMD");
       }
     } catch (error) {
       setzScores(null)
       setBaselines(null)
-      setError("Failed to fetch data. Please check that the server is running.");
+      setError("MrDMD");
       console.error(error);     
     }
   };
@@ -259,7 +263,8 @@ function App() {
     });
 
     // Fetch updated zScores/baselines
-    fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
+    try {
+      fetch(`http://127.0.0.1:5010/mrdmd/${selectedPoints}/${key}/1/0/0/0/0/0`)
       .then(res => res.json())
       .then(dmdData => {
         setzScores(prev => mergeZScores(prev, dmdData.zscores, key));
@@ -274,6 +279,9 @@ function App() {
           };
         });
       });
+    } catch (error) {
+      setError("MrDMD"); 
+    }
   };
 
   // timeBinSize in milliseconds (e.g., 60_000 = 1 min)
@@ -389,26 +397,41 @@ function App() {
 
     // fetch updated zScores/baselines for these nodes
     if (selectedNodeIds.length) {
-      fetch(`http://127.0.0.1:5010/mrdmd/${selectedNodeIds}/${selectedDims}/1/0/0/0/0/0`)
+      try {
+        fetch(`http://127.0.0.1:5010/mrdmd/${selectedNodeIds}/${selectedDims}/1/0/0/0/0/0`)
         .then(res => res.json())
         .then(dmdData => {
           setzScores(dmdData.zscores);
           setBaselines(dmdData.baselines);
         });
+      } catch (error) {
+        setError("MrDMD"); 
+      }
     }
   };
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     async function init() {
       try {
-        await getCsvData();
-        await getDRTimeData();
-        await getMrDMD();
+        const startTime = performance.now();
+
+        await Promise.all([
+          getCsvData(),
+          getDRTimeData(),
+          getMrDMD()
+        ]);
+
+        const endTime = performance.now();
+        console.log(`Parallel load took ${((endTime - startTime) / 1000).toFixed(2)}s`);
+        
       } catch (err) {
         console.error("Error fetching data:", err);
+        setError("Failed to initialize dashboard. Is the server running?");
       }
     }
-
     init();
   }, []);
 
@@ -443,6 +466,16 @@ function App() {
           <Col>
             <Row gutter={24}>
               <Col>
+                <Text strong italic style={{ fontSize: "14px", paddingRight: '10px' }}>
+                  Streaming Mode
+                </Text>
+                <Switch 
+                  size="small" 
+                  checked={streamingMode} 
+                  onChange={(checked) => setStreamingMode(checked)} 
+                />
+              </Col>
+              <Col>
                 <Text strong italic style={{ fontSize: "16px" }}>
                   Nodes: {totalNodes}
                 </Text>
@@ -459,11 +492,11 @@ function App() {
       <Content style={{ marginTop: "5px" }}>
           <Row gutter={[8, 8]}>
             <Col span={14}>
-              {((!nodeData) || (!DRTData)) ? (
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-                    <Spin size="large" />
-                  </div>
-                ) : (
+              {error || ((!nodeData) || (!DRTData)) ? (
+                <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
+                </Card>
+              ): (
                 <TimelineView 
                     bStart={bStart}
                     bEnd={bEnd}
@@ -473,10 +506,10 @@ function App() {
                     nodeClusterMap={nodeClusterMap}
                   />
                   )}
-                {((!metricData) || (!baselines) || (!zScores) || (!headers)) ? (
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-                    <Spin size="large" />
-                  </div>
+                {error || ((!metricData) || (!baselines) || (!zScores) || (!headers))? (
+                  <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
+                  </Card>
                 ) : (
                   <Card title="METRIC READING VIEW" size="small" style={{ height: "auto" }}> 
                     <Row gutter={[16, 16]}>
@@ -511,11 +544,11 @@ function App() {
               )}
             </Col>
               <Col span={10}>
-                {((!DRTData) || (!FCs)) ? (
-                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-                    <Spin size="large" />
-                  </div>
-                ) : (
+                {error || ((!DRTData) || (!FCs)) ? (
+                  <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
+                  </Card>
+                ): (
                   <div>
                       <DRView 
                         data={DRTData} 
@@ -534,10 +567,11 @@ function App() {
                       />
                   </div>
                   )}
-                  {(!zScores) ? (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-                      <Spin size="large" />
-                    </div> ) : (
+                  {error || (!zScores) ? (
+                    <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
+                    </Card>
+                  ): (
                     <HeatmapView 
                       data={zScores} 
                       nodeClusterMap={nodeClusterMap}
