@@ -6,8 +6,6 @@ from numpy import pi, exp, sin, cos
 from numpy.linalg import inv, eig, pinv, solve
 from scipy.linalg import svd, svdvals
 from math import floor, ceil # python 3.x
-import time
-import random
 from joblib import Parallel, delayed
 import itertools
 

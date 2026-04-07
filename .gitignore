@@ -12,3 +12,5 @@ server/scripts/notebooks/
 server/scripts/cache/
 
 ltnc/
+
+.venv

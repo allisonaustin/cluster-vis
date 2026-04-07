@@ -67,24 +67,24 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                         <List.Item key={key} style={{ display: "flex", alignItems: "flex-start", padding: "5px 10px" }}>
                         
                         <div style={{display: 'flex', flexDirection: 'column', flexGrow: 1}}>
+                            <Tooltip 
+                                title={
+                                    <div>
+                                        <strong>{formalTitle}</strong>
+                                        <br />
+                                        {description}
+                                        {headerInfo.units && <div><small>Units: {headerInfo.units}</small></div>}
+                                    </div>
+                                }
+                                placement="bottom"
+                                mouseEnterDelay={0.2} 
+                            >
                             <div style={{display: 'flex', alignItems: "center" }}>
                                 <Checkbox
                                     checked={selectedDims.includes(key)}
                                     onChange={() => onMetricSelectChange(key)}
                                     style={{ marginRight: "10px" }}
                                 />
-                                <Tooltip 
-                                    title={
-                                        <div>
-                                            <strong>{formalTitle}</strong>
-                                            <br />
-                                            {description}
-                                            {headerInfo.units && <div><small>Units: {headerInfo.units}</small></div>}
-                                        </div>
-                                    }
-                                    placement="right"
-                                    mouseEnterDelay={0.2} 
-                                >
                                 <span 
                                     style={{ 
                                         flexGrow: 1, 
@@ -98,7 +98,6 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                     >
                                     {key}
                                 </span>
-                                </Tooltip>
                             </div>
                             <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
                                 <FeatureContributionBarGraph
@@ -158,6 +157,7 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                     })}
                                     </div>
                                 </div>
+                            </Tooltip>
                             </div>
                         </List.Item>
                     );

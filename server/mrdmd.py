@@ -1,18 +1,16 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer as timer
-import time
 import numpy as np
 import pandas as pd
 import sys
 sys.path.append("./scripts/src/")
-import importlib 
 import mrdmd_zscore
 
 ml = 9
 step = 10000
 std_baselines_dict = {}
-CACHE_DIR = './scripts/cache'
+CACHE_DIR = './scripts/cache/'
 ZSC_B_CACHE_NAME = CACHE_DIR + 'mrDMDbaselineZscores.parquet'
 ZSC_CACHE_NAME = CACHE_DIR + 'mrDMDbaselineData.parquet'
 

@@ -6,5 +6,5 @@ export const COLORS = {
     highlight: '#a4c8ddff'
 }
 
-export const colorScheme = d3.schemeSet2;
+export const colorScheme = d3.schemeDark2;
 export const colorScale = d3.scaleOrdinal(colorScheme);

@@ -1,5 +1,7 @@
 # Cluster-Based Visual Analytics System for HPC Performance Data
 
+<img src="ui/public/ui-blank.png" class="pub-img">
+
 ## Frontend (React)
 
 ### Setup
@@ -22,7 +24,7 @@
 4. `source .venv/bin/activate` (Repeat this whenever you start a new terminal)
 5. `pip install -r requirements.txt`
 6. Install CCPCA package
-   1. Download ccpca repo as zip from <https://github.com/takanori-fujiwara/ccpca>:
+   1. Download ccpca repo as zip from [https://github.com/takanori-fujiwara/ccpca](https://github.com/takanori-fujiwara/ccpca):
    2. Download ccpca repo as zip
    3. Unzip in `/server`
    4. `cd ccpca-master`
@@ -40,8 +42,7 @@
       )
       ...
       ```
-
-   6. Install both `ccpca/ccpca/` and `ccpca/fc_view/` as instructed in <https://github.com/takanori-fujiwara/ccpca/blob/master/README.md>
+   6. Install both `ccpca/ccpca/` and `ccpca/fc_view/` as instructed in [https://github.com/takanori-fujiwara/ccpca/blob/master/README.md](https://github.com/takanori-fujiwara/ccpca/blob/master/README.md)
 
 ### Usage
 

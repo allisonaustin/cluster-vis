@@ -3,10 +3,9 @@ import os
 from datetime import datetime
 
 import pandas as pd
-from flask import Flask, abort, jsonify, current_app
+from flask import Flask, abort, jsonify
 from flask_cors import CORS
 
-from datetime import datetime
 from timeit import default_timer as timer
 from concurrent.futures import ThreadPoolExecutor
 from scripts.pipeline import get_feat_contributions

@@ -20,9 +20,12 @@ const LineChart = ({ data, field, baselinesRef, selectedTimeRange, updateBaselin
         ? d3.select(svgContainerRef.current).append("svg")
         : d3.select(svgContainerRef.current).select("svg");
 
-      svg.attr("viewBox", `0 0 ${size.width} ${size.height}`)
-        .style("width", "100%")
-        .style("height", "100%");
+      svg.attr('id', `context-window`)
+        .attr('class', 'context')
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("viewBox", `0 0 ${size.width} ${size.height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
 
       const xScale = d3.scaleTime().domain(selectedTimeRange).range([margin.left, size.width - margin.right]);
       const yScale = d3.scaleLinear().domain([0, d3.max(data, d => d.value) || 1]).range([size.height - margin.bottom, margin.top]);
