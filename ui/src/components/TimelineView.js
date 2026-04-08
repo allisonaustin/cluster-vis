@@ -6,7 +6,6 @@ import Tooltip from '../utils/tooltip.js';
 
 const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClusterMap }) => {
     const svgContainerRef = useRef();
-    const [size, setSize] = useState({ width: 700, height: 120 });
     const xScaleRef = useRef(null); 
     const [brushStart, setBrushStart] = useState(new Date(bStart));
     const [brushEnd, setBrushEnd] = useState(new Date(bEnd));
@@ -21,6 +20,10 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
 
     const drawChart = (data) => {
       d3.select(svgContainerRef.current).selectAll("*").remove();
+
+      const container = svgContainerRef.current;
+      const width = container.clientWidth;
+      const height = container.clientHeight || 120;
       
       const svg = d3.select(svgContainerRef.current)
                 .append("svg")
@@ -28,18 +31,18 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
                 .attr('class', 'context')
                 .attr("width", "100%")
                 .attr("height", "100%")
-                .attr("viewBox", `0 0 ${size.width} ${size.height}`)
+                .attr("viewBox", `0 0 ${width} ${height}`)
                 .attr("preserveAspectRatio", "xMidYMid meet");
 
       const xScale = d3
         .scaleTime()
         .domain([new Date(nodeDataStart), new Date(nodeDataEnd)])
-        .range([margin.left, size.width - margin.right - margin.left])
+        .range([margin.left, width - margin.right - margin.left])
       
       const yScale = d3
         .scaleBand()
         .domain(data.map(d => d.cluster))
-        .range([margin.top, size.height- margin.bottom])
+        .range([margin.top, height- margin.bottom])
         .padding(0.4);
 
       const xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%H:%M"));
@@ -47,7 +50,7 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
 
       svg.append("g")
         .attr('class', 'x-axis')
-        .attr("transform", `translate(0,${size.height - margin.bottom})`)
+        .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(xAxis)
         .selectAll("text")
           .style("font-size", "12px");
@@ -64,7 +67,7 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
 
       svg.append("text")
         .attr("transform", `rotate(-90)`)
-        .attr("x", -size.height / 2)
+        .attr("x", -height / 2)
         .attr("y", 10) 
         .attr("fill", "black")
         .attr("text-anchor", "middle")
@@ -96,7 +99,7 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
       const brush = d3.brushX(xScale)
         .extent([
           [Math.max(margin.left, earliestNodeDataTime), margin.top],
-          [size.width - margin.right - 20, size.height - margin.bottom - 1]
+          [width - margin.right - 20, height - margin.bottom - 1]
         ])
         .on('end', (event) => {
             const selection = event.selection;
@@ -124,7 +127,7 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
 
     return  (
       <>
-        <Card title="TIME DOMAIN VIEW" size="small" style={{ height: 'auto' }}>
+        <Card title="TIME DOMAIN VIEW" size="small" style={{ height: 'auto', width: '100%' }}>
            <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -142,7 +145,7 @@ const TimelineView = ({ data, bStart, bEnd, nodeDataStart, nodeDataEnd, nodeClus
               }} />
               <span style={{ fontSize: '14px' }}>Downtime</span>
             </div>
-            <div ref={svgContainerRef}></div>
+            <div ref={svgContainerRef} style={{ width: '100%', height: '100px' }}></div>
         </Card>
         <Tooltip
           visible={tooltip.visible}

@@ -53,7 +53,7 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                 style={{ marginBottom: 8 }}
             />
             <List
-                style={{ width: "100%", maxWidth: 300, overflowY: "scroll", maxHeight: 430 }}
+                style={{ width: "100%", maxWidth: 300, overflowY: "scroll", height: "calc(60vh - 50px)" }}
                 bordered
                 dataSource={filteredFeatures}
                 renderItem={(key, index) => {
@@ -76,29 +76,31 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                         {headerInfo.units && <div><small>Units: {headerInfo.units}</small></div>}
                                     </div>
                                 }
-                                placement="bottom"
-                                mouseEnterDelay={0.2} 
+                                placement="top"
+                                followMouse
+                                mouseEnterDelay={0.1} 
                             >
-                            <div style={{display: 'flex', alignItems: "center" }}>
-                                <Checkbox
-                                    checked={selectedDims.includes(key)}
-                                    onChange={() => onMetricSelectChange(key)}
-                                    style={{ marginRight: "10px" }}
-                                />
-                                <span 
-                                    style={{ 
-                                        flexGrow: 1, 
-                                        whiteSpace: "nowrap", 
-                                        overflow: "hidden", 
-                                        textOverflow: "ellipsis", 
-                                        cursor: 'pointer',
-                                        textDecoration: 'none'
-                                    }}
-                                    onClick={() => onMetricSelectChange(key)}
-                                    >
-                                    {key}
-                                </span>
-                            </div>
+                                <div style={{display: 'flex', alignItems: "center" }}>
+                                    <Checkbox
+                                        checked={selectedDims.includes(key)}
+                                        onChange={() => onMetricSelectChange(key)}
+                                        style={{ marginRight: "10px" }}
+                                    />
+                                    <span 
+                                        style={{ 
+                                            flexGrow: 1, 
+                                            whiteSpace: "nowrap", 
+                                            overflow: "hidden", 
+                                            textOverflow: "ellipsis", 
+                                            cursor: 'pointer',
+                                            textDecoration: 'none'
+                                        }}
+                                        onClick={() => onMetricSelectChange(key)}
+                                        >
+                                        {key}
+                                    </span>
+                                </div>
+                            </Tooltip>
                             <div style={{ display: "flex", flexDirection: "row", marginTop: "4px" }}>
                                 <FeatureContributionBarGraph
                                     graphId={`${key.replace(/\s/g, "_")}-feat-graph`}
@@ -157,7 +159,6 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                     })}
                                     </div>
                                 </div>
-                            </Tooltip>
                             </div>
                         </List.Item>
                     );

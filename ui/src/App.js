@@ -493,7 +493,7 @@ function App() {
           <Row gutter={[8, 8]}>
             <Col span={14}>
               {error || ((!nodeData) || (!DRTData)) ? (
-                <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Card style={{ height: "30vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
                     <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
                 </Card>
               ): (
@@ -507,7 +507,7 @@ function App() {
                   />
                   )}
                 {error || ((!metricData) || (!baselines) || (!zScores) || (!headers))? (
-                  <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <Card style={{ height: "60vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
                       <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
                   </Card>
                 ) : (
@@ -568,10 +568,10 @@ function App() {
                   </div>
                   )}
                   {error || (!zScores) ? (
-                    <Card style={{ height: "40vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <Card style={{ height: "50vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
                         <Typography.Text type="secondary">No data available (Check the server)</Typography.Text>
                     </Card>
-                  ): (
+                  ) : (
                     <HeatmapView 
                       data={zScores} 
                       nodeClusterMap={nodeClusterMap}

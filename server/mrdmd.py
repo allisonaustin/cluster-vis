@@ -301,6 +301,10 @@ def compute_zscores(df, baselines):
             if res is not None:
                 results.append(res)
 
+    if not results:
+        print("Warning: No valid z-score results to concatenate.")
+        return pd.DataFrame(columns=['nodeId'])
+
     Z_final = pd.concat(results, axis=1)
     cols = Z_final.columns
     if 'nodeId' in cols:
