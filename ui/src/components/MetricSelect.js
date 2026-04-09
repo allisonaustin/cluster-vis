@@ -27,6 +27,8 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
     const [searchTerm, setSearchTerm] = useState("");
     const features = Object.keys(headerMap);
 
+    console.log("Feature contributions", fcs);
+
     const filteredFeatures = useMemo(() => {
         return features
             .filter(f => f.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -108,12 +110,12 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                     fcData={
                                         !fcs || features.indexOf(key) === -1 || features.indexOf(key) >= fcs.agg_feat_contrib_mat.length
                                         ? []
-                                        : Object.keys(fcs.agg_feat_contrib_mat[features.indexOf(key)])
-                                            .sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1))) // sort cluster IDs numerically
-                                            .map(clusterId => ({
-                                                cluster: +clusterId,
-                                                value: fcs.agg_feat_contrib_mat[features.indexOf(key)][+clusterId]
-                                            }))
+                                        : fcs.order_col.map((clusterId, colIndex) => {
+                                            const featureRowIndex = features.indexOf(key);
+                                            const rowData = fcs.agg_feat_contrib_mat[featureRowIndex];
+                                            const val = rowData[colIndex];
+                                            return { cluster: +clusterId, value: val };
+                                        })
                                     }
                                     />
                                 <div
@@ -124,12 +126,12 @@ export default function MetricSelect({ selectedDims, headerMap, fcs, avgSeriesDa
                                         gap: "4px",
                                     }}
                                 >
-                                    {Object.entries(clusterSeries).map(([clusterId, avgData]) => {
-                                        if (!avgData.length) return null;
+                                    {fcs.order_col.map(clusterId => {
+                                        const avgData = clusterSeries[clusterId];
+                                        if (!avgData || !avgData.length) return <div key={clusterId} style={{height: 20}} />;
                                         const smooth = smoothSeries(avgData, 5, 40);
                                         const minVal = Math.min(...smooth.map(d => d.value));
                                         const maxVal = Math.max(...smooth.map(d => d.value));
-
                                         return (
                                             <svg
                                                 key={clusterId}

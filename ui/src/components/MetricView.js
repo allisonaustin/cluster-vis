@@ -139,7 +139,7 @@ const MetricView = ({ data, timeRange, selectedDims, selectedPoints, zScores, se
     };
 
     return (
-      <div style={{ overflow: 'auto', height: "calc(60vh - 50px)", }}>
+      <div style={{ overflow: 'auto', height: "calc(60vh - 40px)", }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 

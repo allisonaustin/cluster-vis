@@ -1,12 +1,12 @@
 # Cluster-Based Visual Analytics System for HPC Performance Data
 
 ## About
-- Implementation of two-step DR (PCA+UMAP) with contrastive clusters for feature contributions. 
+
+- Implementation of two-step DR (PCA+UMAP) with contrastive clusters for feature contributions.
 - Interactive mrDMD to adjust metric baselines and compute per-node devation from baseline(s).
 
-<img src="ui/public/ui-blank.png" class="pub-img">
-
 ## Requirements
+
 - Python3
 - Note: Tested on macOS Tahoe and Ubuntu 24.04 LTS.
 
@@ -59,8 +59,9 @@
 3. `python server.py`
 
 ## References
+
 1. Takanori Fujiwara, Shilpika, Naohisa Sakamoto, Jorji Nonaka, Keiji Yamamoto, and Kwan-Liu Ma, "A Visual Analytics Framework for Reviewing Multivariate Time-Series Data with Dimensionality Reduction". IEEE Transactions on Visualization and Computer Graphics, vol. 27, no. 2, pp. 1601-1611, 2021. [code](https://github.com/takanori-fujiwara/multidr)
-1. Takanori Fujiwara, Oh-Hyun Kwon, and Kwan-Liu Ma, "Supporting Analysis of Dimensionality Reduction Results with Contrastive Learning". IEEE Transactions on Visualization and Computer Graphics, 2020. DOI: 10.1109/TVCG.2019.2934251 [code](https://github.com/takanori-fujiwara/ccpca)
-1. Kutz, J. N., Fu, X., and Brunton, S. L., 2016, “Multiresolution Dynamic Mode Decomposition”, SIAM J. Appl. Dyn. Syst., 15 (2), pp. 713-735.
-2. B. W. Brunton, L. A. Johnson, J. G. Ojemann, and J. N. Kutz, “Extracting spatial–temporal coherent patterns in large-scale neural recordings using dynamic mode decomposition,” Journal of Neuroscience Methods, vol. 258, 2016.
-3. mrDMD code modified from https://humaticlabs.com/blog/mrdmd-python/
+2. Takanori Fujiwara, Oh-Hyun Kwon, and Kwan-Liu Ma, "Supporting Analysis of Dimensionality Reduction Results with Contrastive Learning". IEEE Transactions on Visualization and Computer Graphics, 2020. DOI: 10.1109/TVCG.2019.2934251 [code](https://github.com/takanori-fujiwara/ccpca)
+3. Kutz, J. N., Fu, X., and Brunton, S. L., 2016, “Multiresolution Dynamic Mode Decomposition”, SIAM J. Appl. Dyn. Syst., 15 (2), pp. 713-735.
+4. B. W. Brunton, L. A. Johnson, J. G. Ojemann, and J. N. Kutz, “Extracting spatial–temporal coherent patterns in large-scale neural recordings using dynamic mode decomposition,” Journal of Neuroscience Methods, vol. 258, 2016.
+5. mrDMD code modified from https://humaticlabs.com/blog/mrdmd-python/

@@ -7,7 +7,7 @@ import * as d3 from 'd3';
 const HeatmapView = ({ data, nodeClusterMap }) => {
     const heatmapRef = useRef();
     const legendRef = useRef();
-    const [margin, setMargin] = useState({ top: 10, right: 50, bottom: 130, left: 100 });
+    const [margin, setMargin] = useState({ top: 0, right: 50, bottom: 100, left: 100 });
     const [tooltip, setTooltip] = useState({
             visible: false,
             content: '',
@@ -47,87 +47,76 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
     const drawHeatmap = (matrix, featureNames, nodeIds) => {
         const cellWidth = 20;
         const cellHeight = 30;
-
         const mapWidth = nodeIds.length * cellWidth;
         const mapHeight = featureNames.length * cellHeight;
 
         const containerNode = heatmapRef.current;
-        const actualViewportHeight = containerNode ? containerNode.clientHeight : 400;
+        const visibleHeight = containerNode ? containerNode.clientHeight : 400;
 
-        const yScale = d3.scaleBand()
-            .domain(featureNames)
-            .range([0, mapHeight])
-            .padding(0.05);
-
-        const xScale = d3.scaleBand()
-            .domain(nodeIds)
-            .range([0, mapWidth])
-            .padding(0.05);
-
-        const myColor = d3.scaleDiverging()
-            .interpolator(d3.interpolateRdBu)
-            .domain([5,0,-5]);
+        const yScale = d3.scaleBand().domain(featureNames).range([0, mapHeight]).padding(0.05);
+        const xScale = d3.scaleBand().domain(nodeIds).range([0, mapWidth]).padding(0.05);
+        const myColor = d3.scaleDiverging().interpolator(d3.interpolateRdBu).domain([5, 0, -5]);
 
         const container = d3.select(heatmapRef.current);
         let parent = container.select("#heatmap-parent");
 
         if (parent.empty()) {
-            parent = container.append("div").attr("id", "heatmap-parent");
+            parent = container.append("div").attr("id", "heatmap-parent")
+                .style("position", "relative")
+                .style("width", "100%")
+                .style("height", "100%");
+
+            const scrollDiv = parent.append("div")
+                .attr("id", "heatmap-scroll")
+                .style("position", "absolute")
+                .style("left", `${margin.left}px`)
+                .style("top", `${margin.top}px`)
+                .style("width", `calc(100% - ${margin.left}px)`)
+                .style("height", `${visibleHeight - margin.top - margin.bottom}px`) 
+                .style("overflow", "auto")
+                .style("scrollbar-width", "none")
+                .style("z-index", 1);
+
+            const svg = scrollDiv.append("svg").attr("id", "heatmap-svg");
+            svg.append("g").attr("class", "heatmap-group");
 
             const axisSvg = parent.append("svg")
                 .attr("id", "axis-svg")
                 .style("position", "absolute")
                 .style("top", 0).style("left", 0)
                 .style("pointer-events", "none")
-                .style("z-index", 2)
-            
-            axisSvg.append("rect")
-                .attr("id", "y-axis-bg")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", margin.left)
-                .style("fill", "white");
-            
-            axisSvg.append("g").attr("class", "y-axis")
+                .style("z-index", 10);
 
-            const xAxisStickySvg = parent.append("svg")
-                .attr("id", "x-axis-sticky-svg")
-                .style("position", "absolute")
-                .style("top", 0).style("left", 0)
-                .style("pointer-events", "none")
-                .style("z-index", 9);
+            axisSvg.append("rect").attr("id", "y-axis-bg").style("fill", "white");
+            axisSvg.append("rect").attr("id", "x-axis-bg").style("fill", "white");
 
-            xAxisStickySvg.append("rect").attr("width", "100%").attr("height", margin.top).style("fill", "white");
-            xAxisStickySvg.append("g").attr("class", "x-axis-sticky");
-
-            const scrollDiv = parent.append("div")
-                .attr("id", "heatmap-scroll")
-                .style("overflow", "auto")
-                .style("width", "100%");
-
-            const svg = scrollDiv.append("svg")
-                .attr("id", "heatmap-svg")
-                .style("display", "block");
-
-            svg.append("g")
-                .attr("class", "heatmap-group")
-                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+            axisSvg.append("g").attr("class", "y-axis");
+            axisSvg.append("g").attr("class", "x-axis");
         }
 
-        const scrollDiv = container.select("#heatmap-scroll").style("height", `${actualViewportHeight}px`);
+        const stickyXPosition = visibleHeight - margin.bottom;
+
+        const scrollDiv = container.select("#heatmap-scroll")
+            .style("height", `${stickyXPosition - margin.top}px`); // Clip rows before they hit the X-axis
+
         const svg = container.select("#heatmap-svg")
-            .attr("width", mapWidth + margin.left + margin.right)
-            .attr("height", mapHeight + margin.top + margin.bottom);
+            .attr("width", mapWidth)
+            .attr("height", mapHeight);
 
-        container.select("#axis-svg").attr("width", margin.left).attr('height', actualViewportHeight);
-        container.select("#y-axis-bg").attr("width", margin.left).attr("height", actualViewportHeight);
+        const axisSvg = container.select("#axis-svg")
+            .attr("width", containerNode.clientWidth)
+            .attr("height", visibleHeight);
 
-        container.select("#x-axis-sticky-svg").attr("width", "100%").attr("height", mapHeight + margin.top + margin.bottom);
+        axisSvg.select("#y-axis-bg").attr("width", margin.left).attr("height", visibleHeight);
+        
+        axisSvg.select("#x-axis-bg")
+            .attr("x", margin.left)
+            .attr("y", stickyXPosition) 
+            .attr("width", containerNode.clientWidth - margin.left)
+            .attr("height", margin.bottom);
 
-        // --- Render Axes ---
         container.select(".y-axis").call(d3.axisLeft(yScale));
-        container.select(".x-axis-sticky")
-            .attr("transform", `translate(${margin.left}, ${mapHeight + margin.top})`)
+        container.select(".x-axis")
             .call(d3.axisBottom(xScale))
             .selectAll("text")
             .attr("transform", "rotate(-65)")
@@ -137,22 +126,22 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
             .style("font-weight", "bold");
 
         function syncAxesToScroll() {
-            const { scrollTop, scrollLeft } = scrollDiv.node();
+            const node = scrollDiv.node();
+            const scrollLeft = node.scrollLeft;
+            const scrollTop = node.scrollTop;
+
             container.select(".y-axis")
                 .attr("transform", `translate(${margin.left}, ${margin.top - scrollTop})`);
-            container.select(".x-axis-sticky")
-                .attr("transform", `translate(${margin.left - scrollLeft}, ${mapHeight + margin.top})`);
+
+            container.select(".x-axis")
+                .attr("transform", `translate(${margin.left - scrollLeft}, ${stickyXPosition})`);
         }
 
-        // attach handler
         scrollDiv.on("scroll", syncAxesToScroll);
-
-        // initialize positions
         syncAxesToScroll();
 
-        // --------- Heatmap cells rendering --------------
-        const hGroup = svg.select('.heatmap-group');
-        const cells = hGroup.selectAll('.heatmap-cell')
+        // --- Render Cells ---
+        const cells = svg.select('.heatmap-group').selectAll('.heatmap-cell')
             .data(matrix, d => d.nodeId + ':' + d.feature);
 
         cells.enter()
@@ -163,33 +152,29 @@ const HeatmapView = ({ data, nodeClusterMap }) => {
             .attr("y", d => yScale(d.feature))
             .attr("width", xScale.bandwidth())
             .attr("height", yScale.bandwidth())
-            .attr("rx", 4)
-            .attr("ry", 4)
+            .attr("rx", 4).attr("ry", 4)
             .style("fill", d => myColor(d.value))
-            .style("stroke", "none")
-            .style("opacity", 0.8)
-            .on("mouseover", function(event, d) {
-            d3.select(this).style("stroke", "black").style("stroke-width", "2px").style("opacity", 1);
-            
-            d3.select(`#${d.nodeId}`).transition().duration(150).attr("r", 8).style("opacity", 1);
-            d3.selectAll("path.line").transition().duration(150)
+             .on("mouseover", function(event, d) {
+                d3.select(this).style("stroke", "black").style("stroke-width", "2px").style("opacity", 1);
+                d3.select(`#${d.nodeId}`).transition().duration(150).attr("r", 8).style("opacity", 1);
+                d3.selectAll("path.line").transition().duration(150)
                 .style("opacity", function() { return d3.select(this).classed(`line-${d.nodeId}`) ? 1 : 0.1; })
-                .style("stroke-width", function() { return d3.select(this).classed(`line-${d.nodeId}`) ? "3px" : "1.5px"; });
+                .style("stroke-width", function() { return d3.select(this).classed(`line-${d.nodeId}`) ? "3px" : "1.5px"; }); 
+                 setTooltip({
+                    visible: true,
+                    content: `${d.nodeId}, ${d.value?.toFixed(3) || 'N/A'}`,
+                    x: event.clientX,
+                    y: event.clientY,
+                });
 
-            setTooltip({
-                visible: true,
-                content: `${d.nodeId}, ${d.value?.toFixed(3) || 'N/A'}`,
-                x: event.clientX,
-                y: event.clientY,
-            });
-        })
-        .on("mouseout", function(event, d) {
-            d3.select(this).style("stroke", "none").style("opacity", 0.8);
-            d3.select(`#${d.nodeId}`).transition().duration(150).attr("r", 4);
-            d3.selectAll("path.line").interrupt().transition().duration(150)
-                .style("opacity", 0.8).style("stroke-width", "1.5px");
-            setTooltip(prev => ({ ...prev, visible: false }));
-        });
+                })
+                .on("mouseout", function(event, d) {
+                    d3.select(this).style("stroke", "none").style("opacity", 0.8);
+                    d3.select(`#${d.nodeId}`).transition().duration(150).attr("r", 4);
+                    d3.selectAll("path.line").interrupt().transition().duration(150)
+                    .style("opacity", 0.8).style("stroke-width", "1.5px");
+                    setTooltip(prev => ({ ...prev, visible: false }));
+                }); 
         
         cells.exit().remove();
 
