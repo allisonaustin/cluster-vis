@@ -62,6 +62,4 @@
 
 1. Takanori Fujiwara, Shilpika, Naohisa Sakamoto, Jorji Nonaka, Keiji Yamamoto, and Kwan-Liu Ma, "A Visual Analytics Framework for Reviewing Multivariate Time-Series Data with Dimensionality Reduction". IEEE Transactions on Visualization and Computer Graphics, vol. 27, no. 2, pp. 1601-1611, 2021. [code](https://github.com/takanori-fujiwara/multidr)
 2. Takanori Fujiwara, Oh-Hyun Kwon, and Kwan-Liu Ma, "Supporting Analysis of Dimensionality Reduction Results with Contrastive Learning". IEEE Transactions on Visualization and Computer Graphics, 2020. DOI: 10.1109/TVCG.2019.2934251 [code](https://github.com/takanori-fujiwara/ccpca)
-3. Kutz, J. N., Fu, X., and Brunton, S. L., 2016, “Multiresolution Dynamic Mode Decomposition”, SIAM J. Appl. Dyn. Syst., 15 (2), pp. 713-735.
-4. B. W. Brunton, L. A. Johnson, J. G. Ojemann, and J. N. Kutz, “Extracting spatial–temporal coherent patterns in large-scale neural recordings using dynamic mode decomposition,” Journal of Neuroscience Methods, vol. 258, 2016.
-5. mrDMD code modified from https://humaticlabs.com/blog/mrdmd-python/
+3. S. Shilpika et al., "A Multi-Level, Multi-Scale Visual Analytics Approach to Assessment of Multifidelity HPC Systems," 2024 IEEE 24th International Symposium on Cluster, Cloud and Internet Computing (CCGrid), Philadelphia, PA, USA, 2024, pp. 478-488, doi: 10.1109/CCGrid59990.2024.00060. [code](https://github.com/sshilpika/mrdmd-frequency-isolation)
