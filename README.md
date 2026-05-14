@@ -63,3 +63,6 @@
 1. Takanori Fujiwara, Shilpika, Naohisa Sakamoto, Jorji Nonaka, Keiji Yamamoto, and Kwan-Liu Ma, "A Visual Analytics Framework for Reviewing Multivariate Time-Series Data with Dimensionality Reduction". IEEE Transactions on Visualization and Computer Graphics, vol. 27, no. 2, pp. 1601-1611, 2021. [code](https://github.com/takanori-fujiwara/multidr)
 2. Takanori Fujiwara, Oh-Hyun Kwon, and Kwan-Liu Ma, "Supporting Analysis of Dimensionality Reduction Results with Contrastive Learning". IEEE Transactions on Visualization and Computer Graphics, 2020. DOI: 10.1109/TVCG.2019.2934251 [code](https://github.com/takanori-fujiwara/ccpca)
 3. S. Shilpika et al., "A Multi-Level, Multi-Scale Visual Analytics Approach to Assessment of Multifidelity HPC Systems," 2024 IEEE 24th International Symposium on Cluster, Cloud and Internet Computing (CCGrid), Philadelphia, PA, USA, 2024, pp. 478-488, doi: 10.1109/CCGrid59990.2024.00060. [code](https://github.com/sshilpika/mrdmd-frequency-isolation)
+
+### Citation
+Allison Austin, Shilpika, Yan To Linus Lam, Yun-Hsin Kuo, Venkatram Vishwanath, Michael E. Papka, & Kwan-Liu Ma (2026). Understanding Large-Scale HPC System Behavior Through Cluster-Based Visual Analytics. arXiv. https://doi.org/10.48550/arXiv.2604.11965
